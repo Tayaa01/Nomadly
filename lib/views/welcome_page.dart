@@ -73,6 +73,10 @@ class WelcomePage extends StatelessWidget {
                                 width: 200,
                                 height: 200,
                                 fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Error loading image: $error');
+                                  return const Icon(Icons.error, size: 200, color: Colors.red);
+                                },
                               ),
                             ],
                           ),
