@@ -16,6 +16,7 @@ class CurrencyViewModel extends ChangeNotifier {
   bool isImageProcessing = false;
   bool showTips = false;
   XFile? selectedImage;
+  String? errorMessage;
 
   final TextEditingController amountController = TextEditingController();
 
@@ -52,10 +53,13 @@ class CurrencyViewModel extends ChangeNotifier {
   Future<void> convertCurrency() async {
     if (targetCountry == null || sourceCountry == null) {
       print('Source or target country not selected');
+      errorMessage = "Please select both countries";
+      notifyListeners();
       return;
     }
 
     isConverting = true;
+    errorMessage = null;
     scannedAmount = null;
     convertedAmount = null;
     convertedCurrencySymbol = null;
@@ -68,6 +72,8 @@ class CurrencyViewModel extends ChangeNotifier {
     try {
       if (selectedImage != null) {
         print('Converting currency with image: ${selectedImage!.path}');
+        print('Source country: $sourceCountry, Target country: $targetCountry');
+        
         final data = await _currencyService.analyzeAndConvertImage(
           selectedImage!,
           sourceCountry!,
@@ -75,6 +81,13 @@ class CurrencyViewModel extends ChangeNotifier {
         );
 
         print('API response: $data');
+
+        if (data['error'] != null) {
+          errorMessage = data['error']['message'];
+          print('Error from API: $errorMessage');
+          notifyListeners();
+          return;
+        }
 
         if (data['bill'] != null) {
           final bill = data['bill'];
@@ -86,6 +99,7 @@ class CurrencyViewModel extends ChangeNotifier {
             convertedCurrencySymbol = bill['convertedAmount']['currency'];
           }
         }
+
         if (data['taxRefund'] != null) {
           isTaxRefundAvailable = data['taxRefund']['available'];
           taxRefundMessage = data['taxRefund']['message'];
@@ -93,14 +107,13 @@ class CurrencyViewModel extends ChangeNotifier {
             taxRefundTips = List<String>.from(data['taxRefund']['tips']);
           }
           showTips = true;
-        } else {
-          isTaxRefundAvailable = false;
-          taxRefundMessage = 'Tax refund is not available for this transaction.';
         }
       } else {
+        errorMessage = "Please take a photo first";
         print('No image selected');
       }
     } catch (e) {
+      errorMessage = "Error converting currency: $e";
       print('Error converting currency: $e');
     } finally {
       isConverting = false;

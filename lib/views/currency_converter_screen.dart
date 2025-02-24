@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/currency_viewmodel.dart';
+import '../widgets/custom_bottom_nav.dart';  // Add this import
 
 class CurrencyConverterScreen extends StatelessWidget {
   final VoidCallback toggleTheme;
@@ -65,65 +66,105 @@ class CurrencyConverterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Source Country Dropdown
+                    // Source Country Input
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E1E1E),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          dropdownColor: const Color(0xFF1E1E1E),
-                          hint: const Text('Select source country',
-                              style: TextStyle(color: Color(0xFFA5A5A5))),
-                          value: viewModel.sourceCountry,
-                          isExpanded: true,
-                          items: ['FR', 'US', 'UK', 'JP']
-                              .map((String value) => DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value,
-                                        style: const TextStyle(
-                                            color: Color(0xFFFFFFFF))),
-                                  ))
-                              .toList(),
-                          onChanged: (newValue) {
-                            viewModel.sourceCountry = newValue;
-                          },
+                      child: TextField(
+                        onChanged: (value) {
+                          viewModel.sourceCountry = value.toUpperCase();
+                          print('Source country updated: ${viewModel.sourceCountry}');
+                        },
+                        style: const TextStyle(
+                          color: Color(0xFFFFFFFF),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textCapitalization: TextCapitalization.characters,
+                        maxLength: 2,
+                        textAlign: TextAlign.center,
+                        decoration: const InputDecoration(
+                          counterText: '',  // Hides the character counter
+                          hintText: 'Enter source country (e.g., FR)',
+                          hintStyle: TextStyle(
+                            color: Color(0xFFA5A5A5),
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                          ),
+                          border: InputBorder.none,
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Target Country Dropdown
+                    // Target Country Input
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E1E1E),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          dropdownColor: const Color(0xFF1E1E1E),
-                          hint: const Text('Select target country',
-                              style: TextStyle(color: Color(0xFFA5A5A5))),
-                          value: viewModel.targetCountry,
-                          isExpanded: true,
-                          items: ['FR', 'US', 'UK', 'JP']
-                              .map((String value) => DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value,
-                                        style: const TextStyle(
-                                            color: Color(0xFFFFFFFF))),
-                                  ))
-                              .toList(),
-                          onChanged: (newValue) {
-                            viewModel.targetCountry = newValue;
-                          },
+                      child: TextField(
+                        onChanged: (value) {
+                          viewModel.targetCountry = value.toUpperCase();
+                          print('Target country updated: ${viewModel.targetCountry}');
+                        },
+                        style: const TextStyle(
+                          color: Color(0xFFFFFFFF),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textCapitalization: TextCapitalization.characters,
+                        maxLength: 2,
+                        textAlign: TextAlign.center,
+                        decoration: const InputDecoration(
+                          counterText: '',  // Hides the character counter
+                          hintText: 'Enter target country (e.g., US)',
+                          hintStyle: TextStyle(
+                            color: Color(0xFFA5A5A5),
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                          ),
+                          border: InputBorder.none,
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // Error Message Display
+                    if (viewModel.errorMessage != null)
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.red.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                viewModel.errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
                     // Results Display
                     if (viewModel.convertedAmount != null)
@@ -304,6 +345,17 @@ class CurrencyConverterScreen extends StatelessWidget {
                 ),
               ),
             );
+          },
+        ),
+        bottomNavigationBar: CustomBottomNav(
+          currentIndex: 2,  // Currency converter is index 2
+          onTap: (index) {
+            if (index != 2) {  // If not current tab
+              if (index == 0) {
+                Navigator.pushReplacementNamed(context, '/home');
+              }
+              // Add other navigation cases here as needed
+            }
           },
         ),
       ),

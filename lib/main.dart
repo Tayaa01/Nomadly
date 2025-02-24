@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'views/currency_converter_screen.dart';
+import 'views/currency_converter_screen.dart';  // Update this import
 import 'views/welcome_page.dart';
 import 'views/sign_in_page.dart';
 import 'views/home_page.dart';
@@ -61,13 +61,12 @@ class _MyAppState extends State<MyApp> {
       initialRoute: '/',
       routes: {
         '/': (context) => const WelcomePage(),
+        '/home': (context) => const HomePage(),
         '/sign-in': (context) => const SignInPage(),
         '/currency-converter': (context) => CurrencyConverterScreen(
           toggleTheme: toggleTheme,
           isDarkMode: isDarkMode,
         ),
-        '/home': (context) => const HomePage(),
-        // Add other routes here
       },
     );
   }
