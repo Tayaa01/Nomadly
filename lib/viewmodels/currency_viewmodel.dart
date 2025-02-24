@@ -17,6 +17,14 @@ class CurrencyViewModel extends ChangeNotifier {
   bool showTips = false;
   XFile? selectedImage;
   String? errorMessage;
+  String? sourceCountryName;
+  String? targetCountryName;
+  double? taxRefundAmount;
+  String? taxRefundCurrency;
+  List<String> taxRefundRequirements = [];
+  String? taxRefundInstructions;
+  double? convertedMinAmount;
+  String? convertedMinCurrency;
 
   final TextEditingController amountController = TextEditingController();
 
@@ -59,21 +67,12 @@ class CurrencyViewModel extends ChangeNotifier {
     }
 
     isConverting = true;
-    errorMessage = null;
-    scannedAmount = null;
-    convertedAmount = null;
-    convertedCurrencySymbol = null;
-    isTaxRefundAvailable = false;
-    taxRefundMessage = null;
-    taxRefundTips = [];
-    showTips = false;
+    clearState();  // Only clear conversion-related state
     notifyListeners();
 
     try {
       if (selectedImage != null) {
         print('Converting currency with image: ${selectedImage!.path}');
-        print('Source country: $sourceCountry, Target country: $targetCountry');
-        
         final data = await _currencyService.analyzeAndConvertImage(
           selectedImage!,
           sourceCountry!,
@@ -82,43 +81,105 @@ class CurrencyViewModel extends ChangeNotifier {
 
         print('API response: $data');
 
-        if (data['error'] != null) {
-          errorMessage = data['error']['message'];
-          print('Error from API: $errorMessage');
-          notifyListeners();
-          return;
-        }
-
+        // Handle bill data
         if (data['bill'] != null) {
           final bill = data['bill'];
-          if (bill['amount'] != null) {
-            scannedAmount = '${bill['amount']['value']} ${bill['amount']['currency']}';
-          }
-          if (bill['convertedAmount'] != null) {
-            convertedAmount = double.tryParse(bill['convertedAmount']['value'].toString());
-            convertedCurrencySymbol = bill['convertedAmount']['currency'];
-          }
+          final amount = bill['amount'];
+          final converted = bill['convertedAmount'];
+          
+          scannedAmount = '${amount['value']} ${amount['currency']}';
+          sourceCountryName = bill['country'];
+          convertedAmount = double.tryParse(converted['value'].toString());
+          convertedCurrencySymbol = converted['currency'];
+          targetCountryName = converted['country'];
+          
+          print('Processed bill data: $scannedAmount, $convertedAmount $convertedCurrencySymbol');
         }
 
+        // Handle tax refund data
         if (data['taxRefund'] != null) {
-          isTaxRefundAvailable = data['taxRefund']['available'];
-          taxRefundMessage = data['taxRefund']['message'];
-          if (data['taxRefund']['tips'] != null) {
-            taxRefundTips = List<String>.from(data['taxRefund']['tips']);
+          final taxRefund = data['taxRefund'];
+          isTaxRefundAvailable = taxRefund['available'] ?? false;
+          showTips = true;  // Always show tips section
+          
+          print('Tax refund available: $isTaxRefundAvailable');
+          
+          if (isTaxRefundAvailable) {
+            // Handle refund amount
+            if (taxRefund['amount'] != null) {
+              final refundAmount = taxRefund['amount'];
+              taxRefundAmount = double.tryParse(refundAmount['value'].toString());
+              taxRefundCurrency = refundAmount['currency'];
+              print('Set refund amount: $taxRefundAmount $taxRefundCurrency');
+            }
+            
+            // Handle instructions
+            taxRefundInstructions = taxRefund['instructions']?.toString();
+            print('Set instructions: $taxRefundInstructions');
+            
+            // Handle requirements
+            if (taxRefund['requirements'] != null) {
+              taxRefundRequirements = List<String>.from(taxRefund['requirements']);
+              print('Set requirements: $taxRefundRequirements');
+            }
+
+            // Clear any previous error message
+            taxRefundMessage = null;
+          } else {
+            // Handle unavailable tax refund
+            taxRefundAmount = null;
+            taxRefundCurrency = null;
+            taxRefundRequirements = [];
+            taxRefundInstructions = null;
+            
+            taxRefundMessage = taxRefund['message'];
+            print('Set tax refund message: $taxRefundMessage');
+            
+            if (taxRefund['convertedMinAmount'] != null) {
+              final minAmount = taxRefund['convertedMinAmount'];
+              convertedMinAmount = double.tryParse(minAmount['value']?.toString() ?? '');
+              convertedMinCurrency = minAmount['currency'];
+              print('Set minimum amount: $convertedMinAmount $convertedMinCurrency');
+            }
           }
-          showTips = true;
         }
+        
+        notifyListeners();  // Notify after all data is set
       } else {
         errorMessage = "Please take a photo first";
-        print('No image selected');
+        notifyListeners();
       }
     } catch (e) {
+      print('Error during conversion: $e');
       errorMessage = "Error converting currency: $e";
-      print('Error converting currency: $e');
+      notifyListeners();
     } finally {
+      print('Final state - showTips: $showTips, isTaxRefundAvailable: $isTaxRefundAvailable');
+      print('Requirements: $taxRefundRequirements');
+      print('Instructions: $taxRefundInstructions');
       isConverting = false;
       notifyListeners();
     }
+  }
+
+  void clearState() {
+    // Only clear necessary state, keeping tax refund info
+    errorMessage = null;
+    convertedAmount = null;
+    convertedCurrencySymbol = null;
+    
+    // Don't reset these immediately
+    // isTaxRefundAvailable = false;
+    // taxRefundMessage = null;
+    // showTips = false;
+    // taxRefundAmount = null;
+    // taxRefundCurrency = null;
+    // taxRefundRequirements = [];
+    // taxRefundInstructions = null;
+    
+    // These can be cleared
+    convertedMinAmount = null;
+    convertedMinCurrency = null;
   }
 
   void resetAll() {
