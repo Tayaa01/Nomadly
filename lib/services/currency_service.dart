@@ -5,7 +5,7 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 
 class CurrencyService {
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://192.168.1.3:3000',
+    baseUrl: 'http://192.168.120.159:3000',
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(seconds: 30),
     sendTimeout: const Duration(seconds: 30),
