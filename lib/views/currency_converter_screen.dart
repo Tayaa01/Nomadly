@@ -501,6 +501,8 @@ class CurrencyConverterScreen extends StatelessWidget {
             if (index != 2) {  // If not current tab
               if (index == 0) {
                 Navigator.pushReplacementNamed(context, '/home');
+              } else if (index == 3) {
+                Navigator.pushReplacementNamed(context, '/translation');
               }
               // Add other navigation cases here as needed
             }

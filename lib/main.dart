@@ -3,6 +3,7 @@ import 'views/currency_converter_screen.dart';  // Update this import
 import 'views/welcome_page.dart';
 import 'views/sign_in_page.dart';
 import 'views/home_page.dart';
+import 'views/speech_to_text_view.dart';  // Add this import
 
 void main() {
   runApp(const MyApp());
@@ -67,6 +68,7 @@ class _MyAppState extends State<MyApp> {
           toggleTheme: toggleTheme,
           isDarkMode: isDarkMode,
         ),
+        '/translation': (context) => const SpeechToTextView(),  // Add this route
       },
     );
   }

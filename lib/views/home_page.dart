@@ -174,6 +174,11 @@ class HomePage extends StatelessWidget {
               context,
               '/currency-converter',
             );
+          } else if (index == 3) {  // Add this condition
+            Navigator.pushReplacementNamed(
+              context,
+              '/translation',
+            );
           }
         },
       ),
