@@ -740,6 +740,19 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
                   ),
               ],
             ),
+            SizedBox(height: 4),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Text(
+                _getTimeAgo(message.timestamp),
+                style: TextStyle(
+                  color: message.isUser 
+                      ? Colors.black.withOpacity(0.5)
+                      : Colors.white.withOpacity(0.5),
+                  fontSize: 10,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1086,7 +1099,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF1E1E1E),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -1095,13 +1108,13 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             Icon(
               Icons.category_outlined,
               size: 48,
-              color: Colors.blue[700],
+              color: const Color(0xFF4CD964),
             ),
             SizedBox(height: 16),
             Text(
               'Add new category',
               style: TextStyle(
-                color: Colors.black87,
+                color: Colors.white,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -1116,27 +1129,27 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               TextField(
                 controller: controller,
                 style: TextStyle(
-                  color: Colors.black87,
+                  color: Colors.white,
                   fontSize: 16,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Enter category name',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                  prefixIcon: Icon(Icons.edit, color: Colors.grey[600]),
+                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  prefixIcon: Icon(Icons.edit, color: Colors.grey[400]),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: BorderSide(color: Colors.grey[700]!),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: BorderSide(color: Colors.grey[700]!),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.blue, width: 2),
+                    borderSide: BorderSide(color: const Color(0xFF4CD964), width: 2),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: const Color(0xFF333333),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
@@ -1149,7 +1162,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               Text(
                 'The category will be available for all discussions',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: Colors.grey[400],
                   fontSize: 12,
                 ),
               ),
@@ -1164,7 +1177,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             child: Text(
               'Cancel',
               style: TextStyle(
-                color: Colors.grey[800],
+                color: Colors.grey[400],
                 fontSize: 16,
               ),
             ),
@@ -1172,7 +1185,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
+              backgroundColor: const Color(0xFF4CD964),
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1181,7 +1194,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             child: Text(
               'Add Category',
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
