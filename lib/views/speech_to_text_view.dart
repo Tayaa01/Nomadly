@@ -11,6 +11,7 @@ import '../models/predefined_phrases.dart';
 import '../services/translation_cache_service.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class SpeechToTextView extends StatefulWidget {
   const SpeechToTextView({super.key});
@@ -19,7 +20,8 @@ class SpeechToTextView extends StatefulWidget {
   _SpeechToTextViewState createState() => _SpeechToTextViewState();
 }
 
-class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerProviderStateMixin {
+class _SpeechToTextViewState extends State<SpeechToTextView>
+    with SingleTickerProviderStateMixin {
   late stt.SpeechToText _speech;
   late TtsService _ttsService;
   late SharedPreferences _prefs;
@@ -155,7 +157,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   ];
 
   final List<String> _supportedTtsLanguages = [
-    'en', 'fr', 'es', 'de', 'it', 'zh', 'ja', 'ko', 'ru', 'pt'
+    'en', 'fr', 'es', 'de', 'it', 'zh', 'ja', 'ko', 'ru', 'pt',
     // Add other supported languages here
   ];
 
@@ -180,24 +182,25 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
 
   void _loadDiscussions() {
     final discussionsJson = _prefs.getStringList('discussions') ?? [];
-    _discussions = discussionsJson
-        .map((json) => Discussion.fromJson(jsonDecode(json)))
-        .toList();
-    
+    _discussions =
+        discussionsJson
+            .map((json) => Discussion.fromJson(jsonDecode(json)))
+            .toList();
+
     _cleanupOldDiscussions();
   }
 
   void _cleanupOldDiscussions() {
     final now = DateTime.now();
     bool hasRemovedDiscussions = false;
-    
+
     _discussions.removeWhere((discussion) {
       if (discussion.isFavorite) return false; // Ne pas supprimer les favoris
       final isOld = discussion.isExpired();
       if (isOld) hasRemovedDiscussions = true;
       return isOld;
     });
-    
+
     if (hasRemovedDiscussions) {
       _saveDiscussions();
       setState(() {});
@@ -205,9 +208,10 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   }
 
   void _saveDiscussions() {
-    final discussionsJson = _discussions
-        .map((discussion) => jsonEncode(discussion.toJson()))
-        .toList();
+    final discussionsJson =
+        _discussions
+            .map((discussion) => jsonEncode(discussion.toJson()))
+            .toList();
     _prefs.setStringList('discussions', discussionsJson);
   }
 
@@ -234,19 +238,21 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
 
     try {
       String translation;
-      
+
       // Check cache in offline mode
       if (_isOfflineMode) {
-        translation = await TranslationCacheService.getCachedTranslation(
-          _text,
-          _selectedSourceLanguage,
-          _selectedTargetLanguage,
-        ) ?? 'No offline translation available';
+        translation =
+            await TranslationCacheService.getCachedTranslation(
+              _text,
+              _selectedSourceLanguage,
+              _selectedTargetLanguage,
+            ) ??
+            'No offline translation available';
       } else {
         // Online translation
         final response = await _performOnlineTranslation();
         translation = response['translation'] ?? 'Translation failed';
-        
+
         // Cache the translation
         await TranslationCacheService.cacheTranslation(
           _text,
@@ -259,21 +265,22 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
       setState(() {
         _translatedText = translation;
         if (_currentDiscussion != null) {
-          _currentDiscussion!.messages.add(Message(
-            text: _text,
-            translation: _translatedText,
-            timestamp: DateTime.now(),
-            isUser: true,
-            detectedLanguage: _selectedSourceLanguage,
-          ));
+          _currentDiscussion!.messages.add(
+            Message(
+              text: _text,
+              translation: _translatedText,
+              timestamp: DateTime.now(),
+              isUser: true,
+              detectedLanguage: _selectedSourceLanguage,
+            ),
+          );
           _saveDiscussions();
         }
       });
-
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Translation error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Translation error: $e')));
     } finally {
       setState(() {
         _isTranslating = false;
@@ -288,9 +295,9 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
       await _ttsService.speak(text, language);
     } catch (e) {
       print('Error in _speak: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error playing audio: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error playing audio: $e')));
     }
   }
 
@@ -301,41 +308,44 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ListView.builder(
-        itemCount: _languages.length,
-        itemBuilder: (context, index) {
-          final language = _languages[index];
-          final bool isTtsSupported = _supportedTtsLanguages.contains(language['code']);
-          return ListTile(
-            title: Row(
-              children: [
-                Text(
-                  language['name']!,
-                  style: TextStyle(color: Colors.white),
-                ),
-                if (!isTtsSupported)
-                  Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Text(
-                      '(Translation only)',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+      builder:
+          (context) => ListView.builder(
+            itemCount: _languages.length,
+            itemBuilder: (context, index) {
+              final language = _languages[index];
+              final bool isTtsSupported = _supportedTtsLanguages.contains(
+                language['code'],
+              );
+              return ListTile(
+                title: Row(
+                  children: [
+                    Text(
+                      language['name']!,
+                      style: TextStyle(color: Colors.white),
                     ),
-                  ),
-              ],
-            ),
-            onTap: () {
-              setState(() {
-                if (isSource) {
-                  _selectedSourceLanguage = language['code']!;
-                } else {
-                  _selectedTargetLanguage = language['code']!;
-                }
-              });
-              Navigator.pop(context);
+                    if (!isTtsSupported)
+                      Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: Text(
+                          '(Translation only)',
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    if (isSource) {
+                      _selectedSourceLanguage = language['code']!;
+                    } else {
+                      _selectedTargetLanguage = language['code']!;
+                    }
+                  });
+                  Navigator.pop(context);
+                },
+              );
             },
-          );
-        },
-      ),
+          ),
     );
   }
 
@@ -366,7 +376,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
                 _confidence = val.confidence;
               }
             });
-            
+
             // Only start translation when speech recognition is done
             if (val.finalResult) {
               if (_text.isNotEmpty && _text != 'Say something') {
@@ -385,29 +395,33 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     }
   }
 
-  @override 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E1E1E),
         elevation: 0,
-        leading: _currentDiscussion == null 
-            ? null 
-            : IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                onPressed: () => setState(() => _currentDiscussion = null),
-              ),
-        title: _isSearching
-            ? _buildSearchField()
-            : Text(
-                _currentDiscussion == null ? 'Translate' : _currentDiscussion!.category,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+        leading:
+            _currentDiscussion == null
+                ? null
+                : IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                  onPressed: () => setState(() => _currentDiscussion = null),
                 ),
-              ),
+        title:
+            _isSearching
+                ? _buildSearchField()
+                : Text(
+                  _currentDiscussion == null
+                      ? 'Translate'
+                      : _currentDiscussion!.category,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
         actions: _buildAppBarActions(),
       ),
       body: Container(
@@ -418,24 +432,41 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             colors: [Color(0xFF1E1E1E), Color(0xFF000000)],
           ),
         ),
-        child: _currentDiscussion == null
-            ? _buildDiscussionsListView()
-            : _buildDiscussionView(),
+        child:
+            _currentDiscussion == null
+                ? _buildDiscussionsListView()
+                : _buildDiscussionView(),
       ),
-      floatingActionButton: _currentDiscussion == null 
-          ? FloatingActionButton.extended(
-              onPressed: _createNewDiscussion,
-              icon: const Icon(Icons.add, color: Colors.black),
-              label: const Text(
-                'New Discussion',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
+      floatingActionButton:
+          _currentDiscussion == null
+              ? FloatingActionButton.extended(
+                onPressed: _createNewDiscussion,
+                icon: const Icon(Icons.add, color: Colors.black),
+                label: const Text(
+                  'New Discussion',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              backgroundColor: const Color(0xFF4CD964),
-            )
-          : null,
+                backgroundColor: const Color(0xFF4CD964),
+              )
+              : null,
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 3,
+        onTap: (index) {
+          if (index != 3) {
+            // If not current tab
+            if (index == 0) {
+              Navigator.pushReplacementNamed(context, '/home');
+            } else if (index == 1) {
+              Navigator.pushReplacementNamed(context, '/tips');
+            } else if (index == 2) {
+              Navigator.pushReplacementNamed(context, '/currency-converter');
+            }
+          }
+        },
+      ),
     );
   }
 
@@ -454,7 +485,10 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
           hintStyle: TextStyle(color: Colors.grey[400]),
           prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
         ),
         onChanged: (value) => setState(() => _searchQuery = value),
       ),
@@ -490,19 +524,25 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   }
 
   Widget _buildDiscussionsListView() {
-    final filteredDiscussions = _discussions.where((discussion) {
-      if (_searchQuery.isEmpty) {
-        return _selectedCategory == 'All' || discussion.category == _selectedCategory;
-      }
-      
-      final query = _searchQuery.toLowerCase();
-      final matchesCategory = _selectedCategory == 'All' || discussion.category == _selectedCategory;
-      final matchesSearch = discussion.messages.any((message) =>
-        message.text.toLowerCase().contains(query) ||
-        message.translation.toLowerCase().contains(query));
-      
-      return matchesCategory && matchesSearch;
-    }).toList();
+    final filteredDiscussions =
+        _discussions.where((discussion) {
+          if (_searchQuery.isEmpty) {
+            return _selectedCategory == 'All' ||
+                discussion.category == _selectedCategory;
+          }
+
+          final query = _searchQuery.toLowerCase();
+          final matchesCategory =
+              _selectedCategory == 'All' ||
+              discussion.category == _selectedCategory;
+          final matchesSearch = discussion.messages.any(
+            (message) =>
+                message.text.toLowerCase().contains(query) ||
+                message.translation.toLowerCase().contains(query),
+          );
+
+          return matchesCategory && matchesSearch;
+        }).toList();
 
     return Column(
       children: [
@@ -555,22 +595,23 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
           return ListView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            children: [
-              'All',
-              ...PredefinedPhrases.phrasesByCategory.keys,
-            ].map((category) => _buildCategoryChip(category)).toList()
-            ..add(
-              Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: ActionChip(
-                  avatar: Icon(Icons.add, color: Colors.white, size: 18),
-                  label: Text('New category'),
-                  onPressed: _showAddCategoryDialog,
-                  backgroundColor: Colors.grey[800],
-                  labelStyle: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
+            children:
+                [
+                    'All',
+                    ...PredefinedPhrases.phrasesByCategory.keys,
+                  ].map((category) => _buildCategoryChip(category)).toList()
+                  ..add(
+                    Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: ActionChip(
+                        avatar: Icon(Icons.add, color: Colors.white, size: 18),
+                        label: Text('New category'),
+                        onPressed: _showAddCategoryDialog,
+                        backgroundColor: Colors.grey[800],
+                        labelStyle: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
           );
         },
       ),
@@ -611,9 +652,12 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
         _buildPredefinedPhrases(),
         Expanded(
           child: Container(
-            constraints: isWeb
-                ? BoxConstraints(maxWidth: 800) // Limiter la largeur sur web
-                : null,
+            constraints:
+                isWeb
+                    ? BoxConstraints(
+                      maxWidth: 800,
+                    ) // Limiter la largeur sur web
+                    : null,
             child: ListView.builder(
               padding: EdgeInsets.all(16),
               itemCount: _currentDiscussion!.messages.length,
@@ -625,9 +669,10 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
           ),
         ),
         Container(
-          constraints: isWeb
-              ? BoxConstraints(maxWidth: 800) // Limiter la largeur sur web
-              : null,
+          constraints:
+              isWeb
+                  ? BoxConstraints(maxWidth: 800) // Limiter la largeur sur web
+                  : null,
           child: _buildInputArea(),
         ),
       ],
@@ -635,7 +680,8 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   }
 
   Widget _buildPredefinedPhrases() {
-    final phrases = PredefinedPhrases.phrasesByCategory[_currentDiscussion!.category] ?? [];
+    final phrases =
+        PredefinedPhrases.phrasesByCategory[_currentDiscussion!.category] ?? [];
     if (phrases.isEmpty) return SizedBox.shrink();
 
     return Container(
@@ -667,9 +713,10 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: message.isUser 
-              ? const Color(0xFF4CD964)
-              : const Color(0xFF333333),
+          color:
+              message.isUser
+                  ? const Color(0xFF4CD964)
+                  : const Color(0xFF333333),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -701,28 +748,35 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
                   child: Text(
                     message.translation,
                     style: TextStyle(
-                      color: message.isUser 
-                          ? Colors.black.withOpacity(0.7)
-                          : Colors.white.withOpacity(0.7),
+                      color:
+                          message.isUser
+                              ? Colors.black.withOpacity(0.7)
+                              : Colors.white.withOpacity(0.7),
                       fontSize: 14,
                     ),
                   ),
                 ),
                 if (_supportedTtsLanguages.contains(
-                  message.isUser ? _selectedTargetLanguage : message.detectedLanguage
+                  message.isUser
+                      ? _selectedTargetLanguage
+                      : message.detectedLanguage,
                 ))
                   IconButton(
                     icon: Icon(
                       Icons.volume_up,
-                      color: message.isUser 
-                          ? Colors.black.withOpacity(0.7)
-                          : Colors.white.withOpacity(0.7),
+                      color:
+                          message.isUser
+                              ? Colors.black.withOpacity(0.7)
+                              : Colors.white.withOpacity(0.7),
                       size: 20,
                     ),
-                    onPressed: () => _speak(
-                      message.isUser ? message.translation : message.text,
-                      message.isUser ? _selectedTargetLanguage : message.detectedLanguage,
-                    ),
+                    onPressed:
+                        () => _speak(
+                          message.isUser ? message.translation : message.text,
+                          message.isUser
+                              ? _selectedTargetLanguage
+                              : message.detectedLanguage,
+                        ),
                   ),
               ],
             ),
@@ -771,9 +825,8 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
                   IconButton(
                     icon: Icon(
                       _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening 
-                          ? const Color(0xFF4CD964)
-                          : Colors.grey,
+                      color:
+                          _isListening ? const Color(0xFF4CD964) : Colors.grey,
                     ),
                     onPressed: _listen,
                   ),
@@ -804,36 +857,38 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ListView.builder(
-        itemCount: PredefinedPhrases.phrasesByCategory.length,
-        itemBuilder: (context, index) {
-          final category = PredefinedPhrases.phrasesByCategory.keys.elementAt(index);
-          return ListTile(
-            title: Text(category, style: TextStyle(color: Colors.white)),
-            onTap: () {
-              if (createNew) {
-                final newDiscussion = Discussion(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  messages: [],
-                  createdAt: DateTime.now(),
-                  category: category,
-                );
-                setState(() {
-                  _discussions.add(newDiscussion);
-                  _currentDiscussion = newDiscussion;
-                });
-                _saveDiscussions();
-              } else {
-                setState(() {
-                  _currentDiscussion!.category = category;
-                });
-                _saveDiscussions();
-              }
-              Navigator.pop(context);
+      builder:
+          (context) => ListView.builder(
+            itemCount: PredefinedPhrases.phrasesByCategory.length,
+            itemBuilder: (context, index) {
+              final category = PredefinedPhrases.phrasesByCategory.keys
+                  .elementAt(index);
+              return ListTile(
+                title: Text(category, style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  if (createNew) {
+                    final newDiscussion = Discussion(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      messages: [],
+                      createdAt: DateTime.now(),
+                      category: category,
+                    );
+                    setState(() {
+                      _discussions.add(newDiscussion);
+                      _currentDiscussion = newDiscussion;
+                    });
+                    _saveDiscussions();
+                  } else {
+                    setState(() {
+                      _currentDiscussion!.category = category;
+                    });
+                    _saveDiscussions();
+                  }
+                  Navigator.pop(context);
+                },
+              );
             },
-          );
-        },
-      ),
+          ),
     );
   }
 
@@ -853,10 +908,13 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   }
 
   Future<Map<String, String>> _performOnlineTranslation() async {
-    final String url = 'https://lingva.ml/api/v1/${_selectedSourceLanguage}/${_selectedTargetLanguage}/${Uri.encodeComponent(_text)}';
+    final String url =
+        'https://lingva.ml/api/v1/${_selectedSourceLanguage}/${_selectedTargetLanguage}/${Uri.encodeComponent(_text)}';
 
     print('Sending translation request with text: $_text');
-    print('Source language: $_selectedSourceLanguage, Target language: $_selectedTargetLanguage');
+    print(
+      'Source language: $_selectedSourceLanguage, Target language: $_selectedTargetLanguage',
+    );
     final response = await http.get(Uri.parse(url));
 
     print('Received response with status code: ${response.statusCode}');
@@ -864,22 +922,25 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return {
-        'translation': data['translation'] ?? 'Translation failed',
-      };
+      return {'translation': data['translation'] ?? 'Translation failed'};
     } else {
-      final errorMessage = jsonDecode(response.body)['error'] ?? 'Unknown error';
-      throw Exception('Failed to translate: ${response.statusCode}, Message: $errorMessage');
+      final errorMessage =
+          jsonDecode(response.body)['error'] ?? 'Unknown error';
+      throw Exception(
+        'Failed to translate: ${response.statusCode}, Message: $errorMessage',
+      );
     }
   }
 
   Widget _buildDiscussionListItem(Discussion discussion) {
-    final lastMessage = discussion.messages.isNotEmpty
-        ? discussion.messages.last
-        : null;
-    
+    final lastMessage =
+        discussion.messages.isNotEmpty ? discussion.messages.last : null;
+
     final now = DateTime.now();
-    final hoursLeft = discussion.isFavorite ? null : 24 - now.difference(discussion.createdAt).inHours;
+    final hoursLeft =
+        discussion.isFavorite
+            ? null
+            : 24 - now.difference(discussion.createdAt).inHours;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -924,7 +985,10 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4CD964),
                     borderRadius: BorderRadius.circular(12),
@@ -942,10 +1006,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
                 if (hoursLeft != null)
                   Text(
                     '${hoursLeft}h left',
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
               ],
             ),
@@ -953,10 +1014,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               const SizedBox(height: 4),
               Text(
                 lastMessage.translation,
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[400], fontSize: 14),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -969,9 +1027,10 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             IconButton(
               icon: Icon(
                 discussion.isFavorite ? Icons.star : Icons.star_border,
-                color: discussion.isFavorite 
-                    ? const Color(0xFF4CD964)
-                    : Colors.grey,
+                color:
+                    discussion.isFavorite
+                        ? const Color(0xFF4CD964)
+                        : Colors.grey,
               ),
               onPressed: () {
                 setState(() {
@@ -998,72 +1057,86 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.category, color: Colors.white),
-            title: Text('Change category', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              _showCategorySelector();
-            },
+      builder:
+          (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.category, color: Colors.white),
+                title: Text(
+                  'Change category',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCategorySelector();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.file_download, color: Colors.white),
+                title: Text(
+                  'Export as text',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final text = discussion.exportToText();
+                  await Clipboard.setData(ClipboardData(text: text));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Discussion exported to clipboard')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete, color: Colors.red),
+                title: Text(
+                  'Delete discussion',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _deleteDiscussion(discussion);
+                },
+              ),
+            ],
           ),
-          ListTile(
-            leading: Icon(Icons.file_download, color: Colors.white),
-            title: Text('Export as text', style: TextStyle(color: Colors.white)),
-            onTap: () async {
-              Navigator.pop(context);
-              final text = discussion.exportToText();
-              await Clipboard.setData(ClipboardData(text: text));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Discussion exported to clipboard')),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.delete, color: Colors.red),
-            title: Text('Delete discussion', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _deleteDiscussion(discussion);
-            },
-          ),
-        ],
-      ),
     );
   }
 
   void _deleteDiscussion(Discussion discussion) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text('Delete discussion?', style: TextStyle(color: Colors.white)),
-        content: Text(
-          'This action cannot be undone.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            child: Text('Cancel', style: TextStyle(color: Colors.white70)),
-            onPressed: () => Navigator.pop(context),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            title: Text(
+              'Delete discussion?',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              'This action cannot be undone.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                child: Text('Cancel', style: TextStyle(color: Colors.white70)),
+                onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _discussions.remove(discussion);
+                    if (_currentDiscussion == discussion) {
+                      _currentDiscussion = null;
+                    }
+                    _saveDiscussions();
+                  });
+                },
+              ),
+            ],
           ),
-          TextButton(
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                _discussions.remove(discussion);
-                if (_currentDiscussion == discussion) {
-                  _currentDiscussion = null;
-                }
-                _saveDiscussions();
-              });
-            },
-          ),
-        ],
-      ),
     );
   }
 
@@ -1071,118 +1144,110 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     final TextEditingController controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Column(
-          children: [
-            Icon(
-              Icons.category_outlined,
-              size: 48,
-              color: Colors.blue[700],
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            SizedBox(height: 16),
-            Text(
-              'Add new category',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            title: Column(
+              children: [
+                Icon(
+                  Icons.category_outlined,
+                  size: 48,
+                  color: Colors.blue[700],
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Add new category',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Container(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    style: TextStyle(color: Colors.black87, fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: 'Enter category name',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      prefixIcon: Icon(Icons.edit, color: Colors.grey[600]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.blue, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    textAlign: TextAlign.left,
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'The category will be available for all discussions',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        content: Container(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 16,
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Enter category name',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                  prefixIcon: Icon(Icons.edit, color: Colors.grey[600]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.blue, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.grey[800], fontSize: 16),
                 ),
-                textAlign: TextAlign.left,
-                textCapitalization: TextCapitalization.sentences,
+                onPressed: () => Navigator.pop(context),
               ),
-              SizedBox(height: 8),
-              Text(
-                'The category will be available for all discussions',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700],
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                child: Text(
+                  'Add Category',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onPressed: () {
+                  if (controller.text.isNotEmpty) {
+                    PredefinedPhrases.addCustomCategory(controller.text);
+                    setState(() {});
+                  }
+                  Navigator.pop(context);
+                },
               ),
             ],
+            actionsPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
           ),
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: Colors.grey[800],
-                fontSize: 16,
-              ),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Add Category',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                PredefinedPhrases.addCustomCategory(controller.text);
-                setState(() {});
-              }
-              Navigator.pop(context);
-            },
-          ),
-        ],
-        actionsPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-      ),
     );
   }
 
@@ -1208,82 +1273,97 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.copy, color: Colors.white),
-            title: Text('Copy text', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: message.text));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Text copied to clipboard')),
-              );
-            },
+      builder:
+          (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.copy, color: Colors.white),
+                title: Text('Copy text', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: message.text));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Text copied to clipboard')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.translate, color: Colors.white),
+                title: Text(
+                  'Copy translation',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: message.translation));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Translation copied to clipboard')),
+                  );
+                },
+              ),
+              if (message.isUser)
+                ListTile(
+                  leading: Icon(Icons.edit, color: Colors.white),
+                  title: Text(
+                    'Edit message',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditMessageDialog(message);
+                  },
+                ),
+              if (message.isUser)
+                ListTile(
+                  leading: Icon(Icons.delete, color: Colors.red),
+                  title: Text(
+                    'Delete message',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _deleteMessage(message);
+                  },
+                ),
+            ],
           ),
-          ListTile(
-            leading: Icon(Icons.translate, color: Colors.white),
-            title: Text('Copy translation', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: message.translation));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Translation copied to clipboard')),
-              );
-            },
-          ),
-          if (message.isUser) ListTile(
-            leading: Icon(Icons.edit, color: Colors.white),
-            title: Text('Edit message', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              _showEditMessageDialog(message);
-            },
-          ),
-          if (message.isUser) ListTile(
-            leading: Icon(Icons.delete, color: Colors.red),
-            title: Text('Delete message', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _deleteMessage(message);
-            },
-          ),
-        ],
-      ),
     );
   }
 
   void _showEditMessageDialog(Message message) {
-    final TextEditingController controller = TextEditingController(text: message.text);
+    final TextEditingController controller = TextEditingController(
+      text: message.text,
+    );
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text('Edit message', style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller,
-          style: TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: 'Edit your message',
-            hintStyle: TextStyle(color: Colors.white54),
-            border: OutlineInputBorder(),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            title: Text('Edit message', style: TextStyle(color: Colors.white)),
+            content: TextField(
+              controller: controller,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Edit your message',
+                hintStyle: TextStyle(color: Colors.white54),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text('Cancel', style: TextStyle(color: Colors.white70)),
+                onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                child: Text('Save', style: TextStyle(color: Colors.blue)),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _editMessage(message, controller.text);
+                },
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            child: Text('Cancel', style: TextStyle(color: Colors.white70)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text('Save', style: TextStyle(color: Colors.blue)),
-            onPressed: () {
-              Navigator.pop(context);
-              _editMessage(message, controller.text);
-            },
-          ),
-        ],
-      ),
     );
   }
 

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/translation_response.dart';
 
 class TranslationService {
   static const String baseUrl = 'http://localhost:3000';

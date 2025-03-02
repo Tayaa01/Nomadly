@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/currency_viewmodel.dart';
-import '../widgets/custom_bottom_nav.dart';  // Add this import
+import '../widgets/custom_bottom_nav.dart'; // Add this import
 
 class CurrencyConverterScreen extends StatelessWidget {
   final VoidCallback toggleTheme;
@@ -100,9 +100,10 @@ class CurrencyConverterScreen extends StatelessWidget {
                                       keyboardType: TextInputType.number,
                                       enabled: false, // Disable manual input
                                       decoration: InputDecoration(
-                                        hintText: viewModel.selectedImage != null 
-                                            ? 'Scanning...' 
-                                            : 'Scan image to get amount',
+                                        hintText:
+                                            viewModel.selectedImage != null
+                                                ? 'Scanning...'
+                                                : 'Scan image to get amount',
                                         hintStyle: TextStyle(
                                           color: Colors.grey[600],
                                           fontSize: 24,
@@ -126,7 +127,10 @@ class CurrencyConverterScreen extends StatelessWidget {
                               child: _buildCountryInput(
                                 label: 'From',
                                 hint: 'FR',
-                                onChanged: (value) => viewModel.sourceCountry = value.toUpperCase(),
+                                onChanged:
+                                    (value) =>
+                                        viewModel.sourceCountry =
+                                            value.toUpperCase(),
                               ),
                             ),
                             const Padding(
@@ -141,7 +145,10 @@ class CurrencyConverterScreen extends StatelessWidget {
                               child: _buildCountryInput(
                                 label: 'To',
                                 hint: 'US',
-                                onChanged: (value) => viewModel.targetCountry = value.toUpperCase(),
+                                onChanged:
+                                    (value) =>
+                                        viewModel.targetCountry =
+                                            value.toUpperCase(),
                               ),
                             ),
                           ],
@@ -230,30 +237,35 @@ class CurrencyConverterScreen extends StatelessWidget {
                               child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF333333),
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   elevation: 0,
                                 ),
-                                onPressed: viewModel.isImageProcessing
-                                    ? null
-                                    : viewModel.takePhoto,
-                                icon: viewModel.isImageProcessing
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            Color(0xFF4CD964),
+                                onPressed:
+                                    viewModel.isImageProcessing
+                                        ? null
+                                        : viewModel.takePhoto,
+                                icon:
+                                    viewModel.isImageProcessing
+                                        ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Color(0xFF4CD964),
+                                                ),
                                           ),
+                                        )
+                                        : const Icon(
+                                          Icons.camera_alt_rounded,
+                                          color: Color(0xFF4CD964),
                                         ),
-                                      )
-                                    : const Icon(
-                                        Icons.camera_alt_rounded,
-                                        color: Color(0xFF4CD964),
-                                      ),
                                 label: const Text(
                                   'Scan Bill',
                                   style: TextStyle(
@@ -270,30 +282,34 @@ class CurrencyConverterScreen extends StatelessWidget {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF4CD964),
                                   foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   elevation: 0,
                                 ),
-                                onPressed: viewModel.isConverting
-                                    ? null
-                                    : viewModel.convertCurrency,
-                                child: viewModel.isConverting
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                onPressed:
+                                    viewModel.isConverting
+                                        ? null
+                                        : viewModel.convertCurrency,
+                                child:
+                                    viewModel.isConverting
+                                        ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Convert',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      )
-                                    : const Text(
-                                        'Convert',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
                               ),
                             ),
                           ],
@@ -345,7 +361,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Instructions
                             Container(
                               padding: const EdgeInsets.all(16),
@@ -385,7 +401,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Requirements
                             Container(
                               padding: const EdgeInsets.all(16),
@@ -414,13 +430,15 @@ class CurrencyConverterScreen extends StatelessWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  ...viewModel.taxRefundRequirements.map((req) =>
-                                    Padding(
+                                  ...viewModel.taxRefundRequirements.map(
+                                    (req) => Padding(
                                       padding: const EdgeInsets.only(bottom: 8),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          const Text('• ',
+                                          const Text(
+                                            '• ',
                                             style: TextStyle(
                                               color: Color(0xFF4CD964),
                                               fontSize: 14,
@@ -496,11 +514,14 @@ class CurrencyConverterScreen extends StatelessWidget {
           },
         ),
         bottomNavigationBar: CustomBottomNav(
-          currentIndex: 2,  // Currency converter is index 2
+          currentIndex: 2, // Currency converter is index 2
           onTap: (index) {
-            if (index != 2) {  // If not current tab
+            if (index != 2) {
+              // If not current tab
               if (index == 0) {
                 Navigator.pushReplacementNamed(context, '/home');
+              } else if (index == 1) {
+                Navigator.pushReplacementNamed(context, '/tips');
               } else if (index == 3) {
                 Navigator.pushReplacementNamed(context, '/translation');
               }
@@ -522,9 +543,7 @@ class CurrencyConverterScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF333333),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF4CD964).withOpacity(0.3),
-        ),
+        border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,10 +552,7 @@ class CurrencyConverterScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[400], fontSize: 14),
               ),
               const Spacer(),
               Icon(
@@ -559,10 +575,7 @@ class CurrencyConverterScreen extends StatelessWidget {
             maxLength: 2,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 24,
-              ),
+              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 24),
               border: InputBorder.none,
               counterText: '',
               contentPadding: EdgeInsets.zero,
