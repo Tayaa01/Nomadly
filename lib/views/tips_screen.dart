@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:nomadly/models/tip.dart';
 import 'package:nomadly/services/deals_service.dart';
 import 'dart:ui';
-import 'dart:math';
-import 'package:http/http.dart' as http;
 import '../widgets/custom_bottom_nav.dart';
 import '../widgets/deal_map_view.dart';
 
@@ -25,8 +23,8 @@ class _TipsScreenState extends State<TipsScreen>
   bool _isLoadingTips = true;
 
   // For deals section
-  TextEditingController _categoryController = TextEditingController();
-  TextEditingController _specificController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _specificController = TextEditingController();
   bool _isLoadingDeals = false;
   DealAnalysis? _dealAnalysis;
 
@@ -570,7 +568,7 @@ class _TipsScreenState extends State<TipsScreen>
           Icon(Icons.search, size: 64, color: Colors.grey[600]),
           const SizedBox(height: 16),
           Text(
-            'Search for deals in ${_selectedCountry}',
+            'Search for deals in $_selectedCountry',
             style: TextStyle(color: Colors.grey[400], fontSize: 16),
           ),
           const SizedBox(height: 8),
@@ -845,8 +843,6 @@ class _TipsScreenState extends State<TipsScreen>
   }
 
   String _formatDealType(String dealType) {
-    if (dealType == null) return 'Standard Deal';
-
     final formatted = dealType.replaceAll('_', ' ');
     return '${formatted[0].toUpperCase()}${formatted.substring(1)}';
   }

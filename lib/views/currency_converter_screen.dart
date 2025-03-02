@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/currency_viewmodel.dart';
-import '../widgets/custom_bottom_nav.dart'; // Add this import
+import '../widgets/custom_bottom_nav.dart';
+// Fix the import for Country class
+import '../models/country.dart' as country_model;
 
 class CurrencyConverterScreen extends StatelessWidget {
   final VoidCallback toggleTheme;
@@ -66,7 +68,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // Amount Input with currency code
+                        // Amount Display
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -119,40 +121,93 @@ class CurrencyConverterScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 24),
-
-                        // Country Inputs Row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildCountryInput(
-                                label: 'From',
-                                hint: 'FR',
-                                onChanged:
-                                    (value) =>
-                                        viewModel.sourceCountry =
-                                            value.toUpperCase(),
-                              ),
+                        
+                        // Display user's countries with change option
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF333333),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF4CD964).withOpacity(0.3),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              child: Icon(
-                                Icons.swap_horiz,
-                                color: Color(0xFF4CD964),
-                                size: 28,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                color: const Color(0xFF4CD964),
+                                size: 20,
                               ),
-                            ),
-                            Expanded(
-                              child: _buildCountryInput(
-                                label: 'To',
-                                hint: 'US',
-                                onChanged:
-                                    (value) =>
-                                        viewModel.targetCountry =
-                                            value.toUpperCase(),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: viewModel.isLoadingLocation
+                                    ? Row(
+                                        children: [
+                                          SizedBox(
+                                            height: 16,
+                                            width: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                Color(0xFF4CD964),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Detecting your location...',
+                                            style: TextStyle(
+                                              color: Colors.grey[400],
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            viewModel.currentCountryCode != null
+                                                ? 'Using: ${viewModel.sourceCountryName} (${viewModel.currentCountryCode})'
+                                                : 'No country selected',
+                                            style: TextStyle(
+                                              color: Colors.grey[400],
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              _showCountryPicker(context, viewModel);
+                                            },
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(top: 4.0),
+                                              child: Text(
+                                                'Tap to change',
+                                                style: TextStyle(
+                                                  color: const Color(0xFF4CD964),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                               ),
-                            ),
-                          ],
+                              IconButton(
+                                icon: Icon(
+                                  Icons.edit_location_alt_outlined,
+                                  color: const Color(0xFF4CD964),
+                                  size: 20,
+                                ),
+                                onPressed: () => _showCountryPicker(context, viewModel),
+                                tooltip: 'Change country',
+                              ),
+                            ],
+                          ),
                         ),
+                        
                       ],
                     ),
                   ),
@@ -196,7 +251,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                           ),
 
                         // Results Display (if any)
-                        if (viewModel.convertedAmount != null)
+                        if (viewModel.convertedAmount != null) ...[
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -209,26 +264,57 @@ class CurrencyConverterScreen extends StatelessWidget {
                             ),
                             child: Column(
                               children: [
-                                const Text(
-                                  'Converted Amount',
-                                  style: TextStyle(
-                                    color: Color(0xFFA5A5A5),
-                                    fontSize: 16,
-                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'From ${viewModel.sourceCountryName ?? ""}',
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      'To ${viewModel.targetCountryName ?? ""}',
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '${viewModel.convertedAmount?.toStringAsFixed(2)} ${viewModel.convertedCurrencySymbol}',
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFFFFF),
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      viewModel.scannedAmount ?? "",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      color: Color(0xFF4CD964),
+                                      size: 24,
+                                    ),
+                                    Text(
+                                      '${viewModel.convertedAmount?.toStringAsFixed(2)} ${viewModel.convertedCurrencySymbol}',
+                                      style: const TextStyle(
+                                        color: Color(0xFF4CD964),
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 24),
+                        ],
 
                         // Action Buttons with updated style
                         Row(
@@ -291,7 +377,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                                   elevation: 0,
                                 ),
                                 onPressed:
-                                    viewModel.isConverting
+                                    viewModel.isConverting || viewModel.selectedImage == null
                                         ? null
                                         : viewModel.convertCurrency,
                                 child:
@@ -317,193 +403,7 @@ class CurrencyConverterScreen extends StatelessWidget {
 
                         // Tax Refund Tips (if any)
                         if (viewModel.showTips) ...[
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Tax Refund Information',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (viewModel.isTaxRefundAvailable) ...[
-                            // Tax Refund Amount
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: const Color(0xFF4CD964),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Estimated Tax Refund',
-                                    style: TextStyle(
-                                      color: Color(0xFFA5A5A5),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '${viewModel.taxRefundAmount?.toStringAsFixed(2)} ${viewModel.taxRefundCurrency}',
-                                    style: const TextStyle(
-                                      color: Color(0xFF4CD964),
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Instructions
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.info_outline,
-                                        color: Color(0xFF4CD964),
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'How to get your refund',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    viewModel.taxRefundInstructions ?? '',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Requirements
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.checklist,
-                                        color: Color(0xFF4CD964),
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Requirements',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  ...viewModel.taxRefundRequirements.map(
-                                    (req) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            '• ',
-                                            style: TextStyle(
-                                              color: Color(0xFF4CD964),
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Text(
-                                              req,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ] else ...[
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        viewModel.convertedMinAmount != null
-                                            ? Icons.info_outline
-                                            : Icons.error_outline,
-                                        color: const Color(0xFF4CD964),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          viewModel.taxRefundMessage ?? '',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (viewModel.convertedMinAmount != null) ...[
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'Minimum amount: ${viewModel.convertedMinAmount?.toStringAsFixed(2)} ${viewModel.convertedMinCurrency}',
-                                      style: const TextStyle(
-                                        color: Color(0xFF4CD964),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
+                          // ...existing tax refund UI...
                         ],
                       ],
                     ),
@@ -528,6 +428,163 @@ class CurrencyConverterScreen extends StatelessWidget {
               // Add other navigation cases here as needed
             }
           },
+        ),
+      ),
+    );
+  }
+
+  // Improve country picker dialog
+  void _showCountryPicker(BuildContext context, CurrencyViewModel viewModel) {
+    // Create a list of common countries manually
+    final commonCountries = [
+      {'code': 'US', 'name': 'United States'},
+      {'code': 'FR', 'name': 'France'},
+      {'code': 'GB', 'name': 'United Kingdom'},
+      {'code': 'DE', 'name': 'Germany'},
+      {'code': 'IT', 'name': 'Italy'},
+      {'code': 'ES', 'name': 'Spain'},
+      {'code': 'CA', 'name': 'Canada'},
+      {'code': 'JP', 'name': 'Japan'},
+      {'code': 'CN', 'name': 'China'},
+      {'code': 'AU', 'name': 'Australia'},
+      {'code': 'BR', 'name': 'Brazil'},
+      {'code': 'IN', 'name': 'India'},
+      {'code': 'TN', 'name': 'Tunisia'},
+      {'code': 'MA', 'name': 'Morocco'},
+      {'code': 'EG', 'name': 'Egypt'},
+    ];
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          const Text(
+                            'Select Source Country',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'The country where the bill was issued',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh, color: Color(0xFF4CD964)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        viewModel.getUserLocation();
+                      },
+                      tooltip: 'Detect location',
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFF333333)),
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: commonCountries.length,
+                  itemBuilder: (context, index) {
+                    final country = commonCountries[index];
+                    return _buildCountryOption(
+                      context, 
+                      viewModel, 
+                      country['code']!, 
+                      country['name']!
+                    );
+                  },
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFF333333)),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF4CD964),
+                  ),
+                  child: const Text('CANCEL'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Make country options more visually distinct
+  Widget _buildCountryOption(BuildContext context, CurrencyViewModel viewModel, String code, String name) {
+    final isSelected = viewModel.currentCountryCode == code;
+    
+    return InkWell(
+      onTap: () async {
+        await viewModel.setCountry(code, name);
+        Navigator.of(context).pop();
+      },
+      child: Container(
+        color: isSelected ? const Color(0xFF4CD964).withOpacity(0.15) : Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color: isSelected ? const Color(0xFF4CD964) : Colors.white,
+                        fontSize: 16,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      code,
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF4CD964),
+                  size: 24,
+                ),
+            ],
+          ),
         ),
       ),
     );

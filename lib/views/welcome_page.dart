@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -101,7 +103,7 @@ class WelcomePage extends StatelessWidget {
 
               // Action Buttons
               ElevatedButton(
-                onPressed: () => Navigator.pushNamed(context, '/sign-in'),
+                onPressed: () => Navigator.pushReplacementNamed(context, '/sign-in'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4CD964),
                   foregroundColor: Colors.black,
@@ -144,6 +146,24 @@ class WelcomePage extends StatelessWidget {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _resetWelcomeFlag(context), // Pass context here
+        backgroundColor: Colors.grey[800],
+        child: Icon(Icons.refresh, color: Colors.white),
+      ),
     );
+  }
+
+  // Updated to accept a context parameter
+  void _resetWelcomeFlag(BuildContext context) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('has_seen_welcome');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Welcome screen will show next time')),
+      );
+    } catch (e) {
+      print('Error resetting welcome flag: $e');
+    }
   }
 }

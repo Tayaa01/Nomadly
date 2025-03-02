@@ -1,53 +1,74 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart'; // Ensure this import is correct
+import '../services/auth_service.dart';
 
-class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
 
   @override
-  State<SignInPage> createState() => _SignInPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
-class _SignInPageState extends State<SignInPage> {
+class _SignUpPageState extends State<SignUpPage> {
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  final _confirmPasswordController = TextEditingController(); // Add this line
+  final _countryCodeController = TextEditingController();
   bool _obscurePassword = true;
-  bool _rememberMe = false;
+  bool _obscureConfirmPassword = true; // Add this line
+  String? _passwordError; // Add this line for validation
+  final AuthService _authService = AuthService();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
-  void initState() {
-    super.initState();
-    _loadSavedCredentials();
-  }
-
-  Future<void> _loadSavedCredentials() async {
-    final credentials = await _authService.getRememberedCredentials();
-    if (credentials != null) {
-      setState(() {
-        _emailController.text = credentials['email'];
-        _passwordController.text = credentials['password'];
-        _rememberMe = true;
-      });
-
-      // Auto sign-in if credentials exist
-      _signIn();
-    }
-  }
-
-  @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose(); // Add this line
+    _countryCodeController.dispose();
     super.dispose();
   }
 
-  Future<void> _signIn() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+  // Add this method to validate passwords
+  bool _validatePasswords() {
+    if (_passwordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
       setState(() {
-        _errorMessage = "Email and password are required";
+        _passwordError = "Password fields cannot be empty";
+      });
+      return false;
+    }
+    
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _passwordError = "Passwords don't match";
+      });
+      return false;
+    }
+    
+    setState(() {
+      _passwordError = null;
+    });
+    return true;
+  }
+
+  // Add this method to handle sign up
+  Future<void> _signUp() async {
+    // Validate passwords first
+    if (!_validatePasswords()) {
+      return;
+    }
+
+    // Validate required fields
+    if (_firstNameController.text.isEmpty || 
+        _lastNameController.text.isEmpty || 
+        _emailController.text.isEmpty ||
+        _countryCodeController.text.isEmpty) {
+      setState(() {
+        _errorMessage = "All fields are required";
       });
       return;
     }
@@ -58,10 +79,12 @@ class _SignInPageState extends State<SignInPage> {
     });
 
     try {
-      final result = await _authService.login(
+      final result = await _authService.register(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        rememberMe: _rememberMe, // Pass the remember me value
+        countryCode: _countryCodeController.text.trim().toUpperCase(),
       );
 
       setState(() {
@@ -69,7 +92,15 @@ class _SignInPageState extends State<SignInPage> {
       });
 
       if (result['success']) {
-        Navigator.pushReplacementNamed(context, '/home');
+        // Registration successful, navigate to home or login
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful! Please log in.'),
+            backgroundColor: Color(0xFF4CD964),
+          ),
+        );
+        // Navigate to login page
+        Navigator.pushReplacementNamed(context, '/sign-in');
       } else {
         setState(() {
           _errorMessage = result['message'];
@@ -80,7 +111,7 @@ class _SignInPageState extends State<SignInPage> {
         _isLoading = false;
         _errorMessage = "An error occurred. Please try again.";
       });
-      print("Sign in error: $e");
+      print("Sign up error: $e");
     }
   }
 
@@ -95,6 +126,7 @@ class _SignInPageState extends State<SignInPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top Logo (removed back button)
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -109,8 +141,10 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
+
+                // Welcome Text
                 const Text(
-                  'Welcome back 👋',
+                  'Create Account',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 32,
@@ -119,13 +153,33 @@ class _SignInPageState extends State<SignInPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to access your account',
+                  'Sign up to start your journey',
                   style: TextStyle(
                     color: Colors.grey[400],
                     fontSize: 16,
                   ),
                 ),
                 const SizedBox(height: 40),
+
+                // First Name Input
+                _buildInputField(
+                  controller: _firstNameController,
+                  label: 'First Name',
+                  hint: 'Enter your first name',
+                  icon: Icons.person_outline,
+                ),
+                const SizedBox(height: 20),
+
+                // Last Name Input
+                _buildInputField(
+                  controller: _lastNameController,
+                  label: 'Last Name',
+                  hint: 'Enter your last name',
+                  icon: Icons.person_outline,
+                ),
+                const SizedBox(height: 20),
+
+                // Email Input
                 _buildInputField(
                   controller: _emailController,
                   label: 'Email',
@@ -133,6 +187,8 @@ class _SignInPageState extends State<SignInPage> {
                   icon: Icons.email_outlined,
                 ),
                 const SizedBox(height: 20),
+
+                // Password Input
                 _buildInputField(
                   controller: _passwordController,
                   label: 'Password',
@@ -140,40 +196,30 @@ class _SignInPageState extends State<SignInPage> {
                   icon: Icons.lock_outline,
                   isPassword: true,
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Switch(
-                          value: _rememberMe,
-                          onChanged: (value) => setState(() => _rememberMe = value),
-                          activeColor: const Color(0xFF4CD964),
-                        ),
-                        Text(
-                          'Remember me',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                          color: Color(0xFF4CD964),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 20),
+
+                // Confirm Password Input - Add this block
+                _buildInputField(
+                  controller: _confirmPasswordController,
+                  label: 'Confirm Password',
+                  hint: 'Confirm your password',
+                  icon: Icons.lock_outline,
+                  isPassword: true,
+                  isConfirmPassword: true,
+                  error: _passwordError,
+                ),
+                const SizedBox(height: 20),
+
+                // Country Code Input
+                _buildInputField(
+                  controller: _countryCodeController,
+                  label: 'Country Code',
+                  hint: 'Enter your country code (e.g., US)',
+                  icon: Icons.flag_outlined,
                 ),
                 const SizedBox(height: 32),
+
+                // Display error message if any
                 if (_errorMessage != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 20),
@@ -188,8 +234,10 @@ class _SignInPageState extends State<SignInPage> {
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),
+
+                // Sign Up Button
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _signIn,
+                  onPressed: _isLoading ? null : _signUp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4CD964),
                     minimumSize: const Size(double.infinity, 56),
@@ -208,7 +256,7 @@ class _SignInPageState extends State<SignInPage> {
                           ),
                         )
                       : const Text(
-                          'Sign In',
+                          'Sign Up',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -217,52 +265,20 @@ class _SignInPageState extends State<SignInPage> {
                         ),
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: Colors.grey[800], thickness: 1)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Or continue with',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: Colors.grey[800], thickness: 1)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSocialButton(
-                        onPressed: () {},
-                        icon: Icons.apple,
-                        label: 'Apple',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSocialButton(
-                        onPressed: () {},
-                        icon: Icons.g_mobiledata_rounded,
-                        label: 'Google',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
+
+                // Sign In Link
                 Center(
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/sign-up');
+                      Navigator.pop(context);
                     },
                     child: RichText(
                       text: const TextSpan(
-                        text: "Don't have an account? ",
+                        text: "Already have an account? ",
                         style: TextStyle(color: Colors.grey),
                         children: [
                           TextSpan(
-                            text: 'Sign Up',
+                            text: 'Sign In',
                             style: TextStyle(
                               color: Color(0xFF4CD964),
                               fontWeight: FontWeight.bold,
@@ -287,6 +303,8 @@ class _SignInPageState extends State<SignInPage> {
     required String hint,
     required IconData icon,
     bool isPassword = false,
+    bool isConfirmPassword = false,
+    String? error,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,11 +322,15 @@ class _SignInPageState extends State<SignInPage> {
           decoration: BoxDecoration(
             color: const Color(0xFF1E1E1E),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF333333)),
+            border: Border.all(
+              color: error != null && (isPassword || isConfirmPassword)
+                  ? Colors.red.withOpacity(0.8)
+                  : const Color(0xFF333333),
+            ),
           ),
           child: TextField(
             controller: controller,
-            obscureText: isPassword && _obscurePassword,
+            obscureText: isPassword && (isConfirmPassword ? _obscureConfirmPassword : _obscurePassword),
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: hint,
@@ -317,13 +339,19 @@ class _SignInPageState extends State<SignInPage> {
               suffixIcon: isPassword
                   ? IconButton(
                       icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+                        isConfirmPassword
+                            ? (_obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined)
+                            : (_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                         color: Colors.grey[400],
                       ),
                       onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
+                        setState(() {
+                          if (isConfirmPassword) {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          } else {
+                            _obscurePassword = !_obscurePassword;
+                          }
+                        });
                       },
                     )
                   : null,
@@ -332,40 +360,15 @@ class _SignInPageState extends State<SignInPage> {
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton({
-    required VoidCallback onPressed,
-    required IconData icon,
-    required String label,
-  }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E1E1E),
-        minimumSize: const Size(double.infinity, 56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 0,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.white),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+        if (error != null && (isPassword || isConfirmPassword))
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              error,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }

@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
-import 'views/currency_converter_screen.dart'; // Update this import
+import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'views/currency_converter_screen.dart';
 import 'views/welcome_page.dart';
 import 'views/sign_in_page.dart';
 import 'views/home_page.dart';
-import 'views/speech_to_text_view.dart'; // Add this import
-import 'views/tips_screen.dart'; // Add this import
+import 'views/speech_to_text_view.dart';
+import 'views/tips_screen.dart';
+import 'views/sign_up_page.dart';
+import 'services/auth_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -19,8 +24,60 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool isDarkMode = true;
+  final AuthService _authService = AuthService();
+  bool _isLoading = true;
+  Widget? _startScreen;
 
-  ThemeData get lightTheme => ThemeData(
+  @override
+  void initState() {
+    super.initState();
+    _checkStartupLogic();
+  }
+
+  Future<void> _checkStartupLogic() async {
+    Widget startScreen;
+    
+    // Check if user is logged in
+    try {
+      bool isLoggedIn = await _authService.isLoggedIn();
+      
+      if (isLoggedIn) {
+        print('User is logged in, showing home page');
+        startScreen = const HomePage();
+      } else {
+        // User is not logged in, show sign-in page
+        print('User is not logged in, showing sign-in page');
+        startScreen = const SignInPage();
+        
+        // Check if this is a new installation (no preferences exist at all)
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        bool hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
+        
+        if (!hasSeenWelcome) {
+          // First time ever opening the app
+          print('First installation, showing welcome page');
+          startScreen = const WelcomePage();
+          
+          // Mark that user has seen welcome page
+          await prefs.setBool('has_seen_welcome', true);
+        }
+      }
+    } catch (e) {
+      print('Error during startup check: $e');
+      startScreen = const SignInPage(); // Default to sign-in on error
+    }
+
+    // Only update state if widget is still mounted
+    if (mounted) {
+      setState(() {
+        _startScreen = startScreen;
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Theme definitions
+  ThemeData get _lightTheme => ThemeData(
     scaffoldBackgroundColor: Colors.white,
     colorScheme: ColorScheme.light(
       surface: const Color(0xFFF5F5F5),
@@ -34,7 +91,7 @@ class _MyAppState extends State<MyApp> {
     ),
   );
 
-  ThemeData get darkTheme => ThemeData(
+  ThemeData get _darkTheme => ThemeData(
     scaffoldBackgroundColor: const Color(0xFF000000),
     colorScheme: ColorScheme.dark(
       surface: const Color(0xFF1E1E1E),
@@ -56,22 +113,36 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: Colors.black,
+          body: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+            ),
+          ),
+        ),
+      );
+    }
+
     return MaterialApp(
-      title: 'Currency Converter',
-      theme: isDarkMode ? darkTheme : lightTheme,
+      title: 'Nomadly',
+      theme: isDarkMode ? _darkTheme : _lightTheme,
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
+      home: _startScreen,
       routes: {
-        '/': (context) => const WelcomePage(),
+        '/welcome': (context) => const WelcomePage(),
         '/home': (context) => const HomePage(),
         '/sign-in': (context) => const SignInPage(),
-        '/currency-converter':
-            (context) => CurrencyConverterScreen(
+        '/sign-up': (context) => const SignUpPage(),
+        '/currency-converter': (context) => CurrencyConverterScreen(
               toggleTheme: toggleTheme,
               isDarkMode: isDarkMode,
             ),
-        '/translation': (context) => const SpeechToTextView(), // Add this route
-        '/tips': (context) => const TipsScreen(), // Add this route
+        '/translation': (context) => const SpeechToTextView(),
+        '/tips': (context) => const TipsScreen(),
       },
     );
   }

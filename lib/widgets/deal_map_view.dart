@@ -9,8 +9,7 @@ class DealMapView extends StatefulWidget {
   final List<Deal> deals;
   final String country;
 
-  const DealMapView({Key? key, required this.deals, required this.country})
-    : super(key: key);
+  const DealMapView({super.key, required this.deals, required this.country});
 
   @override
   State<DealMapView> createState() => _DealMapViewState();
