@@ -11,6 +11,7 @@ import '../models/predefined_phrases.dart';
 import '../services/translation_cache_service.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import '../widgets/custom_bottom_nav.dart';  // Add this import
 
 class SpeechToTextView extends StatefulWidget {
   const SpeechToTextView({super.key});
@@ -436,6 +437,19 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               backgroundColor: const Color(0xFF4CD964),
             )
           : null,
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 3,  // Index 3 pour Translation
+        onTap: (index) {
+          if (index != 3) {  // Si ce n'est pas l'onglet actuel
+            if (index == 0) {
+              Navigator.pushReplacementNamed(context, '/home');
+            } else if (index == 2) {
+              Navigator.pushReplacementNamed(context, '/currency-converter');
+            }
+            // Ajoutez d'autres cas de navigation si nécessaire
+          }
+        },
+      ),
     );
   }
 
