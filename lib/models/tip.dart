@@ -2,69 +2,105 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 class Tip {
-  final String content;
   final String category;
-  final String country;
-
-  Tip({required this.content, required this.category, required this.country});
-
-  factory Tip.fromJson(String content, String country, String category) {
-    return Tip(content: content, category: category, country: country);
+  final String content;
+  
+  Tip({
+    required this.category,
+    required this.content,
+  });
+  
+  factory Tip.fromJson(Map<String, dynamic> json) {
+    return Tip(
+      category: json['category'] ?? '',
+      content: json['content'] ?? '',
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'category': category,
+      'content': content,
+    };
   }
 }
 
 class TipsService {
-  static Future<Map<String, dynamic>> loadTipsData() async {
-    final String response = await rootBundle.loadString('tips.json');
-    return json.decode(response);
+  static Future<List<String>> getAvailableCountries() async {
+    // Placeholder implementation
+    await Future.delayed(const Duration(milliseconds: 300));
+    return [
+      'Japan',
+      'France',
+      'Italy',
+      'United States',
+      'United Kingdom',
+      'Spain',
+      'Germany',
+      'China',
+      'Australia',
+      'Canada',
+      'Brazil',
+      'Mexico',
+      'South Korea',
+      'India',
+      'Egypt',
+      'Morocco',
+      'Thailand',
+    ];
   }
 
-  static Future<List<Tip>> getTipsByCountry(String country) async {
-    final data = await loadTipsData();
-    final countryData = data[country] as Map<String, dynamic>;
-
-    List<Tip> tips = [];
-
-    countryData.forEach((category, tipsList) {
-      final List<dynamic> categoryTips = tipsList as List<dynamic>;
-      tips.addAll(
-        categoryTips
-            .map(
-              (tip) => Tip(content: tip, category: category, country: country),
-            )
-            .toList(),
-      );
-    });
-
-    return tips;
+  static Future<List<String>> getCategoriesForCountry(String country) async {
+    // Placeholder implementation
+    await Future.delayed(const Duration(milliseconds: 200));
+    return [
+      'Dining',
+      'Social Etiquette',
+      'Business',
+      'Religious Customs',
+      'Gifts',
+      'Language',
+      'Social Interactions',
+      'Gender Considerations',
+      'Numbers',
+    ];
   }
 
   static Future<List<Tip>> getTipsByCountryAndCategory(
     String country,
     String category,
   ) async {
-    final data = await loadTipsData();
-    final countryData = data[country] as Map<String, dynamic>;
-
-    if (!countryData.containsKey(category)) {
-      return [];
-    }
-
-    final List<dynamic> categoryTips = countryData[category] as List<dynamic>;
-
-    return categoryTips
-        .map((tip) => Tip(content: tip, category: category, country: country))
-        .toList();
-  }
-
-  static Future<List<String>> getAvailableCountries() async {
-    final data = await loadTipsData();
-    return data.keys.toList().cast<String>();
-  }
-
-  static Future<List<String>> getCategoriesForCountry(String country) async {
-    final data = await loadTipsData();
-    final countryData = data[country] as Map<String, dynamic>;
-    return countryData.keys.toList().cast<String>();
+    // Placeholder implementation
+    await Future.delayed(const Duration(milliseconds: 400));
+    
+    // Some sample tips for demonstration
+    final Map<String, List<String>> sampleTips = {
+      'Dining': [
+        'In $country, it\'s customary to wait for everyone to be served before starting to eat.',
+        'When dining in $country, avoid resting your elbows on the table.',
+        'Tipping in $country is typically around 10-15% in restaurants.',
+        'It\'s polite to finish all food on your plate in $country.',
+      ],
+      'Social Etiquette': [
+        'In $country, always remove your shoes before entering someone\'s home.',
+        'Public displays of affection are generally frowned upon in $country.',
+        'Maintaining eye contact while speaking is considered respectful in $country.',
+        'In $country, it\'s customary to bring a small gift when visiting someone\'s home.',
+      ],
+      'Business': [
+        'Business cards should be exchanged with both hands in $country.',
+        'Punctuality is highly valued in $country business meetings.',
+        'Dress conservatively for business meetings in $country.',
+        'In $country, decisions are typically made by consensus rather than by individuals.',
+      ],
+    };
+    
+    final tips = sampleTips[category] ?? 
+      ['No specific tips available for $category in $country'];
+    
+    return tips.map((content) => Tip(
+      category: category,
+      content: content,
+    )).toList();
   }
 }

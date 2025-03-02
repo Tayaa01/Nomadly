@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nomadly/models/tip.dart';
-import 'package:nomadly/services/deals_service.dart';
+import '../models/tip.dart';  // Changed from package:nomadly/models/tip.dart
+import '../services/deals_service.dart';  // Changed from package:nomadly/services/deals_service.dart
 import 'dart:ui';
 import '../widgets/custom_bottom_nav.dart';
 import '../widgets/deal_map_view.dart';
@@ -143,6 +143,8 @@ class _TipsScreenState extends State<TipsScreen>
               Navigator.pushReplacementNamed(context, '/currency-converter');
             } else if (index == 3) {
               Navigator.pushReplacementNamed(context, '/translation');
+            } else if (index == 4) {
+              Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
             }
           }
         },

@@ -18,6 +18,10 @@ class ApiConfig {
   static const String DEALS_ENDPOINT = "/deals";
   static const String DEALS_SEARCH_ENDPOINT = "/deals/search";
   
+  // Endpoints for Finance Service
+  static const String TRANSACTIONS_BY_DAY_ENDPOINT = "/transactions/by-day";
+  static const String SAVINGS_BY_DAY_ENDPOINT = "/savings/by-day";
+  
   // Request timeouts
   static const int CONNECT_TIMEOUT = 30000; // 30 seconds
   static const int RECEIVE_TIMEOUT = 30000; // 30 seconds

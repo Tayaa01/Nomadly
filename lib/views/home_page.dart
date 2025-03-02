@@ -177,8 +177,9 @@ class HomePage extends StatelessWidget {
           } else if (index == 2) {
             Navigator.pushReplacementNamed(context, '/currency-converter');
           } else if (index == 3) {
-            // Add this condition
             Navigator.pushReplacementNamed(context, '/translation');
+          } else if (index == 4) {
+            Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
           }
         },
       ),

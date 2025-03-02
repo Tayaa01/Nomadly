@@ -438,15 +438,18 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             )
           : null,
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: 3,  // Index 3 pour Translation
+        currentIndex: 3,  // Index 3 for Translation
         onTap: (index) {
-          if (index != 3) {  // Si ce n'est pas l'onglet actuel
+          if (index != 3) {  // If not current tab
             if (index == 0) {
               Navigator.pushReplacementNamed(context, '/home');
+            } else if (index == 1) {
+              Navigator.pushReplacementNamed(context, '/tips');
             } else if (index == 2) {
               Navigator.pushReplacementNamed(context, '/currency-converter');
+            } else if (index == 4) {
+              Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
             }
-            // Ajoutez d'autres cas de navigation si nécessaire
           }
         },
       ),

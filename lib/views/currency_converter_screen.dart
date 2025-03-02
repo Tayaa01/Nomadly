@@ -405,6 +405,9 @@ class CurrencyConverterScreen extends StatelessWidget {
                         if (viewModel.showTips) ...[
                           // ...existing tax refund UI...
                         ],
+
+                        // Add the statistics button
+                        _buildStatisticsButton(context),
                       ],
                     ),
                   ),
@@ -424,8 +427,9 @@ class CurrencyConverterScreen extends StatelessWidget {
                 Navigator.pushReplacementNamed(context, '/tips');
               } else if (index == 3) {
                 Navigator.pushReplacementNamed(context, '/translation');
+              } else if (index == 4) {
+                Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
               }
-              // Add other navigation cases here as needed
             }
           },
         ),
@@ -639,6 +643,28 @@ class CurrencyConverterScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Add a button in the UI section of the screen
+  Widget _buildStatisticsButton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.pushNamed(context, '/statistics');
+        },
+        icon: const Icon(Icons.bar_chart),
+        label: const Text('View Financial Statistics'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF4CD964),
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
       ),
     );
   }
