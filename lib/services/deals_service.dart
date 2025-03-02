@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../network/api_config.dart'; // Import the API config
 
 class Coordinates {
   final double? latitude;
@@ -244,21 +245,16 @@ class DealAnalysis {
 
 class DealsService {
   final Dio _dio;
-  final String baseUrl;
 
-  DealsService({String? customBaseUrl, Dio? customDio})
-    : baseUrl = customBaseUrl ?? 'http://localhost:3000/deals',
-      _dio =
-          customDio ??
+  DealsService({Dio? customDio})
+    : _dio = customDio ?? 
           Dio(
             BaseOptions(
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
+              baseUrl: ApiConfig.BASE_URL,  // Use the main BASE_URL
+              connectTimeout: Duration(milliseconds: ApiConfig.CONNECT_TIMEOUT),
+              receiveTimeout: Duration(milliseconds: ApiConfig.RECEIVE_TIMEOUT),
               validateStatus: (status) => status! < 500,
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-              },
+              headers: ApiConfig.commonHeaders,
             ),
           );
 
@@ -275,7 +271,7 @@ class DealsService {
       }
 
       final response = await _dio.get(
-        '$baseUrl/search',
+        ApiConfig.DEALS_SEARCH_ENDPOINT,  // Use the proper endpoint from config
         queryParameters: {
           'country': country,
           'category': category,

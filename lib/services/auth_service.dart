@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import '../network/api_config.dart'; // Import the API config
 
 class AuthService {
   final Dio _dio = Dio();
-  final String _baseUrl = "https://6b4b-2c0f-f698-40c3-f1b9-98f2-7e4f-bdbd-36d3.ngrok-free.app";
   
   // Token storage keys
   static const String TOKEN_KEY = 'auth_token';
@@ -24,8 +24,8 @@ class AuthService {
     required String countryCode,
   }) async {
     try {
-      // Print the full URL for debugging
-      final registerUrl = "$_baseUrl/auth/register";
+      // Use the API config for URL
+      final registerUrl = "${ApiConfig.BASE_URL}${ApiConfig.REGISTER_ENDPOINT}";
       print('Sending registration request to: $registerUrl');
       
       final response = await _dio.post(
@@ -38,10 +38,7 @@ class AuthService {
           "countryCode": countryCode,
         },
         options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers: ApiConfig.commonHeaders,
         ),
       );
       
@@ -64,8 +61,8 @@ class AuthService {
     bool rememberMe = false,
   }) async {
     try {
-      // Print the full URL for debugging
-      final loginUrl = "$_baseUrl/auth/login";
+      // Use the API config for URL
+      final loginUrl = "${ApiConfig.BASE_URL}${ApiConfig.LOGIN_ENDPOINT}";
       print('Sending login request to: $loginUrl');
       
       final response = await _dio.post(
@@ -75,10 +72,7 @@ class AuthService {
           "password": password,
         },
         options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers: ApiConfig.commonHeaders,
         ),
       );
       
@@ -100,8 +94,8 @@ class AuthService {
             await _clearRememberMeData();
           }
           
-          // Mark that the app has been launched before - FIX THIS LINE
-          await _safeMarkAppLaunched(); // Use _safeMarkAppLaunched instead of _markAppLaunched
+          // Mark that the app has been launched before
+          await _safeMarkAppLaunched();
           
           return {'success': true, 'data': responseData};
         } else {

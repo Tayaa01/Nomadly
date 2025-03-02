@@ -2,14 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
-import '../services/auth_service.dart'; // Add this import
+import '../services/auth_service.dart';
+import '../network/api_config.dart'; // Import the API config
 
 class CurrencyService {
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'https://6b4b-2c0f-f698-40c3-f1b9-98f2-7e4f-bdbd-36d3.ngrok-free.app',
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-    sendTimeout: const Duration(seconds: 30),
+    baseUrl: ApiConfig.BASE_URL,  // Use the base URL from config
+    connectTimeout: Duration(milliseconds: ApiConfig.CONNECT_TIMEOUT),
+    receiveTimeout: Duration(milliseconds: ApiConfig.RECEIVE_TIMEOUT),
+    sendTimeout: Duration(milliseconds: ApiConfig.SEND_TIMEOUT),
   ))..interceptors.add(
     DioCacheInterceptor(
       options: CacheOptions(
@@ -37,7 +38,7 @@ class CurrencyService {
   Future<List<String>> fetchCurrencies() async {
     final headers = await _getAuthHeaders();
     final response = await _dio.get(
-      '/currency-converter/currencies',
+      ApiConfig.CURRENCIES_LIST_ENDPOINT,  // Use endpoint from config
       options: Options(headers: headers),
     );
     return List<String>.from(response.data);
@@ -67,7 +68,7 @@ class CurrencyService {
 
     // Make the request exactly as shown in the cURL example
     final response = await _dio.post(
-      '/tax-free/analyze',
+      ApiConfig.CURRENCY_ANALYZE_ENDPOINT,  // Use endpoint from config
       data: formData,
       options: Options(
         headers: {
@@ -85,7 +86,7 @@ class CurrencyService {
   Future<Map<String, dynamic>> convertCurrency(String amount) async {
     final headers = await _getAuthHeaders();
     final response = await _dio.post(
-      '/currency-converter/convert',
+      ApiConfig.CURRENCY_CONVERT_ENDPOINT,  // Use endpoint from config
       data: {
         'amount': amount,
       },
