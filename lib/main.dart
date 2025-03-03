@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'views/currency_converter_screen.dart';
@@ -14,27 +13,11 @@ import 'views/statistics_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-=======
-import '/TravelResultsScreen.dart';
-import 'views/currency_converter_screen.dart'; // Update this import
-import 'views/welcome_page.dart';
-import 'views/sign_in_page.dart';
-import 'views/home_page.dart';
-import 'views/speech_to_text_view.dart'; // Add this import
-import 'views/tips_screen.dart'; // Add this import
-import '/travel_preferences.dart';
-
-void main() {
->>>>>>> aziz
   runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-<<<<<<< HEAD
   const MyApp({Key? key}) : super(key: key);
-=======
-  const MyApp({super.key});
->>>>>>> aziz
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -42,7 +25,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool isDarkMode = true;
-<<<<<<< HEAD
   final AuthService _authService = AuthService();
   bool _isLoading = true;
   Widget? _startScreen;
@@ -97,10 +79,6 @@ class _MyAppState extends State<MyApp> {
 
   // Theme definitions
   ThemeData get _lightTheme => ThemeData(
-=======
-
-  ThemeData get lightTheme => ThemeData(
->>>>>>> aziz
     scaffoldBackgroundColor: Colors.white,
     colorScheme: ColorScheme.light(
       surface: const Color(0xFFF5F5F5),
@@ -114,11 +92,7 @@ class _MyAppState extends State<MyApp> {
     ),
   );
 
-<<<<<<< HEAD
   ThemeData get _darkTheme => ThemeData(
-=======
-  ThemeData get darkTheme => ThemeData(
->>>>>>> aziz
     scaffoldBackgroundColor: const Color(0xFF000000),
     colorScheme: ColorScheme.dark(
       surface: const Color(0xFF1E1E1E),
@@ -140,7 +114,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
     if (_isLoading) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -172,27 +145,6 @@ class _MyAppState extends State<MyApp> {
         '/translation': (context) => const SpeechToTextView(),
         '/tips': (context) => const TipsScreen(),
         '/statistics': (context) => const StatisticsScreen(), // Add this new route
-=======
-    return MaterialApp(
-      title: 'Currency Converter',
-      theme: isDarkMode ? darkTheme : lightTheme,
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const WelcomePage(),
-        '/home': (context) => const HomePage(),
-        '/sign-in': (context) => const SignInPage(),
-        '/currency-converter':
-            (context) => CurrencyConverterScreen(
-              toggleTheme: toggleTheme,
-              isDarkMode: isDarkMode,
-            ),
-        '/translation': (context) => const SpeechToTextView(), // Add this route
-        '/tips': (context) => const TipsScreen(), // Add this route
-        '/planner': (context) => const TravelPreferencesScreen(), // Add this route
-        '/travel-results': (context) =>  TravelResultsScreen(destination: '',), // Add this route
-
->>>>>>> aziz
       },
     );
   }

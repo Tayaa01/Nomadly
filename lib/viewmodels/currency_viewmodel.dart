@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/currency_service.dart';
-<<<<<<< HEAD
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'; // Uncomment this import
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CurrencyViewModel extends ChangeNotifier {
   final CurrencyService _currencyService = CurrencyService();
-=======
-
-class CurrencyViewModel extends ChangeNotifier {
-  final CurrencyService _currencyService = CurrencyService();
-  String? sourceCountry;
-  String? targetCountry;
->>>>>>> aziz
   String? scannedAmount;
   double? convertedAmount;
   String? convertedCurrencySymbol;
@@ -23,18 +15,12 @@ class CurrencyViewModel extends ChangeNotifier {
   List<String> taxRefundTips = [];
   bool isConverting = false;
   bool isImageProcessing = false;
-<<<<<<< HEAD
   bool isLoadingLocation = false;
-=======
->>>>>>> aziz
   bool showTips = false;
   XFile? selectedImage;
   String? errorMessage;
   String? sourceCountryName;
-<<<<<<< HEAD
   String? currentCountryCode;
-=======
->>>>>>> aziz
   String? targetCountryName;
   double? taxRefundAmount;
   String? taxRefundCurrency;
@@ -45,7 +31,6 @@ class CurrencyViewModel extends ChangeNotifier {
 
   final TextEditingController amountController = TextEditingController();
 
-<<<<<<< HEAD
   // Keys for storing preferences
   static const String COUNTRY_CODE_KEY = 'country_code';
   static const String COUNTRY_NAME_KEY = 'country_name';
@@ -183,10 +168,6 @@ class CurrencyViewModel extends ChangeNotifier {
     }
     
     notifyListeners();
-=======
-  CurrencyViewModel() {
-    // No need to fetch currencies
->>>>>>> aziz
   }
 
   Future<void> takePhoto() async {
@@ -209,10 +190,7 @@ class CurrencyViewModel extends ChangeNotifier {
       }
     } catch (e) {
       print('Error taking photo: $e');
-<<<<<<< HEAD
       errorMessage = "Error capturing image: $e";
-=======
->>>>>>> aziz
     } finally {
       isImageProcessing = false;
       notifyListeners();
@@ -220,20 +198,8 @@ class CurrencyViewModel extends ChangeNotifier {
   }
 
   Future<void> convertCurrency() async {
-<<<<<<< HEAD
     isConverting = true;
     clearState();  
-=======
-    if (targetCountry == null || sourceCountry == null) {
-      print('Source or target country not selected');
-      errorMessage = "Please select both countries";
-      notifyListeners();
-      return;
-    }
-
-    isConverting = true;
-    clearState();  // Only clear conversion-related state
->>>>>>> aziz
     notifyListeners();
 
     try {
@@ -241,12 +207,7 @@ class CurrencyViewModel extends ChangeNotifier {
         print('Converting currency with image: ${selectedImage!.path}');
         final data = await _currencyService.analyzeAndConvertImage(
           selectedImage!,
-<<<<<<< HEAD
           countryCode: currentCountryCode, // Pass the detected country code
-=======
-          sourceCountry!,
-          targetCountry!,
->>>>>>> aziz
         );
 
         print('API response: $data');
@@ -314,11 +275,7 @@ class CurrencyViewModel extends ChangeNotifier {
           }
         }
         
-<<<<<<< HEAD
         notifyListeners();
-=======
-        notifyListeners();  // Notify after all data is set
->>>>>>> aziz
       } else {
         errorMessage = "Please take a photo first";
         notifyListeners();
@@ -337,27 +294,9 @@ class CurrencyViewModel extends ChangeNotifier {
   }
 
   void clearState() {
-<<<<<<< HEAD
     errorMessage = null;
     convertedAmount = null;
     convertedCurrencySymbol = null;
-=======
-    // Only clear necessary state, keeping tax refund info
-    errorMessage = null;
-    convertedAmount = null;
-    convertedCurrencySymbol = null;
-    
-    // Don't reset these immediately
-    // isTaxRefundAvailable = false;
-    // taxRefundMessage = null;
-    // showTips = false;
-    // taxRefundAmount = null;
-    // taxRefundCurrency = null;
-    // taxRefundRequirements = [];
-    // taxRefundInstructions = null;
-    
-    // These can be cleared
->>>>>>> aziz
     convertedMinAmount = null;
     convertedMinCurrency = null;
   }
@@ -375,7 +314,6 @@ class CurrencyViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
-<<<<<<< HEAD
 
 // Add this extension to help with debugging
 extension PlacemarkExtension on Placemark {
@@ -391,5 +329,3 @@ extension PlacemarkExtension on Placemark {
     };
   }
 }
-=======
->>>>>>> aziz

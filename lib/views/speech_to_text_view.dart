@@ -27,11 +27,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   bool _isListening = false;
   String _text = 'Say something';
   String _translatedText = '';
-<<<<<<< HEAD
-=======
-  bool _isTranslating = false;
-  double _confidence = 1.0;
->>>>>>> aziz
   late AnimationController _animationController;
   Timer? _debounce;
   bool _isRequestPending = false;
@@ -192,10 +187,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   }
 
   void _cleanupOldDiscussions() {
-<<<<<<< HEAD
-=======
-    final now = DateTime.now();
->>>>>>> aziz
     bool hasRemovedDiscussions = false;
     
     _discussions.removeWhere((discussion) {
@@ -235,10 +226,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     if (_text.isEmpty || _text == 'Say something' || _isRequestPending) return;
 
     setState(() {
-<<<<<<< HEAD
-=======
-      _isTranslating = true;
->>>>>>> aziz
       _isRequestPending = true;
     });
 
@@ -286,10 +273,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
       );
     } finally {
       setState(() {
-<<<<<<< HEAD
-=======
-        _isTranslating = false;
->>>>>>> aziz
         _isRequestPending = false;
       });
     }
@@ -376,10 +359,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               _text = val.recognizedWords;
               print('Recognized text: $_text');
               if (val.hasConfidenceRating && val.confidence > 0) {
-<<<<<<< HEAD
-=======
-                _confidence = val.confidence;
->>>>>>> aziz
               }
             });
             
@@ -453,7 +432,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             )
           : null,
       bottomNavigationBar: CustomBottomNav(
-<<<<<<< HEAD
         currentIndex: 3,  // Index 3 for Translation
         onTap: (index) {
           if (index != 3) {  // If not current tab
@@ -466,21 +444,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             } else if (index == 4) {
               Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
             }
-=======
-        currentIndex: 3,  // Index 3 pour Translation
-        onTap: (index) {
-          if (index != 3) {  // Si ce n'est pas l'onglet actuel
-            if (index == 0) {
-              Navigator.pushReplacementNamed(context, '/home');
-            } else if (index == 2) {
-              Navigator.pushReplacementNamed(context, '/currency-converter');
-            }
-            else if (index == 4) {
-            // Add this condition
-            Navigator.pushReplacementNamed(context, '/planner');
-          }
-            // Ajoutez d'autres cas de navigation si nécessaire
->>>>>>> aziz
           }
         },
       ),
@@ -1262,118 +1225,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     }
   }
 
-<<<<<<< HEAD
 
 
 
-=======
-  void _showMessageOptions(Message message) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.copy, color: Colors.white),
-            title: Text('Copy text', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: message.text));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Text copied to clipboard')),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.translate, color: Colors.white),
-            title: Text('Copy translation', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: message.translation));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Translation copied to clipboard')),
-              );
-            },
-          ),
-          if (message.isUser) ListTile(
-            leading: Icon(Icons.edit, color: Colors.white),
-            title: Text('Edit message', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              _showEditMessageDialog(message);
-            },
-          ),
-          if (message.isUser) ListTile(
-            leading: Icon(Icons.delete, color: Colors.red),
-            title: Text('Delete message', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _deleteMessage(message);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditMessageDialog(Message message) {
-    final TextEditingController controller = TextEditingController(text: message.text);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text('Edit message', style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller,
-          style: TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: 'Edit your message',
-            hintStyle: TextStyle(color: Colors.white54),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text('Cancel', style: TextStyle(color: Colors.white70)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text('Save', style: TextStyle(color: Colors.blue)),
-            onPressed: () {
-              Navigator.pop(context);
-              _editMessage(message, controller.text);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _editMessage(Message message, String newText) {
-    if (newText.isEmpty || newText == message.text) return;
-    setState(() {
-      final index = _currentDiscussion!.messages.indexOf(message);
-      _currentDiscussion!.messages[index] = Message(
-        text: newText,
-        translation: message.translation,
-        timestamp: message.timestamp,
-        isUser: message.isUser,
-        detectedLanguage: message.detectedLanguage,
-      );
-      _text = newText;
-      _translateText();
-    });
-  }
-
-  void _deleteMessage(Message message) {
-    setState(() {
-      _currentDiscussion!.messages.remove(message);
-      _saveDiscussions();
-    });
-  }
->>>>>>> aziz
 }

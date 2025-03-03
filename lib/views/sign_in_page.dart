@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import '../services/auth_service.dart'; // Ensure this import is correct
-=======
->>>>>>> aziz
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -14,7 +11,6 @@ class SignInPage extends StatefulWidget {
 class _SignInPageState extends State<SignInPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-<<<<<<< HEAD
   final AuthService _authService = AuthService();
   bool _obscurePassword = true;
   bool _rememberMe = false;
@@ -40,10 +36,6 @@ class _SignInPageState extends State<SignInPage> {
       _signIn();
     }
   }
-=======
-  bool _obscurePassword = true;
-  bool _rememberMe = false;
->>>>>>> aziz
 
   @override
   void dispose() {
@@ -52,7 +44,6 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
-<<<<<<< HEAD
   Future<void> _signIn() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       setState(() {
@@ -93,8 +84,6 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-=======
->>>>>>> aziz
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,22 +95,10 @@ class _SignInPageState extends State<SignInPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-<<<<<<< HEAD
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Text(
-=======
-                // Back Button and Logo
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const Text(
->>>>>>> aziz
                       'Nomadly',
                       style: TextStyle(
                         color: Color(0xFF4CD964),
@@ -129,17 +106,9 @@ class _SignInPageState extends State<SignInPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-<<<<<<< HEAD
                   ),
                 ),
                 const SizedBox(height: 40),
-=======
-                  ],
-                ),
-                const SizedBox(height: 40),
-
-                // Welcome Text
->>>>>>> aziz
                 const Text(
                   'Welcome back 👋',
                   style: TextStyle(
@@ -157,11 +126,6 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-<<<<<<< HEAD
-=======
-
-                // Email Input
->>>>>>> aziz
                 _buildInputField(
                   controller: _emailController,
                   label: 'Email',
@@ -169,11 +133,6 @@ class _SignInPageState extends State<SignInPage> {
                   icon: Icons.email_outlined,
                 ),
                 const SizedBox(height: 20),
-<<<<<<< HEAD
-=======
-
-                // Password Input
->>>>>>> aziz
                 _buildInputField(
                   controller: _passwordController,
                   label: 'Password',
@@ -182,11 +141,6 @@ class _SignInPageState extends State<SignInPage> {
                   isPassword: true,
                 ),
                 const SizedBox(height: 16),
-<<<<<<< HEAD
-=======
-
-                // Remember Me and Forgot Password
->>>>>>> aziz
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -220,7 +174,6 @@ class _SignInPageState extends State<SignInPage> {
                   ],
                 ),
                 const SizedBox(height: 32),
-<<<<<<< HEAD
                 if (_errorMessage != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 20),
@@ -237,18 +190,6 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _signIn,
-=======
-
-                // Sign In Button
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/home',
-                      (route) => false,
-                    );
-                  },
->>>>>>> aziz
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4CD964),
                     minimumSize: const Size(double.infinity, 56),
@@ -257,7 +198,6 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                     elevation: 0,
                   ),
-<<<<<<< HEAD
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
@@ -277,20 +217,6 @@ class _SignInPageState extends State<SignInPage> {
                         ),
                 ),
                 const SizedBox(height: 24),
-=======
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Or Divider
->>>>>>> aziz
                 Row(
                   children: [
                     Expanded(child: Divider(color: Colors.grey[800], thickness: 1)),
@@ -305,11 +231,6 @@ class _SignInPageState extends State<SignInPage> {
                   ],
                 ),
                 const SizedBox(height: 24),
-<<<<<<< HEAD
-=======
-
-                // Social Sign In Buttons
->>>>>>> aziz
                 Row(
                   children: [
                     Expanded(
@@ -330,19 +251,11 @@ class _SignInPageState extends State<SignInPage> {
                   ],
                 ),
                 const SizedBox(height: 32),
-<<<<<<< HEAD
                 Center(
                   child: GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/sign-up');
                     },
-=======
-
-                // Sign Up Link
-                Center(
-                  child: GestureDetector(
-                    onTap: () {},
->>>>>>> aziz
                     child: RichText(
                       text: const TextSpan(
                         text: "Don't have an account? ",

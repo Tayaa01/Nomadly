@@ -5,7 +5,6 @@ class CustomBottomNav extends StatelessWidget {
   final Function(int) onTap;
 
   const CustomBottomNav({
-<<<<<<< HEAD
     Key? key,
     required this.currentIndex,
     required this.onTap,
@@ -66,48 +65,6 @@ class CustomBottomNav extends StatelessWidget {
           ),
         ],
       ),
-=======
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      backgroundColor: Colors.black,
-      type: BottomNavigationBarType.fixed,
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
-      currentIndex: currentIndex,
-      onTap: onTap,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.tips_and_updates),
-          label: 'Tips',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.currency_exchange),
-          label: 'Currency',
-        ),
-        
-        BottomNavigationBarItem(
-          icon: Icon(Icons.translate),
-          label: 'Translate',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.flight),
-          label: 'planner',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profile',
-        ),
-      ],
-      selectedItemColor: Color(0xFF4CD964),
-      unselectedItemColor: Colors.grey,
->>>>>>> aziz
     );
   }
 }

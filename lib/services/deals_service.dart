@@ -1,11 +1,7 @@
 import 'package:dio/dio.dart';
-<<<<<<< HEAD
 import 'package:dio/io.dart';
 import '../network/api_config.dart'; // Import the API config
 import 'dart:convert';
-=======
-import 'package:flutter/foundation.dart';
->>>>>>> aziz
 
 class Coordinates {
   final double? latitude;
@@ -169,72 +165,34 @@ class Metadata {
 class Deal {
   final String title;
   final String description;
-<<<<<<< HEAD
   final String? url;
   final String? discount;
   final String reason;
   final String? imageUrl;
-=======
-  final String url;
-  final String? price;
-  final String? discount;
-  final double? rating;
-  final Location location;
-  final Venue venue;
-  final DealDetails dealDetails;
-  final Metadata metadata;
->>>>>>> aziz
 
   Deal({
     required this.title,
     required this.description,
-<<<<<<< HEAD
     this.url,
     this.discount,
     required this.reason,
     this.imageUrl,
-=======
-    required this.url,
-    this.price,
-    this.discount,
-    this.rating,
-    required this.location,
-    required this.venue,
-    required this.dealDetails,
-    required this.metadata,
->>>>>>> aziz
   });
 
   factory Deal.fromJson(Map<String, dynamic> json) {
     return Deal(
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-<<<<<<< HEAD
       url: json['url'],
       discount: json['discount'],
       reason: json['reason'] ?? '',
       imageUrl: json['imageUrl'],
     );
   }
-=======
-      url: json['url'] ?? '',
-      price: json['price'],
-      discount: json['discount'],
-      rating: json['rating']?.toDouble(),
-      location: Location.fromJson(json['location'] ?? {}),
-      venue: Venue.fromJson(json['venue'] ?? {}),
-      dealDetails: DealDetails.fromJson(json['dealDetails'] ?? {}),
-      metadata: Metadata.fromJson(json['metadata'] ?? {}),
-    );
-  }
-
-  bool get hasValidCoordinates => location.coordinates?.isValid ?? false;
->>>>>>> aziz
 }
 
 class DealAnalysis {
   final List<Deal> recommendations;
-<<<<<<< HEAD
   final List<String> savingsTips;
   final Map<String, dynamic>? metadata;
 
@@ -242,28 +200,12 @@ class DealAnalysis {
     required this.recommendations,
     required this.savingsTips,
     this.metadata,
-=======
-  final List<String> discounts;
-  final List<String> reasons;
-  final List<String> savingsTips;
-  final Map<String, List<String>> trending;
-  final Map<String, dynamic> statistics;
-
-  DealAnalysis({
-    required this.recommendations,
-    required this.discounts,
-    required this.reasons,
-    required this.savingsTips,
-    required this.trending,
-    required this.statistics,
->>>>>>> aziz
   });
 
   factory DealAnalysis.fromJson(Map<String, dynamic> json) {
     return DealAnalysis(
       recommendations:
           (json['recommendations'] as List?)
-<<<<<<< HEAD
               ?.map((deal) => Deal.fromJson(deal))
               .toList() ??
           [],
@@ -273,22 +215,6 @@ class DealAnalysis {
               .toList() ??
           [],
       metadata: json['metadata'],
-=======
-              ?.map((deal) => Deal.fromJson(deal as Map<String, dynamic>))
-              .toList() ??
-          [],
-      discounts: (json['discounts'] as List?)?.cast<String>() ?? [],
-      reasons: (json['reasons'] as List?)?.cast<String>() ?? [],
-      savingsTips: (json['savingsTips'] as List?)?.cast<String>() ?? [],
-      trending: {
-        'categories':
-            (json['trending']?['categories'] as List?)?.cast<String>() ?? [],
-        'venues': (json['trending']?['venues'] as List?)?.cast<String>() ?? [],
-        'locations':
-            (json['trending']?['locations'] as List?)?.cast<String>() ?? [],
-      },
-      statistics: json['statistics'] ?? {},
->>>>>>> aziz
     );
   }
 }
@@ -297,7 +223,6 @@ class DealsService {
   final Dio _dio;
   final String baseUrl;
 
-<<<<<<< HEAD
   DealsService({String? baseUrl})
     : baseUrl = baseUrl ?? ApiConfig.BASE_URL,
       _dio = Dio(
@@ -314,29 +239,11 @@ class DealsService {
       return client;
     };
   }
-=======
-  DealsService({String? customBaseUrl, Dio? customDio})
-    : baseUrl = customBaseUrl ?? 'http://localhost:3000/deals',
-      _dio =
-          customDio ??
-          Dio(
-            BaseOptions(
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-              validateStatus: (status) => status! < 500,
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-              },
-            ),
-          );
->>>>>>> aziz
 
   Future<DealAnalysis> searchDeals({
     required String country,
     required String category,
     String? specific,
-<<<<<<< HEAD
     double? radius,
     double? latitude,
     double? longitude,
@@ -375,76 +282,6 @@ class DealsService {
     } catch (e) {
       print('Error in searchDeals: $e');
       throw Exception('Failed to fetch deals: $e');
-=======
-  }) async {
-    try {
-      if (kDebugMode) {
-        print(
-          'Searching deals for $category in $country${specific != null ? ' (specific: $specific)' : ''}',
-        );
-      }
-
-      final response = await _dio.get(
-        '$baseUrl/search',
-        queryParameters: {
-          'country': country,
-          'category': category,
-          if (specific != null && specific.isNotEmpty) 'specific': specific,
-        },
-      );
-
-      if (kDebugMode) {
-        print('API Response: ${response.data}');
-      }
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        if (data['success'] == true && data['data'] != null) {
-          return DealAnalysis.fromJson(data['data']);
-        } else {
-          final error = data['error'] ?? 'Unknown error occurred';
-          throw DealException('API returned error: $error');
-        }
-      } else {
-        throw DealException('API returned status code ${response.statusCode}');
-      }
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        print('DioError: ${e.message}');
-        print('DioError type: ${e.type}');
-        if (e.response != null) {
-          print('DioError response: ${e.response?.data}');
-        }
-      }
-
-      String errorMessage;
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          errorMessage =
-              'Connection timeout. Please check your internet connection.';
-          break;
-        case DioExceptionType.connectionError:
-          errorMessage =
-              'Connection error. Please check your internet connection.';
-          break;
-        case DioExceptionType.badResponse:
-          final statusCode = e.response?.statusCode;
-          final responseData = e.response?.data;
-          errorMessage =
-              'Server error (${statusCode ?? 'unknown'}): ${responseData?['error'] ?? 'Unknown error'}';
-          break;
-        default:
-          errorMessage = 'An unexpected error occurred: ${e.message}';
-      }
-      throw DealException(errorMessage);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching deals: $e');
-      }
-      throw DealException('An unexpected error occurred: $e');
->>>>>>> aziz
     }
   }
 }
