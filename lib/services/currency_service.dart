@@ -46,7 +46,6 @@ class CurrencyService {
 
   Future<Map<String, dynamic>> analyzeAndConvertImage(XFile image, {String? countryCode}) async {
     // Get auth headers
-    final headers = await _getAuthHeaders();
     
     // Create form data
     final formData = FormData();

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../widgets/custom_bottom_nav.dart';
 // Fix the import for Country class
-import '../models/country.dart' as country_model;
 
 class CurrencyConverterScreen extends StatelessWidget {
   final VoidCallback toggleTheme;
@@ -594,58 +593,6 @@ class CurrencyConverterScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCountryInput({
-    required String label,
-    required String hint,
-    required ValueChanged<String> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF333333),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                label,
-                style: TextStyle(color: Colors.grey[400], fontSize: 14),
-              ),
-              const Spacer(),
-              Icon(
-                label == 'From' ? Icons.flight_takeoff : Icons.flight_land,
-                color: const Color(0xFF4CD964),
-                size: 16,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            onChanged: onChanged,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-            textCapitalization: TextCapitalization.characters,
-            maxLength: 2,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 24),
-              border: InputBorder.none,
-              counterText: '',
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // Add a button in the UI section of the screen
   Widget _buildStatisticsButton(BuildContext context) {

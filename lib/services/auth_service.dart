@@ -210,11 +210,6 @@ class AuthService {
         return true; // Default to first launch if we can't get SharedPreferences
       }
       
-      if (prefs == null) {
-        print('SharedPreferences instance is null');
-        return true; // Default to first launch
-      }
-      
       // Check if the key exists
       bool keyExists = false;
       try {
@@ -268,11 +263,6 @@ class AuthService {
         prefs = await SharedPreferences.getInstance();
       } catch (e) {
         print('Error getting SharedPreferences instance: $e');
-        return;
-      }
-      
-      if (prefs == null) {
-        print('SharedPreferences instance is null');
         return;
       }
       
