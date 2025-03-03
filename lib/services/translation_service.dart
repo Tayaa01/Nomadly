@@ -1,8 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+<<<<<<< HEAD
 import '../network/api_config.dart'; // Import the API config
 
 class TranslationService {
+=======
+
+class TranslationService {
+  static const String baseUrl = 'http://localhost:3000';
+
+>>>>>>> aziz
   static Future<String> translateText({
     required String text,
     required String targetLanguage,
@@ -15,8 +22,16 @@ class TranslationService {
       print('Target: $targetLanguage');
 
       final response = await http.post(
+<<<<<<< HEAD
         Uri.parse('${ApiConfig.BASE_URL}${ApiConfig.TRANSLATION_ENDPOINT}'),  // Use BASE_URL and TRANSLATION_ENDPOINT
         headers: ApiConfig.commonHeaders,
+=======
+        Uri.parse('$baseUrl/translation/translate'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+>>>>>>> aziz
         body: jsonEncode({
           'text': text,
           'targetLanguage': targetLanguage,

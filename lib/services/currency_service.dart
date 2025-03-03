@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+<<<<<<< HEAD
 import '../services/auth_service.dart';
 import '../network/api_config.dart'; // Import the API config
 
@@ -11,6 +12,15 @@ class CurrencyService {
     connectTimeout: Duration(milliseconds: ApiConfig.CONNECT_TIMEOUT),
     receiveTimeout: Duration(milliseconds: ApiConfig.RECEIVE_TIMEOUT),
     sendTimeout: Duration(milliseconds: ApiConfig.SEND_TIMEOUT),
+=======
+
+class CurrencyService {
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: 'http://192.168.120.159:3000',
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+    sendTimeout: const Duration(seconds: 30),
+>>>>>>> aziz
   ))..interceptors.add(
     DioCacheInterceptor(
       options: CacheOptions(
@@ -22,6 +32,7 @@ class CurrencyService {
       ),
     ),
   );
+<<<<<<< HEAD
   
   final AuthService _authService = AuthService();
 
@@ -48,6 +59,15 @@ class CurrencyService {
     // Get auth headers
     
     // Create form data
+=======
+
+  Future<List<String>> fetchCurrencies() async {
+    final response = await _dio.get('/currency-converter/currencies');
+    return List<String>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> analyzeAndConvertImage(XFile image, String sourceCountry, String targetCountry) async {
+>>>>>>> aziz
     final formData = FormData();
     formData.files.add(MapEntry(
       'receipt',
@@ -57,6 +77,7 @@ class CurrencyService {
         contentType: MediaType('image', 'jpeg'),
       ),
     ));
+<<<<<<< HEAD
     
     // Add detected country code if available - use 'country' parameter as shown in the cURL example
     if (countryCode != null) {
@@ -72,6 +93,18 @@ class CurrencyService {
       options: Options(
         headers: {
           'Authorization': 'Bearer ${await _authService.getToken()}',
+=======
+    formData.fields.add(MapEntry('country', sourceCountry));
+    formData.fields.add(MapEntry('targetCountry', targetCountry));
+
+    print('Sending API request with image: ${image.path}, sourceCountry: $sourceCountry, targetCountry: $targetCountry');
+
+    final response = await _dio.post(
+      '/tax-free/analyze',
+      data: formData,
+      options: Options(
+        headers: {
+>>>>>>> aziz
           'accept': 'application/json',
           'Content-Type': 'multipart/form-data',
         },
@@ -82,6 +115,7 @@ class CurrencyService {
     return response.data;
   }
 
+<<<<<<< HEAD
   Future<Map<String, dynamic>> convertCurrency(String amount) async {
     final headers = await _getAuthHeaders();
     final response = await _dio.post(
@@ -90,6 +124,16 @@ class CurrencyService {
         'amount': amount,
       },
       options: Options(headers: headers),
+=======
+  Future<Map<String, dynamic>> convertCurrency(String sourceCurrency, String targetCurrency, String amount) async {
+    final response = await _dio.get(
+      '/currency-converter/convert',
+      queryParameters: {
+        'from': sourceCurrency,
+        'to': targetCurrency,
+        'amount': amount,
+      },
+>>>>>>> aziz
     );
 
     return response.data;

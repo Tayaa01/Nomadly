@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:shared_preferences/shared_preferences.dart';
+=======
+>>>>>>> aziz
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -102,7 +105,11 @@ class WelcomePage extends StatelessWidget {
 
               // Action Buttons
               ElevatedButton(
+<<<<<<< HEAD
                 onPressed: () => Navigator.pushReplacementNamed(context, '/sign-in'),
+=======
+                onPressed: () => Navigator.pushNamed(context, '/sign-in'),
+>>>>>>> aziz
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4CD964),
                   foregroundColor: Colors.black,
@@ -145,6 +152,7 @@ class WelcomePage extends StatelessWidget {
           ),
         ),
       ),
+<<<<<<< HEAD
       floatingActionButton: FloatingActionButton(
         onPressed: () => _resetWelcomeFlag(context), // Pass context here
         backgroundColor: Colors.grey[800],
@@ -165,4 +173,8 @@ class WelcomePage extends StatelessWidget {
       print('Error resetting welcome flag: $e');
     }
   }
+=======
+    );
+  }
+>>>>>>> aziz
 }

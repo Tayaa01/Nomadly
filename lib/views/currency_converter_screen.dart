@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/currency_viewmodel.dart';
+<<<<<<< HEAD
 import '../widgets/custom_bottom_nav.dart';
 // Fix the import for Country class
+=======
+import '../widgets/custom_bottom_nav.dart'; // Add this import
+>>>>>>> aziz
 
 class CurrencyConverterScreen extends StatelessWidget {
   final VoidCallback toggleTheme;
@@ -67,7 +71,11 @@ class CurrencyConverterScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
+<<<<<<< HEAD
                         // Amount Display
+=======
+                        // Amount Input with currency code
+>>>>>>> aziz
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -120,6 +128,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 24),
+<<<<<<< HEAD
                         
                         // Display user's countries with change option
                         Container(
@@ -207,6 +216,42 @@ class CurrencyConverterScreen extends StatelessWidget {
                           ),
                         ),
                         
+=======
+
+                        // Country Inputs Row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCountryInput(
+                                label: 'From',
+                                hint: 'FR',
+                                onChanged:
+                                    (value) =>
+                                        viewModel.sourceCountry =
+                                            value.toUpperCase(),
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Icon(
+                                Icons.swap_horiz,
+                                color: Color(0xFF4CD964),
+                                size: 28,
+                              ),
+                            ),
+                            Expanded(
+                              child: _buildCountryInput(
+                                label: 'To',
+                                hint: 'US',
+                                onChanged:
+                                    (value) =>
+                                        viewModel.targetCountry =
+                                            value.toUpperCase(),
+                              ),
+                            ),
+                          ],
+                        ),
+>>>>>>> aziz
                       ],
                     ),
                   ),
@@ -250,7 +295,11 @@ class CurrencyConverterScreen extends StatelessWidget {
                           ),
 
                         // Results Display (if any)
+<<<<<<< HEAD
                         if (viewModel.convertedAmount != null) ...[
+=======
+                        if (viewModel.convertedAmount != null)
+>>>>>>> aziz
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -263,6 +312,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                             ),
                             child: Column(
                               children: [
+<<<<<<< HEAD
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -308,12 +358,33 @@ class CurrencyConverterScreen extends StatelessWidget {
                                       ),
                                     ),
                                   ],
+=======
+                                const Text(
+                                  'Converted Amount',
+                                  style: TextStyle(
+                                    color: Color(0xFFA5A5A5),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${viewModel.convertedAmount?.toStringAsFixed(2)} ${viewModel.convertedCurrencySymbol}',
+                                  style: const TextStyle(
+                                    color: Color(0xFFFFFFFF),
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+>>>>>>> aziz
                                 ),
                               ],
                             ),
                           ),
+<<<<<<< HEAD
                           const SizedBox(height: 24),
                         ],
+=======
+                        const SizedBox(height: 24),
+>>>>>>> aziz
 
                         // Action Buttons with updated style
                         Row(
@@ -376,7 +447,11 @@ class CurrencyConverterScreen extends StatelessWidget {
                                   elevation: 0,
                                 ),
                                 onPressed:
+<<<<<<< HEAD
                                     viewModel.isConverting || viewModel.selectedImage == null
+=======
+                                    viewModel.isConverting
+>>>>>>> aziz
                                         ? null
                                         : viewModel.convertCurrency,
                                 child:
@@ -402,11 +477,202 @@ class CurrencyConverterScreen extends StatelessWidget {
 
                         // Tax Refund Tips (if any)
                         if (viewModel.showTips) ...[
+<<<<<<< HEAD
                           // ...existing tax refund UI...
                         ],
 
                         // Add the statistics button
                         _buildStatisticsButton(context),
+=======
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Tax Refund Information',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (viewModel.isTaxRefundAvailable) ...[
+                            // Tax Refund Amount
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E1E1E),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: const Color(0xFF4CD964),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'Estimated Tax Refund',
+                                    style: TextStyle(
+                                      color: Color(0xFFA5A5A5),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '${viewModel.taxRefundAmount?.toStringAsFixed(2)} ${viewModel.taxRefundCurrency}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF4CD964),
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Instructions
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E1E1E),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        color: Color(0xFF4CD964),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'How to get your refund',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    viewModel.taxRefundInstructions ?? '',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Requirements
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E1E1E),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.checklist,
+                                        color: Color(0xFF4CD964),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Requirements',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...viewModel.taxRefundRequirements.map(
+                                    (req) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            '• ',
+                                            style: TextStyle(
+                                              color: Color(0xFF4CD964),
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              req,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E1E1E),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        viewModel.convertedMinAmount != null
+                                            ? Icons.info_outline
+                                            : Icons.error_outline,
+                                        color: const Color(0xFF4CD964),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          viewModel.taxRefundMessage ?? '',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (viewModel.convertedMinAmount != null) ...[
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Minimum amount: ${viewModel.convertedMinAmount?.toStringAsFixed(2)} ${viewModel.convertedMinCurrency}',
+                                      style: const TextStyle(
+                                        color: Color(0xFF4CD964),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+>>>>>>> aziz
                       ],
                     ),
                   ),
@@ -426,9 +692,17 @@ class CurrencyConverterScreen extends StatelessWidget {
                 Navigator.pushReplacementNamed(context, '/tips');
               } else if (index == 3) {
                 Navigator.pushReplacementNamed(context, '/translation');
+<<<<<<< HEAD
               } else if (index == 4) {
                 Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
               }
+=======
+              }
+              else if (index == 4) {
+              Navigator.pushReplacementNamed(context, '/planner');
+            }
+              // Add other navigation cases here as needed
+>>>>>>> aziz
             }
           },
         ),
@@ -436,6 +710,7 @@ class CurrencyConverterScreen extends StatelessWidget {
     );
   }
 
+<<<<<<< HEAD
   // Improve country picker dialog
   void _showCountryPicker(BuildContext context, CurrencyViewModel viewModel) {
     // Create a list of common countries manually
@@ -612,6 +887,57 @@ class CurrencyConverterScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
+=======
+  Widget _buildCountryInput({
+    required String label,
+    required String hint,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF333333),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: TextStyle(color: Colors.grey[400], fontSize: 14),
+              ),
+              const Spacer(),
+              Icon(
+                label == 'From' ? Icons.flight_takeoff : Icons.flight_land,
+                color: const Color(0xFF4CD964),
+                size: 16,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            onChanged: onChanged,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+            textCapitalization: TextCapitalization.characters,
+            maxLength: 2,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 24),
+              border: InputBorder.none,
+              counterText: '',
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        ],
+>>>>>>> aziz
       ),
     );
   }

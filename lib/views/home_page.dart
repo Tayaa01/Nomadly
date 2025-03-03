@@ -1,10 +1,46 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import '../widgets/custom_bottom_nav.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
+=======
+import 'package:url_launcher/url_launcher.dart';
+import '../widgets/custom_bottom_nav.dart';
+import 'package:nomadly/services/flight_service.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, dynamic>> flights = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTravelData();
+  }
+
+  Future<void> _fetchTravelData() async {
+    flights = await FlightService.fetchCheapestFlights();
+
+    // Sort flights by price if available
+    flights.sort((a, b) => (a['price'] ?? double.infinity).compareTo(b['price'] ?? double.infinity));
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  @override
+>>>>>>> aziz
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -56,7 +92,16 @@ class HomePage extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
+<<<<<<< HEAD
                     _buildCategoryChip(icon: Icons.flight, label: 'Flights'),
+=======
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/travel-results');
+                      },
+                      child: _buildCategoryChip(icon: Icons.flight, label: 'Flights'),
+                    ),
+>>>>>>> aziz
                     _buildCategoryChip(icon: Icons.hotel, label: 'Hotels'),
                     _buildCategoryChip(icon: Icons.restaurant, label: 'Food'),
                     _buildCategoryChip(
@@ -85,12 +130,30 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
+<<<<<<< HEAD
                     _buildFeatureCard(
                       title: 'New York City',
                       subtitle: 'Flights from \$245',
                       imageUrl: 'assets/images/flight.jpg',
                       height: 200,
                     ),
+=======
+                    isLoading
+                        ? Center(child: CircularProgressIndicator())
+                        : Column(
+                            children: flights.map((flight) {
+                              return GestureDetector(
+                                onTap: () => _launchURL(flight['link']),
+                                child: _buildFeatureCard(
+                                  title: flight['title'],
+                                  subtitle: 'Flights from \$${flight['price']}',
+                                  imageUrl: 'assets/images/flight.jpg',
+                                  height: 200,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+>>>>>>> aziz
                   ],
                 ),
               ),
@@ -179,7 +242,11 @@ class HomePage extends StatelessWidget {
           } else if (index == 3) {
             Navigator.pushReplacementNamed(context, '/translation');
           } else if (index == 4) {
+<<<<<<< HEAD
             Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
+=======
+            Navigator.pushReplacementNamed(context, '/planner');
+>>>>>>> aziz
           }
         },
       ),
@@ -348,4 +415,18 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+<<<<<<< HEAD
+=======
+
+  void _launchURL(String url) async {
+    Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open $url')),
+      );
+    }
+  }
+>>>>>>> aziz
 }
