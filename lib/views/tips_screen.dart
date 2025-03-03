@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/tip.dart';  // Changed from package:nomadly/models/tip.dart
-import '../services/deals_service.dart';  // Changed from package:nomadly/services/deals_service.dart
+import '../models/tip.dart'; // Changed from package:nomadly/models/tip.dart
+import '../services/deals_service.dart'; // Changed from package:nomadly/services/deals_service.dart
 import 'dart:ui';
 import '../widgets/custom_bottom_nav.dart';
 import '../widgets/deal_map_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TipsScreen extends StatefulWidget {
   const TipsScreen({super.key});
@@ -144,7 +145,10 @@ class _TipsScreenState extends State<TipsScreen>
             } else if (index == 3) {
               Navigator.pushReplacementNamed(context, '/translation');
             } else if (index == 4) {
-              Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
+              Navigator.pushReplacementNamed(
+                context,
+                '/statistics',
+              ); // Add this condition
             }
           }
         },
@@ -606,82 +610,16 @@ class _TipsScreenState extends State<TipsScreen>
   }
 
   Widget _buildDealCard(Deal deal) {
-    final verified = deal.metadata.verified;
-    final popularity = deal.metadata.popularity ?? 0;
-    final source = deal.metadata.source;
-    final dealType = deal.dealDetails.dealType ?? 'standard';
-    final promoCode = deal.dealDetails.promoCode;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color:
-              verified
-                  ? const Color(0xFF4CD964).withOpacity(0.3)
-                  : Colors.grey[800]!,
-        ),
+        border: Border.all(color: Colors.grey[800]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with popularity and verification
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                if (verified)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CD964).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: const [
-                        Icon(
-                          Icons.verified,
-                          color: Color(0xFF4CD964),
-                          size: 16,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Verified',
-                          style: TextStyle(
-                            color: Color(0xFF4CD964),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const Spacer(),
-                Icon(Icons.star, color: Colors.amber, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  '${popularity.toStringAsFixed(0)}%',
-                  style: const TextStyle(
-                    color: Colors.amber,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
           // Deal content
           Padding(
             padding: const EdgeInsets.all(16),
@@ -696,106 +634,80 @@ class _TipsScreenState extends State<TipsScreen>
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (deal.discount != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CD964).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      deal.discount!,
+                      style: const TextStyle(
+                        color: Color(0xFF4CD964),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   deal.description,
                   style: TextStyle(color: Colors.grey[400], fontSize: 14),
                 ),
                 const SizedBox(height: 16),
-                // Deal type and source
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                // Reason
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[800]!.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: Colors.amber[400],
+                        size: 16,
                       ),
-                      decoration: BoxDecoration(
-                        color: _getDealTypeColor(dealType).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _getDealTypeIcon(dealType),
-                            color: _getDealTypeColor(dealType),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDealType(dealType),
-                            style: TextStyle(
-                              color: _getDealTypeColor(dealType),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      source,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-                if (promoCode != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CD964).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFF4CD964).withOpacity(0.3),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'PROMO CODE',
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          deal.reason,
                           style: TextStyle(
-                            color: Color(0xFF4CD964),
+                            color: Colors.grey[300],
                             fontSize: 12,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          promoCode,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                // Action button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _launchDealUrl(deal.url),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CD964),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ),
-                    child: const Text(
-                      'View Deal',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                if (deal.url != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _launchDealUrl(deal.url!),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CD964),
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'View Deal',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -804,48 +716,16 @@ class _TipsScreenState extends State<TipsScreen>
     );
   }
 
-  Color _getDealTypeColor(String dealType) {
-    switch (dealType) {
-      case 'promo_code':
-        return const Color(0xFF4CD964);
-      case 'bundle':
-        return const Color(0xFF5AC8FA);
-      case 'sale':
-        return const Color(0xFFFF2D55);
-      case 'flash_deal':
-        return const Color(0xFFFF9500);
-      case 'seasonal':
-        return const Color(0xFF5856D6);
-      default:
-        return Colors.grey;
-    }
-  }
-
   Future<void> _launchDealUrl(String url) async {
-    // Implement URL launching logic here
-    // You might want to use url_launcher package
-    print('Launching URL: $url');
-  }
-
-  IconData _getDealTypeIcon(String dealType) {
-    switch (dealType) {
-      case 'promo_code':
-        return Icons.confirmation_number_outlined;
-      case 'bundle':
-        return Icons.inventory_2_outlined;
-      case 'sale':
-        return Icons.sell_outlined;
-      case 'flash_deal':
-        return Icons.flash_on_outlined;
-      case 'seasonal':
-        return Icons.event_outlined;
-      default:
-        return Icons.local_offer_outlined;
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open deal URL')),
+        );
+      }
     }
-  }
-
-  String _formatDealType(String dealType) {
-    final formatted = dealType.replaceAll('_', ' ');
-    return '${formatted[0].toUpperCase()}${formatted.substring(1)}';
   }
 }
