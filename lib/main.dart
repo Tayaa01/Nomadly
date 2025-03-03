@@ -10,6 +10,7 @@ import 'views/tips_screen.dart';
 import 'views/sign_up_page.dart';
 import 'services/auth_service.dart';
 import 'views/statistics_screen.dart';
+import 'views/profile_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -145,6 +146,7 @@ class _MyAppState extends State<MyApp> {
         '/translation': (context) => const SpeechToTextView(),
         '/tips': (context) => const TipsScreen(),
         '/statistics': (context) => const StatisticsScreen(), // Add this new route
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }
