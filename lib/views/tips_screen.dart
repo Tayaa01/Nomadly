@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/tip.dart';
 import '../services/deals_service.dart';
-import 'dart:ui';
 import '../widgets/custom_bottom_nav.dart';
 import '../widgets/deal_map_view.dart';
 import 'package:url_launcher/url_launcher.dart';

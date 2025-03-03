@@ -45,13 +45,13 @@ class User {
     String? countryCode,
   }) {
     return User(
-      id: this.id,
+      id: id,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       countryCode: countryCode ?? this.countryCode,
-      role: this.role,
-      isActive: this.isActive,
+      role: role,
+      isActive: isActive,
     );
   }
 }

@@ -232,7 +232,7 @@ class DealsService {
           validateStatus: (status) => status != null && status < 500,
         ),
       ) {
-    (_dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate = (
+    (_dio.httpClientAdapter as IOHttpClientAdapter).onHttpClientCreate = (
       client,
     ) {
       client.badCertificateCallback = (cert, host, port) => true;

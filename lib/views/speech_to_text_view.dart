@@ -32,15 +32,15 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   bool _isRequestPending = false;
   List<Discussion> _discussions = [];
   Discussion? _currentDiscussion;
-  TextEditingController _messageController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
 
   String _selectedSourceLanguage = 'en';
   String _selectedTargetLanguage = 'fr';
   String _selectedCategory = 'All';
   bool _isOfflineMode = false;
-  bool _isSearching = false;
+  final bool _isSearching = false;
   String _searchQuery = '';
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   final List<Map<String, String>> _languages = [
     {'code': 'en', 'name': 'English'},
@@ -559,7 +559,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   }
 
   Widget _buildCategoryFilter() {
-    return Container(
+    return SizedBox(
       height: 60,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -649,7 +649,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     final phrases = PredefinedPhrases.phrasesByCategory[_currentDiscussion!.category] ?? [];
     if (phrases.isEmpty) return SizedBox.shrink();
 
-    return Container(
+    return SizedBox(
       height: 50,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -877,7 +877,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   }
 
   Future<Map<String, String>> _performOnlineTranslation() async {
-    final String url = 'https://lingva.ml/api/v1/${_selectedSourceLanguage}/${_selectedTargetLanguage}/${Uri.encodeComponent(_text)}';
+    final String url = 'https://lingva.ml/api/v1/$_selectedSourceLanguage/$_selectedTargetLanguage/${Uri.encodeComponent(_text)}';
 
     print('Sending translation request with text: $_text');
     print('Source language: $_selectedSourceLanguage, Target language: $_selectedTargetLanguage');
@@ -1118,7 +1118,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             ),
           ],
         ),
-        content: Container(
+        content: SizedBox(
           width: double.maxFinite,
           child: Column(
             mainAxisSize: MainAxisSize.min,
