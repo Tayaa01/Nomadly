@@ -54,7 +54,9 @@ class _TravelResultsScreenState extends State<TravelResultsScreen> {
                       ? Text("No flights found.")
                       : Column(
                           children: flights.map((flight) {
+                            bool isCheapest = flight == flights.first;
                             return Card(
+                              color: isCheapest ? Colors.green[100] : null, // Highlight the cheapest flight
                               child: ListTile(
                                 title: Text(flight['title']),
                                 subtitle: Text("${flight['snippet']}\nPrice: ${flight['price'] ?? 'N/A'}"),

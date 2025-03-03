@@ -1,25 +1,83 @@
 import 'package:flutter/material.dart';
-import 'travel_preferences.dart';
+import '/TravelResultsScreen.dart';
+import 'views/currency_converter_screen.dart'; // Update this import
+import 'views/welcome_page.dart';
+import 'views/sign_in_page.dart';
+import 'views/home_page.dart';
+import 'views/speech_to_text_view.dart'; // Add this import
+import 'views/tips_screen.dart'; // Add this import
+import '/travel_preferences.dart';
 
 void main() {
-  runApp(TravelPlannerApp());
+  runApp(const MyApp());
 }
 
-class TravelPlannerApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool isDarkMode = true;
+
+  ThemeData get lightTheme => ThemeData(
+    scaffoldBackgroundColor: Colors.white,
+    colorScheme: ColorScheme.light(
+      surface: const Color(0xFFF5F5F5),
+      primary: const Color(0xFF1E1E1E),
+      onPrimary: Colors.white,
+      secondary: const Color(0xFF666666),
+    ),
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: Color(0xFF1E1E1E)),
+      bodyMedium: TextStyle(color: Color(0xFF666666)),
+    ),
+  );
+
+  ThemeData get darkTheme => ThemeData(
+    scaffoldBackgroundColor: const Color(0xFF000000),
+    colorScheme: ColorScheme.dark(
+      surface: const Color(0xFF1E1E1E),
+      primary: const Color(0xFFF2F2F2),
+      onPrimary: const Color(0xFF000000),
+      secondary: const Color(0xFFA5A5A5),
+    ),
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: Color(0xFFFFFFFF)),
+      bodyMedium: TextStyle(color: Color(0xFFA5A5A5)),
+    ),
+  );
+
+  void toggleTheme() {
+    setState(() {
+      isDarkMode = !isDarkMode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Currency Converter',
+      theme: isDarkMode ? darkTheme : lightTheme,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        primarySwatch: Colors.blue,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.blue,
-      ),
-      themeMode: ThemeMode.system, // Auto-switch based on system setting
-      home: TravelPreferencesScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const WelcomePage(),
+        '/home': (context) => const HomePage(),
+        '/sign-in': (context) => const SignInPage(),
+        '/currency-converter':
+            (context) => CurrencyConverterScreen(
+              toggleTheme: toggleTheme,
+              isDarkMode: isDarkMode,
+            ),
+        '/translation': (context) => const SpeechToTextView(), // Add this route
+        '/tips': (context) => const TipsScreen(), // Add this route
+        '/planner': (context) => const TravelPreferencesScreen(), // Add this route
+        '/travel-results': (context) =>  TravelResultsScreen(destination: '',), // Add this route
+
+      },
     );
   }
 }

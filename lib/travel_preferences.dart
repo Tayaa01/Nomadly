@@ -3,6 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart'; // Import Geolocator
+import '../widgets/custom_bottom_nav.dart';
+import 'TravelResultsScreen.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class TravelPreferencesScreen extends StatefulWidget {
   const TravelPreferencesScreen({super.key});
@@ -24,6 +27,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
   
   // Store itinerary data
   List<dynamic>? itineraryData;
+  bool showActivities = false; // State variable to toggle between location and activities
 
   @override
   void initState() {
@@ -157,19 +161,34 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Day')),
-          DataColumn(label: Text('Title')),
-          DataColumn(label: Text('Estimated Cost')),
-        ],
-        rows: itineraryData!.map<DataRow>((day) {
-          return DataRow(cells: [
-            DataCell(Text(day["day"].toString())),
-            DataCell(Text(day["title"])),
-            DataCell(Text("\$${day["estimated_cost"]}")),
-          ]);
-        }).toList(),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: DataTable(
+          key: ValueKey<bool>(showActivities),
+          columns: const [
+            DataColumn(label: Text('Day')),
+            DataColumn(label: Text('Location/Activities')),
+            DataColumn(label: Text('Estimated Cost')),
+          ],
+          rows: itineraryData!.map<DataRow>((day) {
+            return DataRow(
+              cells: [
+                DataCell(Text(day["day"].toString())),
+                DataCell(
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showActivities = !showActivities;
+                      });
+                    },
+                    child: Text(showActivities ? day["activities"].join(", ") : day["title"]),
+                  ),
+                ),
+                DataCell(Text("\$${day["estimated_cost"]}")),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -177,7 +196,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Plan Your Journey"),
@@ -216,12 +235,33 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
                   const SizedBox(height: 32),
                   _buildTravelPlanCard(colorScheme),
                   const SizedBox(height: 32),
-                  _buildItineraryTable(), // Display table only
+                  if (itineraryData != null) ...[
+                    const SizedBox(height: 32),
+                    _buildItineraryTable(),
+                    const SizedBox(height: 32),
+                    _buildBudgetChart(),  // Add the chart here
+                  ],
                 ],
               ],
             ),
           ),
         ),
+      ),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 4,
+        onTap: (index) {
+          if (index != 4) {
+            if (index == 0) {
+              Navigator.pushReplacementNamed(context, '/home');
+            } else if (index == 2) {
+              Navigator.pushReplacementNamed(context, '/currency-converter');
+            } else if (index == 3) {
+              Navigator.pushReplacementNamed(context, '/translation');
+            } else if (index == 4) {
+              Navigator.pushReplacementNamed(context, '/planner', arguments: _destinationController.text);
+            }
+          }
+        },
       ),
     );
   }
@@ -290,6 +330,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: Colors.green, // Change the button color to green
       ),
       child: _isLoading
           ? const CircularProgressIndicator(color: Colors.white)
@@ -297,11 +338,88 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
     );
   }
 
+ Widget _buildBudgetChart() {
+  if (itineraryData == null || itineraryData!.isEmpty) {
+    return const SizedBox();
+  }
+
+  List<PieChartSectionData> sections = itineraryData!.map((day) {
+    return PieChartSectionData(
+      color: Colors.primaries[day["day"] % Colors.primaries.length],
+      value: day["estimated_cost"].toDouble(),
+      title: "\$${day["estimated_cost"]}",
+      radius: 55, // Increased for better visibility
+      titleStyle: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      badgeWidget: _buildBadge(day["day"]),
+      badgePositionPercentageOffset: 1.2, // Adjusted positioning
+    );
+  }).toList();
+
+  return Container(
+    height: 280, // Slightly taller for better spacing
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: const Color.fromARGB(46, 118, 168, 120),
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(color: Colors.black26, blurRadius: 6, spreadRadius: 3),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Budget Breakdown",
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: PieChart(
+            PieChartData(
+              sections: sections,
+              borderData: FlBorderData(show: false),
+              centerSpaceRadius: 45,
+              sectionsSpace: 3,
+              pieTouchData: PieTouchData(
+                touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// 🎯 Badge Widget for Each Section
+Widget _buildBadge(int day) {
+  return Container(
+    padding: const EdgeInsets.all(7),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 2),
+      ],
+    ),
+    child: Text(
+      "Day $day",
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black),
+    ),
+  );
+}
+
+
+
   Widget _buildTravelPlanCard(ColorScheme colorScheme) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 5,
-      color: colorScheme.primaryContainer,
+        color: const Color.fromARGB(146, 167, 190, 168), // Change the button color to green
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -320,9 +438,36 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
                 color: colorScheme.onPrimaryContainer,
               ),
             ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TravelResultsScreen(
+                      destination: _destinationController.text,
+                    ),
+                  ),
+                );
+              },
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.flight_takeoff_rounded),
+                  Icon(Icons.hotel),
+                  SizedBox(width: 8),
+                  Text("flights and hotels prices"),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+
 }
