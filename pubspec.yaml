@@ -40,7 +40,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   webview_flutter: ^4.7.0
   flutter_map: ^7.0.2
-  fl_chart: ^0.66.2
+  fl_chart: ^0.70.0
   latlong2: 0.9.1 
   url_launcher: ^6.3.1
   lottie: ^1.2.1

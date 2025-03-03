@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'travelresultsscreen.dart';
-import 'package:geolocator/geolocator.dart';  // Import Geolocator
-
+import 'package:geolocator/geolocator.dart'; // Import Geolocator
 
 class TravelPreferencesScreen extends StatefulWidget {
   const TravelPreferencesScreen({super.key});
@@ -23,10 +21,9 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
   String? travelPlan;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-
   
-
-  
+  // Store itinerary data
+  List<dynamic>? itineraryData;
 
   @override
   void initState() {
@@ -81,15 +78,13 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
     }
   }
 
-
-
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _destinationController.text = prefs.getString('destination') ?? '';
       _budgetController.text = prefs.getString('budget') ?? '';
       _activitiesController.text = prefs.getString('activities') ?? '';
-       _departureLocation = prefs.getString('departure') ?? '';
+      _departureLocation = prefs.getString('departure') ?? '';
     });
   }
 
@@ -98,9 +93,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
     await prefs.setString('destination', _destinationController.text);
     await prefs.setString('budget', _budgetController.text);
     await prefs.setString('activities', _activitiesController.text);
-      await prefs.setString('departure', _departureLocation ?? '');
-
-
+    await prefs.setString('departure', _departureLocation ?? '');
   }
 
   Future<void> generateTravelPlan() async {
@@ -128,7 +121,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "preferences": {
-           "departure": _departureLocation, // Send current location
+            "departure": _departureLocation, // Send current location
             "destination": _destinationController.text,
             "budget": _budgetController.text,
             "activities": _activitiesController.text,
@@ -138,10 +131,10 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
 
       if (response.statusCode == 200) {
         setState(() {
-          travelPlan = jsonDecode(response.body)["plan"];
+          var responseData = jsonDecode(response.body);
+          travelPlan = responseData["trip_name"];
+          itineraryData = responseData["day_itinerary"];
         });
-        if (!mounted) return;
-        
       } else {
         throw Exception('Failed to generate plan');
       }
@@ -157,6 +150,28 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildItineraryTable() {
+    if (itineraryData == null) return const SizedBox(); // No data to show
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('Day')),
+          DataColumn(label: Text('Title')),
+          DataColumn(label: Text('Estimated Cost')),
+        ],
+        rows: itineraryData!.map<DataRow>((day) {
+          return DataRow(cells: [
+            DataCell(Text(day["day"].toString())),
+            DataCell(Text(day["title"])),
+            DataCell(Text("\$${day["estimated_cost"]}")),
+          ]);
+        }).toList(),
+      ),
+    );
   }
 
   @override
@@ -200,6 +215,8 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
                 if (travelPlan != null) ...[
                   const SizedBox(height: 32),
                   _buildTravelPlanCard(colorScheme),
+                  const SizedBox(height: 32),
+                  _buildItineraryTable(), // Display table only
                 ],
               ],
             ),
@@ -251,144 +268,61 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
     required String label,
     required IconData icon,
     required String hint,
-    TextInputType? keyboardType,
+    TextInputType keyboardType = TextInputType.text,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-              ),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildActionButton() {
-    return FilledButton(
+    return ElevatedButton(
       onPressed: _isLoading ? null : generateTravelPlan,
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: _isLoading
-          ? const SizedBox(
-              height: 24,
-              width: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.auto_awesome),
-                SizedBox(width: 8),
-                Text(
-                  "Create My Travel Plan",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
+          ? const CircularProgressIndicator(color: Colors.white)
+          : const Text('Create My Travel Plan'),
     );
   }
 
   Widget _buildTravelPlanCard(ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.map_rounded,
-                color: colorScheme.primary,
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 5,
+      color: colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              travelPlan ?? '',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Your Travel Plan',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your personalized travel plan has been generated!',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onPrimaryContainer,
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            travelPlan!,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          
-              const SizedBox(height: 24),
-          FilledButton.tonal(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TravelResultsScreen(
-                    destination: _destinationController.text,
-
-                  ),
-                ),
-              );
-            },
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.map_outlined),
-                SizedBox(width: 8),
-                Text("flights and hotels prices"),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-
-  @override
-  void dispose() {
-    _destinationController.dispose();
-    _budgetController.dispose();
-    _activitiesController.dispose();
-    _animationController.dispose();
-    super.dispose();
-  }
-}  
+}
