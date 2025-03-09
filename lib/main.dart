@@ -38,11 +38,11 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _checkStartupLogic() async {
     Widget startScreen;
-    
+
     // Check if user is logged in
     try {
       bool isLoggedIn = await _authService.isLoggedIn();
-      
+
       if (isLoggedIn) {
         print('User is logged in, showing home page');
         startScreen = const HomePage();
@@ -50,16 +50,16 @@ class _MyAppState extends State<MyApp> {
         // User is not logged in, show sign-in page
         print('User is not logged in, showing sign-in page');
         startScreen = const SignInPage();
-        
+
         // Check if this is a new installation (no preferences exist at all)
         SharedPreferences prefs = await SharedPreferences.getInstance();
         bool hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
-        
+
         if (!hasSeenWelcome) {
           // First time ever opening the app
           print('First installation, showing welcome page');
           startScreen = const WelcomePage();
-          
+
           // Mark that user has seen welcome page
           await prefs.setBool('has_seen_welcome', true);
         }
@@ -139,13 +139,14 @@ class _MyAppState extends State<MyApp> {
         '/home': (context) => const HomePage(),
         '/sign-in': (context) => const SignInPage(),
         '/sign-up': (context) => const SignUpPage(),
-        '/currency-converter': (context) => CurrencyConverterScreen(
+        '/currency-converter':
+            (context) => CurrencyConverterScreen(
               toggleTheme: toggleTheme,
               isDarkMode: isDarkMode,
             ),
         '/translation': (context) => const SpeechToTextView(),
         '/tips': (context) => const TipsScreen(),
-        '/statistics': (context) => const StatisticsScreen(), // Add this new route
+        '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
       },
     );
