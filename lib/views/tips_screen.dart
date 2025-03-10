@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/deals_service.dart';
 import '../widgets/custom_bottom_nav.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'cultural_tips_screen.dart';
 
 class TipsScreen extends StatefulWidget {
   const TipsScreen({super.key});
@@ -10,10 +11,10 @@ class TipsScreen extends StatefulWidget {
   State<TipsScreen> createState() => _TipsScreenState();
 }
 
-class _TipsScreenState extends State<TipsScreen>
-    with SingleTickerProviderStateMixin {
+class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
   final DealsService _dealsService = DealsService();
   late TabController _tabController;
+  late TabController _mainTabController;
   String _selectedCountry = 'global';
   String _selectedCategory = 'travel';
   bool _isLoading = false;
@@ -35,6 +36,7 @@ class _TipsScreenState extends State<TipsScreen>
       length: _validCategories.length,
       vsync: this,
     );
+    _mainTabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabChange);
     _loadDeals();
   }
@@ -104,54 +106,29 @@ class _TipsScreenState extends State<TipsScreen>
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E1E1E),
         elevation: 0,
-        title: Row(
-          children: [
-            const Text(
-              'Travel Tips',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CD964),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _selectedCountry.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+        title: const Text(
+          'Travel Tips',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        bottom: TabBar(
+          controller: _mainTabController,
+          indicatorColor: const Color(0xFF4CD964),
+          indicatorWeight: 3,
+          labelColor: const Color(0xFF4CD964),
+          unselectedLabelColor: Colors.grey,
+          tabs: const [
+            Tab(icon: Icon(Icons.local_offer), text: 'DEALS'),
+            Tab(icon: Icon(Icons.lightbulb_outline), text: 'CULTURAL TIPS'),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          _buildCategoryTabs(),
-          _buildCountrySelector(),
-          Expanded(
-            child:
-                _isLoading
-                    ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF4CD964),
-                      ),
-                    )
-                    : _error != null
-                    ? _buildErrorView()
-                    : _dealAnalysis == null
-                    ? _buildEmptyView()
-                    : _buildDealsList(),
-          ),
-        ],
+      body: TabBarView(
+        controller: _mainTabController,
+        children: [_buildDealsTab(), const CulturalTipsScreen()],
       ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 1,
@@ -169,6 +146,27 @@ class _TipsScreenState extends State<TipsScreen>
           }
         },
       ),
+    );
+  }
+
+  Widget _buildDealsTab() {
+    return Column(
+      children: [
+        _buildCategoryTabs(),
+        _buildCountrySelector(),
+        Expanded(
+          child:
+              _isLoading
+                  ? const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF4CD964)),
+                  )
+                  : _error != null
+                  ? _buildErrorView()
+                  : _dealAnalysis == null
+                  ? _buildEmptyView()
+                  : _buildDealsList(),
+        ),
+      ],
     );
   }
 
@@ -593,6 +591,7 @@ class _TipsScreenState extends State<TipsScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _mainTabController.dispose();
     super.dispose();
   }
 }
