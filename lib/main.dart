@@ -11,6 +11,8 @@ import 'views/sign_up_page.dart';
 import 'services/auth_service.dart';
 import 'views/statistics_screen.dart';
 import 'views/profile_screen.dart';
+import 'views/travel_preferences.dart';
+import 'views/travelResultsScreen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -148,6 +150,9 @@ class _MyAppState extends State<MyApp> {
         '/tips': (context) => const TipsScreen(),
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
+                '/planner': (context) => const TravelPreferencesScreen(), // Add this route
+        '/travel-results': (context) =>  TravelResultsScreen(destination: '',), // Add this route
+
       },
     );
   }
