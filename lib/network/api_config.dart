@@ -1,7 +1,7 @@
 class ApiConfig {
   // Main base URL for all services
   static const String BASE_URL =
-      "https://6b4b-2c0f-f698-40c3-f1b9-98f2-7e4f-bdbd-36d3.ngrok-free.app";
+      "https://63a9-160-157-136-218.ngrok-free.app";
 
   // Endpoints for Auth Service
   static const String REGISTER_ENDPOINT = "/auth/register";

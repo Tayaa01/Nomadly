@@ -34,8 +34,7 @@ class CustomBottomNav extends StatelessWidget {
               _buildNavItem(2, Icons.currency_exchange, 'Convert'),
               _buildNavItem(3, Icons.translate, 'Translate'),
               
-              _buildNavItem(4, Icons.bar_chart, 'Stats'), // This item exists
-              _buildNavItem(5, Icons.translate, 'Translate'),
+              _buildNavItem(4, Icons.bar_chart, 'Stats'), // This item exist
             ],
           ),
         ),
