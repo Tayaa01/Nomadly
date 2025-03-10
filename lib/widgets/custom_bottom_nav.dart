@@ -35,7 +35,7 @@ class CustomBottomNav extends StatelessWidget {
               _buildNavItem(3, Icons.translate, 'Translate'),
               
               _buildNavItem(4, Icons.bar_chart, 'Stats'), // This item exist
-              _buildNavItem(5, Icons.flight,'Translate'),
+              _buildNavItem(5, Icons.flight,'planner'),
             ],
           ),
         ),
