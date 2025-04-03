@@ -174,7 +174,12 @@ class HomePage extends StatelessWidget {
               context,
               '/currency-converter',
             );
-          } else if (index == 3) {  // Add this condition
+          } else if (index == 3) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/expense-tracker',
+            );
+          } else if (index == 4) {
             Navigator.pushReplacementNamed(
               context,
               '/translation',

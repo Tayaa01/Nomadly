@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
-import 'views/currency_converter_screen.dart';  // Update this import
+import 'package:provider/provider.dart';
+import 'views/currency_converter_screen.dart';
 import 'views/welcome_page.dart';
 import 'views/sign_in_page.dart';
 import 'views/home_page.dart';
-import 'views/speech_to_text_view.dart';  // Add this import
+import 'views/speech_to_text_view.dart';
+import 'views/expense_tracker_screen.dart';
+import 'viewmodels/expense_viewmodel.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ExpenseViewModel()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -68,7 +78,11 @@ class _MyAppState extends State<MyApp> {
           toggleTheme: toggleTheme,
           isDarkMode: isDarkMode,
         ),
-        '/translation': (context) => const SpeechToTextView(),  // Add this route
+        '/translation': (context) => const SpeechToTextView(),
+        '/expense-tracker': (context) => ExpenseTrackerScreen(
+          toggleTheme: toggleTheme,
+          isDarkMode: isDarkMode,
+        ),
       },
     );
   }

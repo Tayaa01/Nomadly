@@ -33,6 +33,10 @@ class CustomBottomNav extends StatelessWidget {
           label: 'Currency',
         ),
         BottomNavigationBarItem(
+          icon: Icon(Icons.receipt_long),
+          label: 'Expenses',
+        ),
+        BottomNavigationBarItem(
           icon: Icon(Icons.translate),
           label: 'Translate',
         ),
