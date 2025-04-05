@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/travel_group.dart';
 import '../viewmodels/travel_group_viewmodel.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../widgets/debt_flow_chart.dart';
 
 class BalanceVisualizationScreen extends StatefulWidget {
   final String groupId;
@@ -81,6 +82,13 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                 ),
                 SizedBox(height: 16),
                 _buildSettlementsList(viewModel, group),
+                SizedBox(height: 32),
+                Text(
+                  'Visualisation interactive des flux d\'argent',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                _buildInteractiveFlowChart(viewModel, group),
               ],
             ],
           ),
@@ -274,4 +282,46 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
   }
 
   int min(int a, int b) => a < b ? a : b;
+  
+  // Construire le graphique interactif des flux d'argent
+  Widget _buildInteractiveFlowChart(TravelGroupViewModel viewModel, TravelGroup group) {
+    // Ne montrer que les règlements non réglés pour la visualisation interactive
+    final activeSettlements = viewModel.settlements.where((s) => !s.isSettled).toList();
+    
+    return Column(
+      children: [
+        Container(
+          height: 400, // Plus grand pour une meilleure visualisation
+          child: DebtFlowChart(
+            settlements: viewModel.settlements, // Tous les règlements pour voir aussi les réglés
+            members: group.members,
+            isDarkMode: widget.isDarkMode,
+          ),
+        ),
+        SizedBox(height: 16),
+        Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Comment utiliser ce graphique :',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                SizedBox(height: 8),
+                Text('• Touchez un membre pour voir ses flux d\'argent'),
+                Text('• Les flèches indiquent la direction du paiement'),
+                Text('• Les lignes orange représentent les flux sélectionnés'),
+                Text('• Les lignes grises sont les règlements déjà effectués'),
+                Text('• L\'épaisseur des lignes est proportionnelle au montant'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

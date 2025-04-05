@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/travel_group.dart';
 import '../models/shared_expense.dart';
+import '../models/settlement_method.dart';
 import '../services/travel_group_service.dart';
+import '../utils/settlement_optimizer.dart';
 
 class TravelGroupViewModel extends ChangeNotifier {
   final TravelGroupService _travelGroupService = TravelGroupService();
@@ -221,13 +223,31 @@ class TravelGroupViewModel extends ChangeNotifier {
     }
   }
 
-  // Calculer les règlements pour le groupe courant
+  // Calculer les règlements optimaux pour le groupe courant
   Future<void> calculateSettlements() async {
     if (_currentGroup == null) return;
     
     _setLoading(true);
     try {
-      _settlements = await _travelGroupService.calculateSettlements(_currentGroup!.id);
+      // Récupérer les règlements existants qui sont déjà marqués comme réglés
+      final existingSettlements = await _travelGroupService.getSettlementsForGroup(_currentGroup!.id);
+      final settledSettlements = existingSettlements.where((s) => s.isSettled).toList();
+      
+      // Calculer les balances actuelles
+      final memberIds = _currentGroup!.members.map((m) => m.id).toList();
+      final balances = SettlementOptimizer.calculateBalances(_sharedExpenses, memberIds);
+      
+      // Calculer les règlements optimaux
+      final optimalSettlements = SettlementOptimizer.calculateOptimalSettlements(balances);
+      
+      // Combiner les règlements réglés avec les nouveaux règlements optimaux
+      _settlements = [...settledSettlements, ...optimalSettlements];
+      
+      // Sauvegarder les nouveaux règlements
+      for (var settlement in optimalSettlements) {
+        await _travelGroupService.addSettlement(settlement);
+      }
+      
       _errorMessage = '';
     } catch (e) {
       _errorMessage = 'Erreur lors du calcul des règlements: ${e.toString()}';
@@ -237,12 +257,18 @@ class TravelGroupViewModel extends ChangeNotifier {
   }
 
   // Marquer un règlement comme effectué
-  Future<void> markSettlementAsSettled(String settlementId) async {
+  Future<void> markSettlementAsSettled(
+    String settlementId, {
+    SettlementMethod? method,
+    String? notes,
+  }) async {
     _setLoading(true);
     try {
       final settlement = _settlements.firstWhere((s) => s.id == settlementId);
-      final updatedSettlement = settlement.markAsSettled();
-      
+      final updatedSettlement = settlement.markAsSettled(
+        method: method,
+        notes: notes,
+      );
       await _travelGroupService.updateSettlement(updatedSettlement);
       await loadSettlementsForCurrentGroup();
       _errorMessage = '';

@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 import 'expense.dart';
+import 'settlement_method.dart';
 
 class SharedExpense extends Expense {
   final String groupId; // ID du groupe de voyage
@@ -137,6 +138,7 @@ enum SplitType {
   equal, // Répartition égale entre tous les membres
   custom, // Montants personnalisés pour chaque membre
   percentage, // Pourcentage du total pour chaque membre
+  weighted, // Répartition pondérée selon des poids attribués
 }
 
 // Classe pour représenter un règlement entre deux membres
@@ -148,6 +150,8 @@ class Settlement {
   final String currency;
   final DateTime date;
   final bool isSettled;
+  final String? notes; // Notes supplémentaires sur le règlement
+  final SettlementMethod method; // Méthode de règlement
 
   Settlement({
     String? id,
@@ -157,12 +161,17 @@ class Settlement {
     required this.currency,
     DateTime? date,
     this.isSettled = false,
+    this.notes,
+    this.method = SettlementMethod.other,
   }) : 
     id = id ?? const Uuid().v4(),
     date = date ?? DateTime.now();
 
   // Méthode pour marquer un règlement comme effectué
-  Settlement markAsSettled() {
+  Settlement markAsSettled({
+    SettlementMethod? method,
+    String? notes,
+  }) {
     return Settlement(
       id: id,
       fromMemberId: fromMemberId,
@@ -171,6 +180,8 @@ class Settlement {
       currency: currency,
       date: date,
       isSettled: true,
+      notes: notes ?? this.notes,
+      method: method ?? this.method,
     );
   }
 
@@ -184,6 +195,8 @@ class Settlement {
       'currency': currency,
       'date': date.millisecondsSinceEpoch,
       'isSettled': isSettled,
+      'notes': notes,
+      'method': method.toString(),
     };
   }
 
@@ -197,6 +210,13 @@ class Settlement {
       currency: map['currency'],
       date: DateTime.fromMillisecondsSinceEpoch(map['date']),
       isSettled: map['isSettled'] ?? false,
+      notes: map['notes'],
+      method: map['method'] != null
+          ? SettlementMethod.values.firstWhere(
+              (e) => e.toString() == map['method'],
+              orElse: () => SettlementMethod.other,
+            )
+          : SettlementMethod.other,
     );
   }
 }

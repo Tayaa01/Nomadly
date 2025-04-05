@@ -7,6 +7,7 @@ import '../viewmodels/travel_group_viewmodel.dart';
 import 'shared_expense_form_screen.dart';
 import 'balance_visualization_screen.dart';
 import 'expense_distribution_screen.dart';
+import 'settlement_management_screen.dart';
 
 class TravelGroupDetailScreen extends StatefulWidget {
   final String groupId;
@@ -385,10 +386,30 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
                 icon: Icon(Icons.refresh),
                 label: Text('Recalculer'),
               ),
-              ElevatedButton.icon(
-                onPressed: () => _navigateToBalanceVisualization(group),
-                icon: Icon(Icons.bar_chart),
-                label: Text('Visualiser les soldes'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _navigateToBalanceVisualization(group),
+                    icon: Icon(Icons.bar_chart),
+                    label: Text('Visualiser les soldes'),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SettlementManagementScreen(
+                          groupId: group.id,
+                          isDarkMode: widget.isDarkMode,
+                          toggleTheme: widget.toggleTheme,
+                        ),
+                      ),
+                    ),
+                    icon: Icon(Icons.account_balance_wallet),
+                    label: Text('Gérer les règlements'),
+                  ),
+                ],
               ),
             ],
           ),
