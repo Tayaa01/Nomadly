@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/expense.dart';
 import '../viewmodels/expense_viewmodel.dart';
 import 'expense_chart_screen.dart';
+import 'travel_groups_screen.dart';
 import '../widgets/custom_bottom_nav.dart';
 
 class ExpenseTrackerScreen extends StatefulWidget {
@@ -340,6 +341,38 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
           ),
         ],
       ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TravelGroupsScreen(
+                    isDarkMode: widget.isDarkMode,
+                    toggleTheme: widget.toggleTheme,
+                  ),
+                ),
+              );
+            },
+            icon: Icon(Icons.group),
+            label: Text('Partager les dépenses'),
+            tooltip: 'Gérer les dépenses de groupe',
+            heroTag: 'shareExpenses',
+            backgroundColor: const Color(0xFF4CD964),
+          ),
+          SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: _showAddExpenseForm,
+            backgroundColor: const Color(0xFF4CD964),
+            child: const Icon(Icons.add),
+            heroTag: 'addExpense',
+          ),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 3,  // Index 3 for expenses
         onTap: (index) {
@@ -521,11 +554,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddExpenseForm,
-        backgroundColor: const Color(0xFF4CD964),
-        child: const Icon(Icons.add),
-      ),
+
     );
   }
 

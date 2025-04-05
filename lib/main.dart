@@ -6,13 +6,18 @@ import 'views/sign_in_page.dart';
 import 'views/home_page.dart';
 import 'views/speech_to_text_view.dart';
 import 'views/expense_tracker_screen.dart';
+import 'views/travel_groups_screen.dart';
 import 'viewmodels/expense_viewmodel.dart';
+import 'viewmodels/currency_viewmodel.dart';
+import 'viewmodels/travel_group_viewmodel.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ExpenseViewModel()),
+        ChangeNotifierProvider(create: (_) => CurrencyViewModel()),
+        ChangeNotifierProvider(create: (_) => TravelGroupViewModel()),
       ],
       child: const MyApp(),
     ),
@@ -80,6 +85,10 @@ class _MyAppState extends State<MyApp> {
         ),
         '/translation': (context) => const SpeechToTextView(),
         '/expense-tracker': (context) => ExpenseTrackerScreen(
+          toggleTheme: toggleTheme,
+          isDarkMode: isDarkMode,
+        ),
+        '/travel-groups': (context) => TravelGroupsScreen(
           toggleTheme: toggleTheme,
           isDarkMode: isDarkMode,
         ),
