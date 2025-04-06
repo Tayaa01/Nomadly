@@ -369,6 +369,27 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacementNamed(
+                              context,
+                              '/expense-tracker',
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[800],
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.receipt_long,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
                           onTap: () => Navigator.pushNamed(context, '/profile')
                               .then((_) => _loadData()), // Refresh after returning from profile
                           child: CircleAvatar(
