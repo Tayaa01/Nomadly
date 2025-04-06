@@ -38,6 +38,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1 # Add this line
 
 flutter_native_splash:
   color: "#000000"
@@ -50,6 +51,13 @@ flutter_native_splash:
     image_dark: assets/logodark.png
     icon_background_color_dark: "#000000"
   web: true
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/logodark.png" # Path to your custom icon
+  adaptive_icon_background: "#000000" # Background color for Android adaptive icons
+  adaptive_icon_foreground: "assets/logodark.png" # Foreground image for Android adaptive icons
 
 flutter:
   uses-material-design: true
