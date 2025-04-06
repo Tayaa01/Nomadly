@@ -496,16 +496,14 @@ class CurrencyConverterScreen extends StatelessWidget {
           },
         ),
         bottomNavigationBar: CustomBottomNav(
-          currentIndex: 2,  // Currency converter is index 2
+          currentIndex: -1,  // Aucun bouton sélectionné
           onTap: (index) {
-            if (index != 2) {  // If not current tab
-              if (index == 0) {
-                Navigator.pushReplacementNamed(context, '/home');
-              } else if (index == 3) {
-                Navigator.pushReplacementNamed(context, '/translation');
-              }
-              // Add other navigation cases here as needed
+            if (index == 0) {
+              Navigator.pushReplacementNamed(context, '/home');
+            } else if (index == 3) {
+              Navigator.pushReplacementNamed(context, '/translation');
             }
+            // Add other navigation cases here as needed
           },
         ),
       ),

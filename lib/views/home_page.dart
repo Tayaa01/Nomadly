@@ -38,10 +38,35 @@ class HomePage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.grey[800],
-                      child: const Icon(Icons.person, color: Colors.white),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacementNamed(
+                              context,
+                              '/expense-tracker',
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[800],
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.receipt_long,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.grey[800],
+                          child: const Icon(Icons.person, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -167,19 +192,15 @@ class HomePage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: 0,
+        currentIndex: -1,  // Aucun bouton sélectionné
         onTap: (index) {
+          // Ne plus naviguer vers expense-tracker depuis le bouton de recherche (index 1)
           if (index == 2) {
             Navigator.pushReplacementNamed(
               context,
               '/currency-converter',
             );
           } else if (index == 3) {
-            Navigator.pushReplacementNamed(
-              context,
-              '/expense-tracker',
-            );
-          } else if (index == 4) {
             Navigator.pushReplacementNamed(
               context,
               '/translation',

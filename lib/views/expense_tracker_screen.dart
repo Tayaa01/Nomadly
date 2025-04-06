@@ -374,16 +374,14 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: 3,  // Index 3 for expenses
+        currentIndex: -1,  // No button selected
         onTap: (index) {
-          if (index != 3) {  // If not the current tab
-            if (index == 0) {
-              Navigator.pushReplacementNamed(context, '/home');
-            } else if (index == 2) {
-              Navigator.pushReplacementNamed(context, '/currency-converter');
-            } else if (index == 4) {
-              Navigator.pushReplacementNamed(context, '/translation');
-            }
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/currency-converter');
+          } else if (index == 3) {
+            Navigator.pushReplacementNamed(context, '/translation');
           }
         },
       ),
