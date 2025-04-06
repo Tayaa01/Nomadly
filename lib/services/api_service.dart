@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/travel_request.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.123:3000';
+  final String baseUrl = 'http://localhost:3000';
 
   Future<String> generateItinerary(TravelRequest request) async {
     try {

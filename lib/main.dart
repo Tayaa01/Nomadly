@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nomadly/providers/chat_provider.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'views/currency_converter_screen.dart';
@@ -17,12 +18,17 @@ import 'views/travelResultsScreen.dart';
 import 'package:provider/provider.dart';
 import 'providers/destination_provider.dart';
 import 'screens/travel_form_screen.dart';
+import 'providers/theme_provider.dart';
+import 'providers/chat_provider.dart';
+
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => DestinationProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_)=> ChatProvider('haddari'))
         // Add other providers as needed
       ],
       child: const MyApp(),
