@@ -55,9 +55,9 @@ flutter_native_splash:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/logodark.png" # Path to your custom icon
+  image_path: "assets/applogo.png" # Replace logodark with applogo
   adaptive_icon_background: "#000000" # Background color for Android adaptive icons
-  adaptive_icon_foreground: "assets/logodark.png" # Foreground image for Android adaptive icons
+  adaptive_icon_foreground: "assets/applogo.png" # Foreground image for Android adaptive icons
 
 flutter:
   uses-material-design: true
