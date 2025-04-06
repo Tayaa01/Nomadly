@@ -13,10 +13,19 @@ import 'views/statistics_screen.dart';
 import 'views/profile_screen.dart';
 import 'views/travel_preferences.dart';
 import 'views/travelResultsScreen.dart';
+import 'package:provider/provider.dart';
+import 'providers/destination_provider.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => DestinationProvider()),
+        // Add other providers as needed
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -150,9 +159,10 @@ class _MyAppState extends State<MyApp> {
         '/tips': (context) => const TipsScreen(),
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
-                '/planner': (context) => const TravelPreferencesScreen(), // Add this route
-        '/travel-results': (context) =>  TravelResultsScreen(destination: '',), // Add this route
-
+        '/planner':
+            (context) => const TravelPreferencesScreen(), // Add this route
+        '/travel-results':
+            (context) => TravelResultsScreen(destination: ''), // Add this route
       },
     );
   }
