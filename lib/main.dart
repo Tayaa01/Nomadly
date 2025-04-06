@@ -154,6 +154,7 @@ class _MyAppState extends State<MyApp> {
       theme: isDarkMode ? _darkTheme : _lightTheme,
       debugShowCheckedModeBanner: false,
       home: _startScreen,
+      onGenerateRoute: _onGenerateRoute,
       routes: {
         '/welcome': (context) => const WelcomePage(),
         '/home': (context) => const HomePage(),
@@ -188,5 +189,44 @@ class _MyAppState extends State<MyApp> {
         ),
       },
     );
+  }
+
+  Route<dynamic> _onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/':
+        return MaterialPageRoute(builder: (_) => _startScreen ?? const SignInPage());
+      case '/login':
+        return MaterialPageRoute(builder: (_) => const SignInPage());
+      case '/register':
+        return MaterialPageRoute(builder: (_) => const SignUpPage());
+      case '/home':
+        return MaterialPageRoute(builder: (_) => const HomePage());
+      case '/profile':
+        return MaterialPageRoute(builder: (_) => const ProfileScreen());
+      case '/deals':
+        return MaterialPageRoute(builder: (_) => const DealsScreen());
+      case '/planner':
+        // Use PageRouteBuilder for a custom transition
+        return PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const TravelPreferencesScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOut;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
+        );
+      // ...existing code for other routes...
+      default:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            body: Center(
+              child: Text('No route defined for ${settings.name}'),
+            ),
+          ),
+        );
+    }
   }
 }

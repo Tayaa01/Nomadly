@@ -6,7 +6,7 @@ import '../widgets/custom_bottom_nav.dart';
 import 'package:provider/provider.dart';
 
 class TipsScreen extends StatefulWidget {
-  const TipsScreen({Key? key}) : super(key: key);
+  const TipsScreen({super.key});
 
   @override
   State<TipsScreen> createState() => _TipsScreenState();

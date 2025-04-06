@@ -259,8 +259,9 @@ class _DealsScreenState extends State<DealsScreen> {
           final numericPrice = int.tryParse(price.replaceAll(RegExp(r'[^\d]'), ''));
           if (numericPrice != null && numericPrice > 999) {
             String currencySymbol = '';
-            if (price.contains('\$')) currencySymbol = '\$';
-            else if (price.toLowerCase().contains('usd')) currencySymbol = 'USD ';
+            if (price.contains('\$')) {
+              currencySymbol = '\$';
+            } else if (price.toLowerCase().contains('usd')) currencySymbol = 'USD ';
             
             formattedPrice = '$currencySymbol${numericPrice.toString().replaceAllMapped(
               RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),

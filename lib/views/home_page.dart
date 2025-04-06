@@ -472,7 +472,11 @@ class _HomePageState extends State<HomePage> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/planner'),
+                  onTap: () {
+                    // Use pushNamed instead of pushReplacementNamed to preserve the bottom nav state
+                    // This pushes the Travel Planner screen on top of the current stack
+                    Navigator.of(context).pushNamed('/planner');
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
@@ -983,18 +987,19 @@ class _HomePageState extends State<HomePage> {
   
   String _getImageFromText(String query) {
     // Simplify the query to avoid complex URLs that may fail
-    final String simpleQuery;
+    String simpleQuery;
     
     if (query.contains('flight')) {
-      simpleQuery = 'flight';
+      simpleQuery = 'airplane';
     } else if (query.contains('hotel')) {
       simpleQuery = 'hotel';
     } else {
       simpleQuery = 'travel';
     }
     
-    // Use random to avoid caching issues and a simpler format
-    return 'https://source.unsplash.com/random/400x300/?$simpleQuery';
+    // Use a more reliable source for random images (Picsum)
+    // This avoids the 404 errors from Unsplash
+    return 'https://picsum.photos/seed/${simpleQuery}${Random().nextInt(1000)}/400/300';
   }
 
   String _getTimeOfDay() {

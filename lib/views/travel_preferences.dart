@@ -222,14 +222,23 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
+    
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Plan Your Journey"),
-        centerTitle: true,
-        elevation: 0,
-        scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Travel Planner',
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            // Simply pop back to home screen
+            Navigator.of(context).pop();
+          },
+        ),
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -273,19 +282,22 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
           ),
         ),
       ),
+      // Add the bottom navigation bar with Home tab selected
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: 4,
+        currentIndex: 0, // Set to 0 to keep Home tab selected
         onTap: (index) {
-          if (index != 4) {
-            if (index == 0) {
-              Navigator.pushReplacementNamed(context, '/home');
-            } else if (index == 2) {
-              Navigator.pushReplacementNamed(context, '/currency-converter');
-            } else if (index == 3) {
-              Navigator.pushReplacementNamed(context, '/translation');
-            } else if (index == 4) {
-              Navigator.pushReplacementNamed(context, '/planner', arguments: _destinationController.text);
-            }
+          if (index == 0) {
+            // If user taps Home tab, navigate back to home
+            Navigator.of(context).pop();
+          } else if (index == 1) {
+            // For other tabs, navigate to their screens
+            Navigator.of(context).pushReplacementNamed('/deals');
+          } else if (index == 2) {
+            Navigator.of(context).pushReplacementNamed('/currency-converter');
+          } else if (index == 3) {
+            Navigator.of(context).pushReplacementNamed('/translation');
+          } else if (index == 4) {
+            Navigator.of(context).pushReplacementNamed('/statistics');
           }
         },
       ),
