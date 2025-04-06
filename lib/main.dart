@@ -16,6 +16,7 @@ import 'views/travel_preferences.dart';
 import 'views/travelResultsScreen.dart';
 import 'package:provider/provider.dart';
 import 'providers/destination_provider.dart';
+import 'screens/travel_form_screen.dart';
 
 void main() {
   runApp(
@@ -162,7 +163,7 @@ class _MyAppState extends State<MyApp> {
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/planner':
-            (context) => const TravelPreferencesScreen(),
+            (context) => const TravelFormScreen(),
         '/travel-results':
             (context) => TravelResultsScreen(destination: ''),
       },

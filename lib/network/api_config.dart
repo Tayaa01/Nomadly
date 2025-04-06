@@ -1,7 +1,7 @@
 class ApiConfig {
   // Main base URL for all services
   static const String BASE_URL =
-      "http://192.168.31.171:3000";
+      "http://localhost:3000";
 
   // Endpoints for Auth Service
   static const String REGISTER_ENDPOINT = "/auth/register";
