@@ -5,7 +5,7 @@ import '/services/travel_services.dart';
 class TravelResultsScreen extends StatefulWidget {
   final String destination;
 
-  TravelResultsScreen({required this.destination});
+  const TravelResultsScreen({super.key, required this.destination});
 
   @override
   _TravelResultsScreenState createState() => _TravelResultsScreenState();

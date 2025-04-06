@@ -288,7 +288,7 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
             _buildSavingsTipsSection(),
             const SizedBox(height: 16),
           ],
-          ..._dealAnalysis!.recommendations.map(_buildDealCard).toList(),
+          ..._dealAnalysis!.recommendations.map(_buildDealCard),
         ],
       ),
     );

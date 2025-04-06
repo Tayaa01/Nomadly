@@ -295,7 +295,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
   Widget _buildInputSection(ColorScheme colorScheme) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.1),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
