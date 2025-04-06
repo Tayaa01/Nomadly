@@ -444,6 +444,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
             }
           }
+          // Ajoutez d'autres cas de navigation si nécessaire
         },
       ),
     );

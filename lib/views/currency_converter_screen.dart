@@ -430,6 +430,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                 Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
               }
             }
+            // Add other navigation cases here as needed
           },
         ),
       ),

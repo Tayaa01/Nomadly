@@ -16,6 +16,11 @@ import 'views/travel_preferences.dart';
 import 'views/travelResultsScreen.dart';
 import 'package:provider/provider.dart';
 import 'providers/destination_provider.dart';
+import 'views/expense_tracker_screen.dart';
+import 'views/travel_groups_screen.dart';
+import 'viewmodels/expense_viewmodel.dart';
+import 'viewmodels/currency_viewmodel.dart';
+import 'viewmodels/travel_group_viewmodel.dart';
 
 void main() {
   runApp(
@@ -23,6 +28,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => DestinationProvider()),
         // Add other providers as needed
+        ChangeNotifierProvider(create: (_) => ExpenseViewModel()),
+        ChangeNotifierProvider(create: (_) => CurrencyViewModel()),
+        ChangeNotifierProvider(create: (_) => TravelGroupViewModel()),
       ],
       child: const MyApp(),
     ),
@@ -165,6 +173,19 @@ class _MyAppState extends State<MyApp> {
             (context) => const TravelPreferencesScreen(),
         '/travel-results':
             (context) => TravelResultsScreen(destination: ''),
+        '/currency-converter': (context) => CurrencyConverterScreen(
+          toggleTheme: toggleTheme,
+          isDarkMode: isDarkMode,
+        ),
+        '/translation': (context) => const SpeechToTextView(),
+        '/expense-tracker': (context) => ExpenseTrackerScreen(
+          toggleTheme: toggleTheme,
+          isDarkMode: isDarkMode,
+        ),
+        '/travel-groups': (context) => TravelGroupsScreen(
+          toggleTheme: toggleTheme,
+          isDarkMode: isDarkMode,
+        ),
       },
     );
   }
