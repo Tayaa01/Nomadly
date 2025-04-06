@@ -1,31 +1,28 @@
 class User {
   final String id;
+  final String email;
   final String firstName;
   final String lastName;
-  final String email;
   final String countryCode;
-  final String role;
-  final bool isActive;
+  final String? role;
 
   User({
     required this.id,
+    required this.email,
     required this.firstName,
     required this.lastName,
-    required this.email,
     required this.countryCode,
-    required this.role,
-    required this.isActive,
+    this.role,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
+      email: json['email'] ?? '',
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
-      email: json['email'] ?? '',
       countryCode: json['countryCode'] ?? '',
-      role: json['role'] ?? 'user',
-      isActive: json['isActive'] ?? true,
+      role: json['role'],
     );
   }
 
@@ -33,8 +30,8 @@ class User {
     return {
       'firstName': firstName,
       'lastName': lastName,
-      'email': email,
       'countryCode': countryCode,
+      // Don't include id, email and role as they shouldn't be updated by the client
     };
   }
 
@@ -46,12 +43,11 @@ class User {
   }) {
     return User(
       id: id,
+      email: email ?? this.email,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
-      email: email ?? this.email,
       countryCode: countryCode ?? this.countryCode,
       role: role,
-      isActive: isActive,
     );
   }
 }

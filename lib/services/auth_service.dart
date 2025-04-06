@@ -72,7 +72,7 @@ class AuthService {
           "password": password,
         },
         options: Options(
-          headers: ApiConfig.commonHeaders,
+          headers: ApiConfig.commonHeaders, // Should use commonHeaders consistently
         ),
       );
       

@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
-import 'auth_service.dart';
+import '../services/auth_service.dart';
+import '../network/api_config.dart';
 
 class UserService {
-  final String baseUrl = 'https://6b4b-2c0f-f698-40c3-f1b9-98f2-7e4f-bdbd-36d3.ngrok-free.app';
   final AuthService _authService = AuthService();
 
   Future<User> getUserProfile() async {
@@ -15,11 +15,8 @@ class UserService {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/users/me'),
-        headers: {
-          'accept': '*/*',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiConfig.BASE_URL}${ApiConfig.USER_PROFILE_ENDPOINT}'),
+        headers: ApiConfig.getAuthHeaders(token),
       );
 
       if (response.statusCode == 200) {
@@ -42,12 +39,8 @@ class UserService {
       }
 
       final response = await http.put(
-        Uri.parse('$baseUrl/users/me'),
-        headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiConfig.BASE_URL}${ApiConfig.USER_UPDATE_ENDPOINT}'),
+        headers: ApiConfig.getAuthHeaders(token),
         body: jsonEncode(user.toJson()),
       );
 

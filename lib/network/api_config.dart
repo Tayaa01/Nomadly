@@ -7,6 +7,10 @@ class ApiConfig {
   static const String REGISTER_ENDPOINT = "/auth/register";
   static const String LOGIN_ENDPOINT = "/auth/login";
 
+  // Endpoints for User Service
+  static const String USER_PROFILE_ENDPOINT = "/users/me";
+  static const String USER_UPDATE_ENDPOINT = "/users/me";
+
   // Endpoints for Currency Service
   static const String CURRENCY_ANALYZE_ENDPOINT = "/tax-free/analyze";
   static const String CURRENCY_CONVERT_ENDPOINT = "/currency-converter/convert";
@@ -34,4 +38,13 @@ class ApiConfig {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+
+  // Helper to create authenticated headers
+  static Map<String, String> getAuthHeaders(String token) {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
 }
