@@ -23,47 +23,40 @@ class CustomBottomNav extends StatelessWidget {
           ),
         ],
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildNavItem(0, Icons.home_outlined, 'Home'),
-              _buildNavItem(1, Icons.lightbulb_outline, 'Tips'),
-              _buildNavItem(2, Icons.currency_exchange, 'Convert'),
-              _buildNavItem(3, Icons.translate, 'Translate'),
-              
-              _buildNavItem(4, Icons.bar_chart, 'Stats'), // This item exist
-              _buildNavItem(5, Icons.flight,'planner'),
-            ],
+      child: BottomNavigationBar(
+        currentIndex: currentIndex,
+        onTap: onTap,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFF1E1E1E),
+        selectedItemColor: const Color(0xFF4CD964),
+        unselectedItemColor: Colors.grey,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isSelected = index == currentIndex;
-
-    return InkWell(
-      onTap: () => onTap(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? const Color(0xFF4CD964) : Colors.grey,
-            size: 26,
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_offer_outlined),
+            activeIcon: Icon(Icons.local_offer),
+            label: 'Deals', // Update this label
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? const Color(0xFF4CD964) : Colors.grey,
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.currency_exchange),
+            activeIcon: Icon(Icons.currency_exchange),
+            label: 'Currency',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.translate_outlined),
+            activeIcon: Icon(Icons.translate),
+            label: 'Translate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart),
+            label: 'Statistics',
           ),
         ],
       ),

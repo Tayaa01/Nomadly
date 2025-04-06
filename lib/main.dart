@@ -6,7 +6,8 @@ import 'views/welcome_page.dart';
 import 'views/sign_in_page.dart';
 import 'views/home_page.dart';
 import 'views/speech_to_text_view.dart';
-import 'views/tips_screen.dart';
+import 'views/deals_screen.dart';
+import 'views/tips_screen.dart'; // Add this import for TipsScreen
 import 'views/sign_up_page.dart';
 import 'services/auth_service.dart';
 import 'views/statistics_screen.dart';
@@ -156,13 +157,14 @@ class _MyAppState extends State<MyApp> {
               isDarkMode: isDarkMode,
             ),
         '/translation': (context) => const SpeechToTextView(),
-        '/tips': (context) => const TipsScreen(),
+        '/deals': (context) => const DealsScreen(),
+        '/tips': (context) => const TipsScreen(), // Add this route for tips
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/planner':
-            (context) => const TravelPreferencesScreen(), // Add this route
+            (context) => const TravelPreferencesScreen(),
         '/travel-results':
-            (context) => TravelResultsScreen(destination: ''), // Add this route
+            (context) => TravelResultsScreen(destination: ''),
       },
     );
   }

@@ -4,11 +4,13 @@ import '../services/travel_services.dart';
 import '../services/user_service.dart';
 import '../models/user.dart';
 import '../models/tip.dart';
-import '../services/deals_service.dart';
+import '../services/tips_service.dart'; // Make sure this import is correct
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../providers/destination_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:math';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +21,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final UserService _userService = UserService();
+  final TipsService _tipsService = TipsService(); // Create a local instance
   bool _isLoading = true;
   bool _isRefreshing = false;
   User? _user;
@@ -35,7 +38,7 @@ class _HomePageState extends State<HomePage> {
     
     // Set up auto-refresh every 5 minutes
     _autoRefreshTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
-      if (!_isLoading && !_isRefreshing) {
+      if (!_isLoading && !_isRefreshing && mounted) {
         _silentRefresh();
       }
     });
@@ -48,6 +51,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -57,17 +62,24 @@ class _HomePageState extends State<HomePage> {
       // Get destination provider
       final destinationProvider = Provider.of<DestinationProvider>(context, listen: false);
       
+      // Ensure countries are loaded in the provider
+      await destinationProvider.initializeCountriesIfNeeded(); // Use the public method instead
+      
       // Load user profile
       try {
         final user = await _userService.getUserProfile();
-        setState(() {
-          _user = user;
-        });
         
-        // Set user's country in the provider if it's the first time
-        if (!destinationProvider.hasInitializedCountry && user.countryCode.isNotEmpty) {
-          String userCountry = _mapCountryCodeToName(user.countryCode);
-          destinationProvider.setInitialCountry(userCountry);
+        // Only update state if the widget is still mounted
+        if (mounted) {
+          setState(() {
+            _user = user;
+          });
+        
+          // Set user's country in the provider if it's the first time
+          if (!destinationProvider.hasInitializedCountry && user.countryCode.isNotEmpty) {
+            String userCountry = _mapCountryCodeToName(user.countryCode);
+            destinationProvider.setInitialCountry(userCountry);
+          }
         }
       } catch (e) {
         print('Error loading user profile: $e');
@@ -79,25 +91,29 @@ class _HomePageState extends State<HomePage> {
         await _loadDestinationData(destinationProvider.selectedCountry!);
       }
 
-      setState(() {
-        _isLoading = false;
-        _lastUpdated = DateTime.now();
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _lastUpdated = DateTime.now();
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Failed to load data: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load data: $e';
+        });
+      }
     }
   }
   
   // Silent refresh for auto-updates
   Future<void> _silentRefresh() async {
-    if (mounted) {
-      setState(() {
-        _isRefreshing = true;
-      });
-    }
+    if (!mounted) return;
+    
+    setState(() {
+      _isRefreshing = true;
+    });
     
     try {
       final destinationProvider = Provider.of<DestinationProvider>(context, listen: false);
@@ -151,6 +167,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadDestinationData(String destination) async {
+    if (!mounted) return;
+    
     try {
       setState(() {
         if (!_isLoading) _isRefreshing = true;
@@ -175,12 +193,15 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _isRefreshing = false;
+          // Don't set error message for this to avoid disrupting the UI
         });
       }
     }
   }
 
   Future<void> _onCountrySelected(String country) async {
+    if (!mounted) return;
+    
     final destinationProvider = Provider.of<DestinationProvider>(context, listen: false);
     
     if (country == destinationProvider.selectedCountry) return;
@@ -195,6 +216,25 @@ class _HomePageState extends State<HomePage> {
     });
     
     await _loadDestinationData(country);
+  }
+
+  Future<void> _openLink(String? url) async {
+    if (url == null) return;
+    
+    try {
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the link')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error opening link: $e')),
+      );
+    }
   }
 
   @override
@@ -212,7 +252,7 @@ class _HomePageState extends State<HomePage> {
             currentIndex: 0,
             onTap: (index) {
               if (index == 1) {
-                Navigator.pushReplacementNamed(context, '/tips');
+                Navigator.pushReplacementNamed(context, '/deals'); // Update this navigation
               } else if (index == 2) {
                 Navigator.pushReplacementNamed(context, '/currency-converter');
               } else if (index == 3) {
@@ -329,7 +369,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/profile'),
+                          onTap: () => Navigator.pushNamed(context, '/profile')
+                              .then((_) => _loadData()), // Refresh after returning from profile
                           child: CircleAvatar(
                             radius: 24,
                             backgroundColor: Colors.grey[800],
@@ -358,10 +399,10 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-            // Destination Selector
+            // Enhanced Destination Selector
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -373,72 +414,8 @@ class _HomePageState extends State<HomePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    AnimatedOpacity(
-                      opacity: _isRefreshing && destinationProvider.selectedCountry != null ? 0.6 : 1.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: SizedBox(
-                        height: 50,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: destinationProvider.availableCountries.length,
-                          itemBuilder: (context, index) {
-                            final country = destinationProvider.availableCountries[index];
-                            final isSelected = country == destinationProvider.selectedCountry;
-                            
-                            return GestureDetector(
-                              onTap: _isRefreshing 
-                                  ? null 
-                                  : () => _onCountrySelected(country),
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 8.0),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 8.0,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected 
-                                      ? const Color(0xFF4CD964) 
-                                      : const Color(0xFF333333),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: isSelected ? [
-                                    BoxShadow(
-                                      color: const Color(0xFF4CD964).withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ] : null,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isSelected && _isRefreshing)
-                                      Container(
-                                        width: 12,
-                                        height: 12,
-                                        margin: const EdgeInsets.only(right: 8),
-                                        child: const CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                                        ),
-                                      ),
-                                    Text(
-                                      country,
-                                      style: TextStyle(
-                                        color: isSelected ? Colors.black : Colors.white,
-                                        fontWeight: isSelected 
-                                            ? FontWeight.bold 
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 16),
+                    _buildImprovedDestinationSelector(destinationProvider),
                   ],
                 ),
               ),
@@ -450,7 +427,7 @@ class _HomePageState extends State<HomePage> {
                   ? destinationProvider.selectedCountry != null && !_isRefreshing
                       ? _buildEmptyState('No flight data available for ${destinationProvider.selectedCountry}')
                       : const SizedBox.shrink()
-                  : _buildFeaturedFlightsSection(),
+                  : _buildFeaturedFlightsSection(destinationProvider),
             ),
 
             // Popular Hotels Section
@@ -459,7 +436,7 @@ class _HomePageState extends State<HomePage> {
                   ? destinationProvider.selectedCountry != null && !_isRefreshing
                       ? _buildEmptyState('No hotel data available for ${destinationProvider.selectedCountry}') 
                       : const SizedBox.shrink()
-                  : _buildHotelsSection(),
+                  : _buildHotelsSection(destinationProvider),
             ),
 
             // Travel Tips Section with integrated Tips
@@ -469,10 +446,79 @@ class _HomePageState extends State<HomePage> {
                   : _buildIntegratedTipsSection(destinationProvider),
             ),
 
-            // Currency services promo
+            // Travel Planner Promo
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
+                child: GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/planner'),
+                  child: Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF4CD964),
+                          Color(0xFF34A853),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.map_outlined,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Travel Planner',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Plan your perfect trip with our personalized recommendations',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Currency services promo
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
                 child: GestureDetector(
                   onTap: () => Navigator.pushNamed(context, '/currency-converter'),
                   child: Container(
@@ -546,7 +592,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFeaturedFlightsSection() {
+  Widget _buildFeaturedFlightsSection(DestinationProvider destinationProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -578,21 +624,15 @@ class _HomePageState extends State<HomePage> {
           LayoutBuilder(
             builder: (context, constraints) {
               return _buildFeatureCard(
-                title: _flights[0]['title'] ?? 'Flight to ${Provider.of<DestinationProvider>(context).selectedCountry}',
+                title: _flights[0]['title'] ?? 'Flight to ${destinationProvider.selectedCountry}',
                 subtitle: _flights[0]['price'] != null 
                     ? 'From ${_flights[0]['price']}' 
                     : _flights[0]['snippet'] != null
                         ? 'Details: ${_formatSnippet(_flights[0]['snippet'])}' 
                         : 'Check prices online',
                 imageUrl: 'assets/images/flight.jpg',
-                networkImageUrl: _getImageFromText('flight to ${Provider.of<DestinationProvider>(context).selectedCountry}'),
-                onTap: () {
-                  if (_flights[0]['link'] != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Opening flight details...')),
-                    );
-                  }
-                },
+                networkImageUrl: _getImageFromText('flight to ${destinationProvider.selectedCountry}'),
+                onTap: () => _openLink(_flights[0]['link']),
                 height: 200,
                 maxWidth: constraints.maxWidth,
               );
@@ -603,7 +643,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
   
-  Widget _buildHotelsSection() {
+  Widget _buildHotelsSection(DestinationProvider destinationProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -633,25 +673,19 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 180,
+            height: 200, // Increase this height from 180 to 200 to fix the overflow
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: _hotels.length > 3 ? 3 : _hotels.length,
               itemBuilder: (context, index) {
                 final hotel = _hotels[index];
                 return _buildHotelCard(
-                  name: hotel['title'] ?? 'Hotel in ${Provider.of<DestinationProvider>(context).selectedCountry}',
+                  name: hotel['title'] ?? 'Hotel in ${destinationProvider.selectedCountry}',
                   price: hotel['price'] ?? 'Check prices',
                   snippet: hotel['snippet'],
                   imageUrl: 'assets/images/hotel.jpg',
-                  networkImageUrl: _getImageFromText('hotel in ${hotel['title'] ?? Provider.of<DestinationProvider>(context).selectedCountry}'),
-                  onTap: () {
-                    if (hotel['link'] != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Opening hotel details...')),
-                      );
-                    }
-                  },
+                  networkImageUrl: _getImageFromText('hotel in ${hotel['title'] ?? destinationProvider.selectedCountry}'),
+                  onTap: () => _openLink(hotel['link']),
                 );
               },
             ),
@@ -663,7 +697,8 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildIntegratedTipsSection(DestinationProvider destinationProvider) {
     return FutureBuilder<List<String>>(
-      future: TipsService.getCategoriesForCountry(destinationProvider.selectedCountry!),
+      // Use the imported class name instead of direct access
+      future: _tipsService.getCategoriesForCountry(destinationProvider.selectedCountry!),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
@@ -715,7 +750,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      // Pass current destination to tips page
+                      // Set the tip category and navigate to the tips screen
                       destinationProvider.setTipCategory(selectedCategory);
                       Navigator.pushNamed(context, '/tips');
                     },
@@ -734,7 +769,8 @@ class _HomePageState extends State<HomePage> {
               // Preview one tip from the first category
               if (selectedCategory != null)
                 FutureBuilder<List<Tip>>(
-                  future: TipsService.getTipsByCountryAndCategory(
+                  // Change this line to use the instance method instead of static access
+                  future: _tipsService.getTipsByCountryAndCategory(
                     destinationProvider.selectedCountry!,
                     selectedCategory,
                   ),
@@ -806,7 +842,7 @@ class _HomePageState extends State<HomePage> {
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap, // This onTap should navigate to tips screen
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -925,11 +961,19 @@ class _HomePageState extends State<HomePage> {
   }
   
   String _getImageFromText(String query) {
-    // Replace spaces with plus signs for URL
-    final formattedQuery = query.replaceAll(' ', '+');
+    // Simplify the query to avoid complex URLs that may fail
+    final String simpleQuery;
     
-    // Use Unsplash API for random images based on the query
-    return 'https://source.unsplash.com/400x300/?$formattedQuery';
+    if (query.contains('flight')) {
+      simpleQuery = 'flight';
+    } else if (query.contains('hotel')) {
+      simpleQuery = 'hotel';
+    } else {
+      simpleQuery = 'travel';
+    }
+    
+    // Use random to avoid caching issues and a simpler format
+    return 'https://source.unsplash.com/random/400x300/?$simpleQuery';
   }
 
   String _getTimeOfDay() {
@@ -964,8 +1008,9 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Increase the image height from 100 to 110
             SizedBox(
-              height: 100,
+              height: 110,
               width: double.infinity,
               child: networkImageUrl != null
                   ? CachedNetworkImage(
@@ -985,13 +1030,14 @@ class _HomePageState extends State<HomePage> {
                       fit: BoxFit.cover,
                     ),
             ),
+            // Adjust padding to prevent overflow
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10), // Reduced from 12
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name.length > 20 ? '${name.substring(0, 20)}...' : name,
+                    name.length > 18 ? '${name.substring(0, 18)}...' : name, // Reduce maximum length
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -1001,9 +1047,9 @@ class _HomePageState extends State<HomePage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (snippet != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2), // Reduced from 4
                     Text(
-                      snippet.length > 50 ? '${snippet.substring(0, 50)}...' : snippet,
+                      snippet.length > 45 ? '${snippet.substring(0, 45)}...' : snippet, // Reduced from 50
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 12,
@@ -1012,7 +1058,7 @@ class _HomePageState extends State<HomePage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2), // Reduced from 4
                   Text(
                     price,
                     style: const TextStyle(
@@ -1139,6 +1185,338 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImprovedDestinationSelector(DestinationProvider destinationProvider) {
+    // Prepare all countries in paired rows
+    final int totalCountries = min(20, destinationProvider.availableCountries.length);
+    final int itemsPerRow = (totalCountries / 2).ceil();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Search Bar for countries
+        InkWell(
+          onTap: () => _showAllCountriesDialog(destinationProvider),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.search, color: Color(0xFF4CD964)),
+                const SizedBox(width: 12),
+                Text(
+                  'Search destinations...',
+                  style: TextStyle(color: Colors.grey[400]),
+                ),
+                const Spacer(),
+                Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+              ],
+            ),
+          ),
+        ),
+        
+        // Show selected country prominently if one is selected
+        if (destinationProvider.selectedCountry != null) ...[
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CD964).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF4CD964), width: 1),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, color: Color(0xFF4CD964)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Current Destination',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        destinationProvider.selectedCountry!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_isRefreshing)
+                  Container(
+                    width: 16,
+                    height: 16,
+                    margin: const EdgeInsets.only(left: 8),
+                    child: const CircularProgressIndicator(
+                      color: Color(0xFF4CD964),
+                      strokeWidth: 2,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const Text(
+            'Explore Other Destinations',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        
+        // Combined row approach that scrolls together
+        SizedBox(
+          height: 88, // Height for both rows
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(
+                itemsPerRow + (destinationProvider.availableCountries.length > 20 ? 1 : 0),
+                (columnIndex) {
+                  // For the "More" button as the last column
+                  if (columnIndex == itemsPerRow && destinationProvider.availableCountries.length > 20) {
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Empty space matching the height of a country button
+                          const SizedBox(height: 36),
+                          
+                          // "More" button in the bottom row
+                          GestureDetector(
+                            onTap: () => _showAllCountriesDialog(destinationProvider),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF333333),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.more_horiz, color: Color(0xFF4CD964), size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'More',
+                                    style: TextStyle(color: Color(0xFF4CD964)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  
+                  // Regular column of country items (one for top row, one for bottom row)
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top row item
+                        if (columnIndex < destinationProvider.availableCountries.length)
+                          _buildCountryButton(
+                            destinationProvider.availableCountries[columnIndex],
+                            destinationProvider
+                          ),
+                        
+                        // Bottom row item
+                        if (columnIndex + itemsPerRow < totalCountries)
+                          _buildCountryButton(
+                            destinationProvider.availableCountries[columnIndex + itemsPerRow],
+                            destinationProvider
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper to build a single country button
+  Widget _buildCountryButton(String country, DestinationProvider destinationProvider) {
+    final isSelected = country == destinationProvider.selectedCountry;
+    
+    return GestureDetector(
+      onTap: _isRefreshing ? null : () => _onCountrySelected(country),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16.0,
+          vertical: 8.0,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? const Color(0xFF4CD964) 
+              : const Color(0xFF333333),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: const Color(0xFF4CD964).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )
+          ] : null,
+        ),
+        child: Text(
+          country,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Fix the method for showing country suggestions
+
+  // Fix the all countries dialog with search functionality
+  void _showAllCountriesDialog(DestinationProvider destinationProvider) {
+    // Controller for search
+    final searchController = TextEditingController();
+    // Create a local state for filtered countries
+    List<String> filteredCountries = List.from(destinationProvider.availableCountries);
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.5,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (context, scrollController) {
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Container(
+                        height: 4,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[600],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: searchController,
+                        autofocus: true,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search countries...',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          prefixIcon: const Icon(Icons.search, color: Color(0xFF4CD964)),
+                          filled: true,
+                          fillColor: const Color(0xFF333333),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onChanged: (value) {
+                          // Update the filtered list based on search input
+                          setState(() {
+                            if (value.isEmpty) {
+                              filteredCountries = List.from(destinationProvider.availableCountries);
+                            } else {
+                              filteredCountries = destinationProvider.availableCountries
+                                  .where((country) => country.toLowerCase().contains(value.toLowerCase()))
+                                  .toList();
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    if (filteredCountries.isEmpty)
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            'No countries found matching "${searchController.text}"',
+                            style: TextStyle(color: Colors.grey[400]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          itemCount: filteredCountries.length,
+                          itemBuilder: (context, index) {
+                            final country = filteredCountries[index];
+                            final isSelected = country == destinationProvider.selectedCountry;
+                            
+                            return ListTile(
+                              title: Text(
+                                country,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                              leading: const Icon(Icons.place, color: Color(0xFF4CD964)),
+                              trailing: isSelected 
+                                  ? const Icon(Icons.check_circle, color: Color(0xFF4CD964)) 
+                                  : null,
+                              onTap: () {
+                                Navigator.pop(context);
+                                _onCountrySelected(country);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
