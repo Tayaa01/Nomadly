@@ -284,7 +284,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
       ),
       // Add the bottom navigation bar with Home tab selected
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: 0, // Set to 0 to keep Home tab selected
+        currentIndex: 5, // Set to 0 to keep Home tab selected
         onTap: (index) {
           if (index == 0) {
             // If user taps Home tab, navigate back to home
@@ -298,6 +298,9 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
             Navigator.of(context).pushReplacementNamed('/translation');
           } else if (index == 4) {
             Navigator.of(context).pushReplacementNamed('/statistics');
+          }
+           else if (index == 5) {
+            Navigator.of(context).pushReplacementNamed('/planner');
           }
         },
       ),

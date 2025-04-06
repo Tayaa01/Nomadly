@@ -58,6 +58,11 @@ class CustomBottomNav extends StatelessWidget {
             activeIcon: Icon(Icons.bar_chart),
             label: 'Statistics',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.flight),
+            label: 'planner',
+          ),
         ],
       ),
     );
