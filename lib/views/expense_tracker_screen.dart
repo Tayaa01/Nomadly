@@ -3,16 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
 import '../viewmodels/expense_viewmodel.dart';
+import '../widgets/app_drawer.dart';
 import 'expense_chart_screen.dart';
 import 'travel_groups_screen.dart';
-import '../widgets/custom_bottom_nav.dart';
 
 class ExpenseTrackerScreen extends StatefulWidget {
   final bool isDarkMode;
   final Function toggleTheme;
 
   const ExpenseTrackerScreen({
-    Key? key,
+    Key? key, 
     required this.isDarkMode,
     required this.toggleTheme,
   }) : super(key: key);
@@ -111,10 +111,10 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                     flex: 3,
                     child: TextFormField(
                       controller: _amountController,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: 'Amount',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         labelStyle: TextStyle(
                           color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                         ),
@@ -138,7 +138,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                     flex: 1,
                     child: DropdownButtonFormField<String>(
                       value: _selectedCurrency,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 16),
                       ),
@@ -169,7 +169,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                 value: _selectedCategory,
                 decoration: InputDecoration(
                   labelText: 'Category',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   labelStyle: TextStyle(
                     color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                   ),
@@ -199,7 +199,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                 child: InputDecorator(
                   decoration: InputDecoration(
                     labelText: 'Date',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     labelStyle: TextStyle(
                       color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                     ),
@@ -227,7 +227,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                 controller: _descriptionController,
                 decoration: InputDecoration(
                   labelText: 'Description',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   labelStyle: TextStyle(
                     color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                   ),
@@ -341,6 +341,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
           ),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: '/expense-tracker'),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -357,13 +358,13 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                 ),
               );
             },
-            icon: Icon(Icons.group),
-            label: Text('Partager les dépenses'),
+            icon: const Icon(Icons.group),
+            label: const Text('Partager les dépenses'),
             tooltip: 'Gérer les dépenses de groupe',
             heroTag: 'shareExpenses',
             backgroundColor: const Color(0xFF4CD964),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           FloatingActionButton(
             onPressed: _showAddExpenseForm,
             backgroundColor: const Color(0xFF4CD964),
@@ -373,22 +374,6 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 0,  // Utiliser un index valide (0 à 4) au lieu de -1
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/deals');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/currency-converter');
-          } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/translation');
-          } else if (index == 4) {
-            Navigator.pushReplacementNamed(context, '/statistics');
-          }
-        },
-      ),
       body: Consumer<ExpenseViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
@@ -400,163 +385,172 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
           }
           
           if (viewModel.expenses.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.receipt_long,
-                    size: 80,
-                    color: widget.isDarkMode ? Colors.grey[700] : Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No expenses recorded',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _showAddExpenseForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CD964),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Add an expense'),
-                  ),
-                ],
-              ),
-            );
+            return _buildEmptyState();
           }
           
-          return Column(
-            children: [
-              // Expense summary
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: FutureBuilder<double>(
-                  future: viewModel.getTotalExpenses(),
-                  builder: (context, snapshot) {
-                    return Card(
-                      color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Total expenses',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              snapshot.hasData
-                                  ? '${snapshot.data!.toStringAsFixed(2)} €'
-                                  : '...',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: widget.isDarkMode ? Colors.white : Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${viewModel.expenses.length} transactions',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              
-              // Expense list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: viewModel.expenses.length,
-                  itemBuilder: (context, index) {
-                    final expense = viewModel.expenses[index];
-                    return Dismissible(
-                      key: Key(expense.id),
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      direction: DismissDirection.endToStart,
-                      onDismissed: (direction) {
-                        viewModel.deleteExpense(expense.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Expense deleted')),
-                        );
-                      },
-                      child: Card(
-                        color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                        elevation: 2,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CD964).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              _getCategoryIcon(expense.category),
-                              color: const Color(0xFF4CD964),
-                            ),
-                          ),
-                          title: Text(
-                            expense.description,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: widget.isDarkMode ? Colors.white : Colors.black,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${expense.category} • ${DateFormat('dd/MM/yyyy').format(expense.date)}',
-                            style: TextStyle(
-                              color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                            ),
-                          ),
-                          trailing: Text(
-                            '${expense.amount.toStringAsFixed(2)} ${expense.currency}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: const Color(0xFF4CD964),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          );
+          return _buildExpensesList(viewModel);
         },
       ),
+    );
+  }
 
+  // Empty state widget
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.receipt_long,
+            size: 80,
+            color: widget.isDarkMode ? Colors.grey[700] : Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No expenses recorded',
+            style: TextStyle(
+              fontSize: 18,
+              color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _showAddExpenseForm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CD964),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Add an expense'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Expense list widget
+  Widget _buildExpensesList(ExpenseViewModel viewModel) {
+    return Column(
+      children: [
+        // Expense summary
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: FutureBuilder<double>(
+            future: viewModel.getTotalExpenses(),
+            builder: (context, snapshot) {
+              return Card(
+                color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Total expenses',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        snapshot.hasData
+                            ? '${snapshot.data!.toStringAsFixed(2)} €'
+                            : '...',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: widget.isDarkMode ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${viewModel.expenses.length} transactions',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        
+        // Expense list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: viewModel.expenses.length,
+            itemBuilder: (context, index) {
+              final expense = viewModel.expenses[index];
+              return Dismissible(
+                key: Key(expense.id),
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                direction: DismissDirection.endToStart,
+                onDismissed: (direction) {
+                  viewModel.deleteExpense(expense.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Expense deleted')),
+                  );
+                },
+                child: Card(
+                  color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CD964).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _getCategoryIcon(expense.category),
+                        color: const Color(0xFF4CD964),
+                      ),
+                    ),
+                    title: Text(
+                      expense.description,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${expense.category} • ${DateFormat('dd/MM/yyyy').format(expense.date)}',
+                      style: TextStyle(
+                        color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                      ),
+                    ),
+                    trailing: Text(
+                      '${expense.amount.toStringAsFixed(2)} ${expense.currency}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF4CD964),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

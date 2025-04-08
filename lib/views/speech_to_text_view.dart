@@ -10,7 +10,8 @@ import '../models/message.dart';
 import '../models/predefined_phrases.dart';
 import '../services/translation_cache_service.dart';
 import 'package:flutter/services.dart';
-import '../widgets/custom_bottom_nav.dart';  // Add this import
+import '../widgets/app_drawer.dart';  // Change import from custom_bottom_nav to app_drawer
+import '../widgets/modern_app_bar.dart'; // Import modern app bar
 
 class SpeechToTextView extends StatefulWidget {
   const SpeechToTextView({super.key});
@@ -37,7 +38,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   String _selectedTargetLanguage = 'fr';
   String _selectedCategory = 'All';
   bool _isOfflineMode = false;
-  final bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -381,29 +381,24 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
 
   @override 
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E1E),
+      appBar: ModernAppBar(
+        title: _currentDiscussion == null ? 'Translate' : _currentDiscussion!.category,
+        isDarkMode: isDarkMode,
+        centerTitle: false,
         elevation: 0,
         leading: _currentDiscussion == null 
             ? null 
             : IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
                 onPressed: () => setState(() => _currentDiscussion = null),
-              ),
-        title: _isSearching
-            ? _buildSearchField()
-            : Text(
-                _currentDiscussion == null ? 'Translate' : _currentDiscussion!.category,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
               ),
         actions: _buildAppBarActions(),
       ),
+      drawer: const AppDrawer(currentRoute: '/translation'), // Add drawer navigation
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -430,47 +425,10 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               backgroundColor: const Color(0xFF4CD964),
             )
           : null,
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 3,  // Index 3 for Translation
-        onTap: (index) {
-          if (index != 3) {  // If not current tab
-            if (index == 0) {
-              Navigator.pushReplacementNamed(context, '/home');
-            } else if (index == 1) {
-              Navigator.pushReplacementNamed(context, '/tips');
-            } else if (index == 2) {
-              Navigator.pushReplacementNamed(context, '/currency-converter');
-            } else if (index == 4) {
-              Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
-            }
-          }
-          // Ajoutez d'autres cas de navigation si nécessaire
-        },
-      ),
+      // Remove bottomNavigationBar property
     );
   }
 
-  Widget _buildSearchField() {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: const Color(0xFF333333),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: TextField(
-        controller: _searchController,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: 'Search discussions...',
-          hintStyle: TextStyle(color: Colors.grey[400]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        onChanged: (value) => setState(() => _searchQuery = value),
-      ),
-    );
-  }
 
   List<Widget> _buildAppBarActions() {
     if (_currentDiscussion == null) {

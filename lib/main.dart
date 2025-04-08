@@ -160,11 +160,10 @@ class _MyAppState extends State<MyApp> {
         '/home': (context) => const HomePage(),
         '/sign-in': (context) => const SignInPage(),
         '/sign-up': (context) => const SignUpPage(),
-        '/currency-converter':
-            (context) => CurrencyConverterScreen(
-              toggleTheme: toggleTheme,
-              isDarkMode: isDarkMode,
-            ),
+        '/currency-converter': (context) => CurrencyConverterScreen(
+          toggleTheme: toggleTheme,
+          isDarkMode: isDarkMode,
+        ),
         '/translation': (context) => const SpeechToTextView(),
         '/deals': (context) => const DealsScreen(),
         '/tips': (context) => const TipsScreen(), // Add this route for tips
@@ -173,11 +172,6 @@ class _MyAppState extends State<MyApp> {
         '/planner':(context) => const TravelPreferencesScreen(),
         '/travel-results':
             (context) => TravelResultsScreen(destination: ''),
-        '/currency-converter': (context) => CurrencyConverterScreen(
-          toggleTheme: toggleTheme,
-          isDarkMode: isDarkMode,
-        ),
-        '/translation': (context) => const SpeechToTextView(),
         '/expense-tracker': (context) => ExpenseTrackerScreen(
           toggleTheme: toggleTheme,
           isDarkMode: isDarkMode,

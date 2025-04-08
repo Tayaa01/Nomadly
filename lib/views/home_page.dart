@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_bottom_nav.dart';
+import '../widgets/app_drawer.dart';
+import '../widgets/modern_app_bar.dart'; // Import the new modern app bar
 import '../services/travel_services.dart';
 import '../services/user_service.dart';
 import '../models/user.dart';
@@ -239,31 +240,37 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DestinationProvider>(
-      builder: (context, destinationProvider, _) {
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: _isLoading 
-              ? _buildLoadingView()
-              : _errorMessage != null 
-                  ? _buildErrorView() 
-                  : _buildContentView(destinationProvider),
-          bottomNavigationBar: CustomBottomNav(
-            currentIndex: 0,
-            onTap: (index) {
-              if (index == 1) {
-                Navigator.pushReplacementNamed(context, '/deals'); // Update this navigation
-              } else if (index == 2) {
-                Navigator.pushReplacementNamed(context, '/currency-converter');
-              } else if (index == 3) {
-                Navigator.pushReplacementNamed(context, '/translation');
-              } else if (index == 4) {
-                Navigator.pushReplacementNamed(context, '/statistics');
-              }
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Scaffold(
+      appBar: ModernAppBar(
+        title: 'Nomadly',
+        isDarkMode: isDarkMode,
+        centerTitle: false,
+        elevation: 0.5,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            color: isDarkMode ? Colors.white : Colors.black,
+            onPressed: () {
+              // Notification handling
             },
           ),
-        );
-      }
+          IconButton(
+            icon: const Icon(Icons.person_outline_rounded),
+            color: isDarkMode ? Colors.white : Colors.black,
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+          ),
+        ],
+      ),
+      drawer: const AppDrawer(currentRoute: '/home'),
+      body: _isLoading 
+          ? _buildLoadingView()
+          : _errorMessage != null 
+              ? _buildErrorView() 
+              : _buildContentView(Provider.of<DestinationProvider>(context)),
     );
   }
 
@@ -355,50 +362,6 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                    ),
-                    Row(
-                      children: [
-                        if (_isRefreshing)
-                          Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            width: 16,
-                            height: 16,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
-                            ),
-                          ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              '/expense-tracker',
-                            );
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[800],
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.receipt_long,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/profile')
-                              .then((_) => _loadData()), // Refresh after returning from profile
-                          child: CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Colors.grey[800],
-                            child: const Icon(Icons.person, color: Colors.white),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),

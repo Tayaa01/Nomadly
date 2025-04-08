@@ -5,7 +5,7 @@ import '../models/travel_group.dart';
 import '../models/shared_expense.dart';
 import '../models/settlement_method.dart';
 import '../viewmodels/travel_group_viewmodel.dart';
-import '../utils/settlement_optimizer.dart';
+import '../widgets/app_drawer.dart'; // Add this import
 
 class SettlementManagementScreen extends StatefulWidget {
   final String groupId;
@@ -63,6 +63,7 @@ class _SettlementManagementScreenState extends State<SettlementManagementScreen>
           ],
         ),
       ),
+      drawer: const AppDrawer(currentRoute: '/travel-groups'), // Add drawer
       body: Consumer<TravelGroupViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
@@ -120,6 +121,7 @@ class _SettlementManagementScreenState extends State<SettlementManagementScreen>
       );
     }
 
+    // Wrap the content in a SingleChildScrollView to prevent overflow
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -165,6 +167,7 @@ class _SettlementManagementScreenState extends State<SettlementManagementScreen>
       );
     }
 
+    // Wrap the content in a SingleChildScrollView to prevent overflow
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -200,11 +203,17 @@ class _SettlementManagementScreenState extends State<SettlementManagementScreen>
                   title: Text(
                     '${fromMember.name} → ${toMember.name}',
                     style: TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis, // Prevent overflow in title
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${settlement.amount.toStringAsFixed(2)} ${settlement.currency}'),
+                      Text(
+                        '${settlement.amount.toStringAsFixed(2)} ${settlement.currency}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis, // Prevent overflow in subtitle
+                      ),
                       Text(
                         'Réglé le ${DateFormat('dd/MM/yyyy').format(settlement.date)}',
                         style: TextStyle(fontSize: 12),
@@ -259,8 +268,14 @@ class _SettlementManagementScreenState extends State<SettlementManagementScreen>
             title: Text(
               '${fromMember.name} doit payer ${toMember.name}',
               style: TextStyle(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis, // Prevent overflow in title
             ),
-            subtitle: Text('${settlement.amount.toStringAsFixed(2)} ${settlement.currency}'),
+            subtitle: Text(
+              '${settlement.amount.toStringAsFixed(2)} ${settlement.currency}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis, // Prevent overflow in subtitle
+            ),
             trailing: settlement.isSettled
                 ? Chip(
                     label: Text('Réglé'),

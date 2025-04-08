@@ -3,12 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart'; // Import Geolocator
-import '../widgets/custom_bottom_nav.dart';
 import 'TravelResultsScreen.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 import '/config/secrets.dart';
+import '../widgets/app_drawer.dart'; // Add this import
 
 // Add GoogleAuthClient class at the top level
 class GoogleAuthClient extends http.BaseClient {
@@ -240,6 +240,7 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
           },
         ),
       ),
+      drawer: const AppDrawer(currentRoute: '/planner'), // Add drawer 
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SafeArea(
@@ -281,28 +282,6 @@ class _TravelPreferencesScreenState extends State<TravelPreferencesScreen> with 
             ),
           ),
         ),
-      ),
-      // Add the bottom navigation bar with Home tab selected
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 5, // Set to 0 to keep Home tab selected
-        onTap: (index) {
-          if (index == 0) {
-            // If user taps Home tab, navigate back to home
-            Navigator.of(context).pop();
-          } else if (index == 1) {
-            // For other tabs, navigate to their screens
-            Navigator.of(context).pushReplacementNamed('/deals');
-          } else if (index == 2) {
-            Navigator.of(context).pushReplacementNamed('/currency-converter');
-          } else if (index == 3) {
-            Navigator.of(context).pushReplacementNamed('/translation');
-          } else if (index == 4) {
-            Navigator.of(context).pushReplacementNamed('/statistics');
-          }
-           else if (index == 5) {
-            Navigator.of(context).pushReplacementNamed('/planner');
-          }
-        },
       ),
     );
   }

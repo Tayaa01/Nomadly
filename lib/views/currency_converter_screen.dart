@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/currency_viewmodel.dart';
-import '../widgets/custom_bottom_nav.dart';
-// Fix the import for Country class
+import '../widgets/app_drawer.dart'; // Change import
 
 class CurrencyConverterScreen extends StatelessWidget {
   final VoidCallback toggleTheme;
@@ -43,6 +42,7 @@ class CurrencyConverterScreen extends StatelessWidget {
             ),
           ],
         ),
+        drawer: const AppDrawer(currentRoute: '/currency-converter'),
         body: Consumer<CurrencyViewModel>(
           builder: (context, viewModel, child) {
             return SingleChildScrollView(
@@ -415,24 +415,7 @@ class CurrencyConverterScreen extends StatelessWidget {
             );
           },
         ),
-        bottomNavigationBar: CustomBottomNav(
-          currentIndex: 2, // Currency converter is index 2
-          onTap: (index) {
-            if (index != 2) {
-              // If not current tab
-              if (index == 0) {
-                Navigator.pushReplacementNamed(context, '/home');
-              } else if (index == 1) {
-                Navigator.pushReplacementNamed(context, '/tips');
-              } else if (index == 3) {
-                Navigator.pushReplacementNamed(context, '/translation');
-              } else if (index == 4) {
-                Navigator.pushReplacementNamed(context, '/statistics'); // Add this condition
-              }
-            }
-            // Add other navigation cases here as needed
-          },
-        ),
+        // Remove bottomNavigationBar property
       ),
     );
   }

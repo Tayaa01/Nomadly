@@ -343,33 +343,35 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
   Widget _buildSettlementsTab(TravelGroupViewModel viewModel, TravelGroup group) {
     if (viewModel.settlements.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.account_balance_wallet,
-              size: 80,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Aucun règlement à effectuer',
-              style: TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => viewModel.calculateSettlements(),
-              icon: Icon(Icons.refresh),
-              label: Text('Calculer les règlements'),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => _navigateToBalanceVisualization(group),
-              icon: Icon(Icons.bar_chart),
-              label: Text('Visualiser les soldes'),
-            ),
-          ],
+        child: SingleChildScrollView( // Wrap in SingleChildScrollView to prevent overflow
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.account_balance_wallet,
+                size: 80,
+                color: Colors.grey,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Aucun règlement à effectuer',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => viewModel.calculateSettlements(),
+                icon: Icon(Icons.refresh),
+                label: Text('Calculer les règlements'),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => _navigateToBalanceVisualization(group),
+                icon: Icon(Icons.bar_chart),
+                label: Text('Visualiser les soldes'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -414,7 +416,7 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
             ],
           ),
         ),
-        Expanded(
+        Expanded( // Use Expanded to ensure the ListView takes up remaining space
           child: ListView.builder(
             itemCount: viewModel.settlements.length,
             itemBuilder: (context, index) {

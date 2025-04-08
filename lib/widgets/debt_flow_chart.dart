@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../models/shared_expense.dart';
 import '../models/travel_group.dart';
 import 'dart:math' as math;

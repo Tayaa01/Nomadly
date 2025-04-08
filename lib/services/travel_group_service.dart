@@ -149,7 +149,6 @@ class TravelGroupService {
   // Récupérer les règlements pour un groupe spécifique
   Future<List<Settlement>> getSettlementsForGroup(String groupId) async {
     final allSettlements = await getAllSettlements();
-    final groupExpenses = await getSharedExpensesForGroup(groupId);
     final groupMemberIds = (await getGroupById(groupId))?.members.map((m) => m.id).toList() ?? [];
     
     return allSettlements.where((settlement) => 

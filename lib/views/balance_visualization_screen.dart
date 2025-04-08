@@ -116,7 +116,6 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
     final barGroups = balances.asMap().entries.map((entry) {
       final index = entry.key;
       final memberBalance = entry.value;
-      final member = memberBalance.key;
       final balance = memberBalance.value;
 
       return BarChartGroupData(
@@ -286,7 +285,7 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
   // Construire le graphique interactif des flux d'argent
   Widget _buildInteractiveFlowChart(TravelGroupViewModel viewModel, TravelGroup group) {
     // Ne montrer que les règlements non réglés pour la visualisation interactive
-    final activeSettlements = viewModel.settlements.where((s) => !s.isSettled).toList();
+    viewModel.settlements.where((s) => !s.isSettled).toList();
     
     return Column(
       children: [

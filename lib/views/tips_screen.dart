@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/tip.dart';
 import '../providers/destination_provider.dart';
 import '../services/tips_service.dart';
-import '../widgets/custom_bottom_nav.dart';
 import 'package:provider/provider.dart';
+import '../widgets/app_drawer.dart';
 
 class TipsScreen extends StatefulWidget {
   const TipsScreen({super.key});
@@ -29,7 +29,9 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _tabController.dispose();
+    if (_categories.isNotEmpty) {
+      _tabController.dispose();
+    }
     super.dispose();
   }
 
@@ -57,6 +59,14 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
       // Load categories for the selected country
       _categories = await _tipsService.getCategoriesForCountry(selectedCountry);
       
+      if (_categories.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'No tip categories available for $selectedCountry';
+        });
+        return;
+      }
+      
       // Initialize tab controller after getting categories
       _tabController = TabController(
         length: _categories.length,
@@ -69,7 +79,7 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
       _tabController.addListener(_handleTabChange);
 
       // Set selected category
-      _selectedCategory = selectedCategory ?? (_categories.isNotEmpty ? _categories[0] : null);
+      _selectedCategory = selectedCategory ?? _categories[0];
 
       // Load tips for the selected category
       if (_selectedCategory != null) {
@@ -138,108 +148,42 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _searchTips(String query) async {
-    if (query.isEmpty) {
-      _loadTipsForCategory();
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final results = await _tipsService.searchTips(query);
-      
-      if (mounted) {
-        setState(() {
-          _tips = results;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Search error: $e';
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Consumer<DestinationProvider>(
-      builder: (context, destinationProvider, _) {
-        return Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF1E1E1E),
-            elevation: 0,
-            title: Text(
-              destinationProvider.selectedCountry != null
-                  ? 'Tips for ${destinationProvider.selectedCountry}'
-                  : 'Travel Tips',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.search, color: Color(0xFF4CD964)),
-                onPressed: () {
-                  showSearch(
-                    context: context,
-                    delegate: TipsSearchDelegate(searchTips: _searchTips, reloadTips: _loadTipsForCategory),
-                  );
-                },
-              ),
-            ],
-            bottom: _categories.isNotEmpty
-                ? TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    indicator: BoxDecoration(
-                      color: const Color(0xFF4CD964),
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    labelColor: Colors.black,
-                    unselectedLabelColor: Colors.white,
-                    tabs: _categories
-                        .map((category) => Tab(text: category.toUpperCase()))
-                        .toList(),
-                  )
-                : null,
-          ),
-          body: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF4CD964)),
-                )
-              : _errorMessage != null
-                  ? _buildErrorView()
-                  : _categories.isEmpty
-                      ? _buildEmptyView('No tip categories available for this destination')
-                      : _buildTipsView(),
-          bottomNavigationBar: CustomBottomNav(
-            currentIndex: 0, // Set home as active since tips are now integrated with home
-            onTap: (index) {
-              if (index == 0) {
-                Navigator.pushReplacementNamed(context, '/home');
-              } else if (index == 1) {
-                Navigator.pushReplacementNamed(context, '/deals');
-              } else if (index == 2) {
-                Navigator.pushReplacementNamed(context, '/currency-converter');
-              } else if (index == 3) {
-                Navigator.pushReplacementNamed(context, '/translation');
-              } else if (index == 4) {
-                Navigator.pushReplacementNamed(context, '/statistics');
-              }
-            },
-          ),
-        );
-      },
+    final destinationProvider = Provider.of<DestinationProvider>(context);
+    final selectedCountry = destinationProvider.selectedCountry;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Travel Tips${selectedCountry != null ? ' - $selectedCountry' : ''}'),
+        bottom: _categories.isNotEmpty ? TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: _categories.map((category) => Tab(text: category)).toList(),
+          indicatorColor: const Color(0xFF4CD964),
+          labelColor: const Color(0xFF4CD964),
+          unselectedLabelColor: Colors.grey,
+        ) : null,
+      ),
+      drawer: const AppDrawer(currentRoute: '/tips'),
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF4CD964)))
+          : _errorMessage != null 
+              ? _buildErrorView() 
+              : _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_categories.isEmpty) {
+      return _buildEmptyView('No tip categories available for this destination');
+    }
+    
+    return TabBarView(
+      controller: _tabController,
+      children: _categories.map((category) {
+        return _buildTipsView();
+      }).toList(),
     );
   }
 
@@ -396,111 +340,6 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class TipsSearchDelegate extends SearchDelegate {
-  final Future<void> Function(String) searchTips;
-  final Future<void> Function() reloadTips;
-
-  TipsSearchDelegate({required this.searchTips, required this.reloadTips});
-
-  @override
-  String get searchFieldLabel => 'Search for travel tips...';
-
-  @override
-  TextStyle get searchFieldStyle => const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-      );
-
-  @override
-  ThemeData appBarTheme(BuildContext context) {
-    return ThemeData(
-      scaffoldBackgroundColor: Colors.black,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1E1E1E),
-        iconTheme: IconThemeData(color: Color(0xFF4CD964)),
-        actionsIconTheme: IconThemeData(color: Color(0xFF4CD964)),
-      ),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: InputBorder.none,
-        hintStyle: TextStyle(color: Colors.grey),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Colors.white),
-      ),
-    );
-  }
-
-  @override
-  List<Widget> buildActions(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () {
-          if (query.isEmpty) {
-            close(context, null);
-          } else {
-            query = '';
-            showSuggestions(context);
-          }
-        },
-      ),
-    ];
-  }
-
-  @override
-  Widget buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        close(context, null);
-        reloadTips(); // Reload original tips when search is closed
-      },
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    if (query.trim().isEmpty) {
-      return Center(
-        child: Text(
-          'Please enter a search term',
-          style: TextStyle(color: Colors.grey[400], fontSize: 16),
-        ),
-      );
-    }
-
-    searchTips(query); // Trigger search
-    
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          CircularProgressIndicator(color: Color(0xFF4CD964)),
-          SizedBox(height: 16),
-          Text(
-            'Searching for tips...',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    if (query.trim().length > 2) {
-      searchTips(query); // Start searching when query is 3+ characters
-    }
-    
-    return Center(
-      child: Text(
-        'Type to search for travel tips',
-        style: TextStyle(color: Colors.grey[400], fontSize: 16),
       ),
     );
   }

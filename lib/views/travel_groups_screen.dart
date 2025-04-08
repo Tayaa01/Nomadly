@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/travel_group.dart';
 import '../viewmodels/travel_group_viewmodel.dart';
 import 'travel_group_detail_screen.dart';
-import '../widgets/custom_bottom_nav.dart';
+import '../widgets/app_drawer.dart'; // Replace custom_bottom_nav import
 
 class TravelGroupsScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -119,6 +119,7 @@ class _TravelGroupsScreenState extends State<TravelGroupsScreen> {
           ),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: '/travel-groups'),
       body: Consumer<TravelGroupViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
@@ -230,17 +231,6 @@ class _TravelGroupsScreenState extends State<TravelGroupsScreen> {
         tooltip: 'Créer un groupe',
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 3, // Utiliser l'index 3 pour les dépenses, car les groupes de voyage sont liés aux dépenses
-        
-        onTap: (index) {
-          // Gérer la navigation vers les différentes sections de l'application
-          if (index != 3) {
-            // Retourner à l'écran précédent si on n'est pas déjà sur l'index actuel
-            Navigator.pop(context);
-          }
-        },
-      ),
     );
   }
 }

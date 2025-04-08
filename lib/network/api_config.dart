@@ -20,7 +20,7 @@ class ApiConfig {
   // Endpoints for Translation Service
   static const String TRANSLATION_ENDPOINT = "/translation/translate";
 
-  // Endpoints for Deals Service
+  // Endpoints for Deals Serviceç
   static const String DEALS_ENDPOINT = "/deals";
   static const String DEALS_SEARCH_ENDPOINT = "/deals/search";
 

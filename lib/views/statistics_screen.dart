@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import '../widgets/custom_bottom_nav.dart';
+import '../widgets/app_drawer.dart';
 import '../models/transaction_summary.dart';
 import '../models/saving_summary.dart';
 import '../services/finance_service.dart';
@@ -32,7 +32,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     _fetchData();
   }
 
-  // Fix the _initializeWeekDates method to work with the format in the API response
+  // Initialize the week dates
   void _initializeWeekDates() {
     // Set to March 2025 dates to match your sample data instead of using current date
     _currentWeekStart = DateTime(2025, 3, 1);
@@ -44,6 +44,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     // _currentWeekEnd = _currentWeekStart.add(const Duration(days: 6));
   }
 
+  // Navigation methods for week selection
   void _goToPreviousWeek() {
     setState(() {
       _currentWeekStart = _currentWeekStart.subtract(const Duration(days: 7));
@@ -60,7 +61,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     });
   }
 
-  // Fix the date comparison logic in _fetchData
+  // Fetch financial data
   Future<void> _fetchData() async {
     setState(() {
       _isLoading = true;
@@ -72,12 +73,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       final transactions = await _financeService.getTransactionsByDay();
       final savings = await _financeService.getSavingsByDay();
       
-      print('Raw transactions: $transactions');
-      print('Raw savings: $savings');
-      
-      // Improve filtering logic to handle string date comparisons properly
+      // Filter transactions to current week
       final filteredTransactions = transactions.where((t) {
-        // Compare just the date part without time
         final transactionDate = DateTime(t.date.year, t.date.month, t.date.day);
         final startDate = DateTime(_currentWeekStart.year, _currentWeekStart.month, _currentWeekStart.day);
         final endDate = DateTime(_currentWeekEnd.year, _currentWeekEnd.month, _currentWeekEnd.day);
@@ -86,8 +83,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                !transactionDate.isAfter(endDate);
       }).toList();
       
+      // Filter savings to current week
       final filteredSavings = savings.where((s) {
-        // Compare just the date part without time
         final savingDate = DateTime(s.date.year, s.date.month, s.date.day);
         final startDate = DateTime(_currentWeekStart.year, _currentWeekStart.month, _currentWeekStart.day);
         final endDate = DateTime(_currentWeekEnd.year, _currentWeekEnd.month, _currentWeekEnd.day);
@@ -95,9 +92,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         return !savingDate.isBefore(startDate) && 
                !savingDate.isAfter(endDate);
       }).toList();
-
-      print('Filtered transactions: $filteredTransactions');
-      print('Filtered savings: $filteredSavings');
 
       setState(() {
         _transactions = filteredTransactions;
@@ -116,7 +110,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      // Fix the duplicate title in the AppBar
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -129,6 +123,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
         ),
       ),
+      drawer: const AppDrawer(currentRoute: '/statistics'),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
@@ -136,36 +131,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             )
           : _hasError
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, 
-                        color: Colors.redAccent, 
-                        size: 60,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading data',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage,
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _fetchData,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CD964),
-                        ),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                )
+              ? _buildErrorView()
               : RefreshIndicator(
                   onRefresh: _fetchData,
                   color: const Color(0xFF4CD964),
@@ -186,23 +152,44 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                   ),
                 ),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 4, // Assuming this is the 5th item
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/tips');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/currency-converter');
-          } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/translation');
-          }
-        },
+    );
+  }
+
+  // Error view widget
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, 
+            color: Colors.redAccent, 
+            size: 60,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Error loading data',
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage,
+            style: TextStyle(color: Colors.grey[400], fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _fetchData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CD964),
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
 
+  // Week selector widget
   Widget _buildWeekSelector() {
     final dateFormat = DateFormat('MMM d');
     return Row(
@@ -228,6 +215,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  // Transactions card widget
   Widget _buildTransactionsCard() {
     if (_transactions.isEmpty) {
       return _buildEmptyCard('No transactions for this week');
@@ -275,6 +263,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  // Savings card widget
   Widget _buildSavingsCard() {
     if (_savings.isEmpty) {
       return _buildEmptyCard('No savings data for this week');
@@ -320,6 +309,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  // Summary item widget
   Widget _buildSummaryItem(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,6 +327,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  // Empty card widget
   Widget _buildEmptyCard(String message) {
     return Card(
       color: const Color(0xFF1E1E1E),
@@ -354,7 +345,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  // Fix the _buildTransactionsChart method to correctly map dates to weekdays
+  // Transactions chart widget
   Widget _buildTransactionsChart() {
     // Generate data points for all days of the week
     final Map<int, TransactionSummary> transactionMap = {};
@@ -365,8 +356,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       final weekday = t.date.weekday;
       transactionMap[weekday] = t;
     }
-    
-    print('Transaction map by weekday: $transactionMap');
 
     // Create spots for every day of the week
     final spots = List<FlSpot>.generate(7, (index) {
@@ -411,8 +400,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         if (count > 0)
                           Text(
                             '($count)',  // Display count in parentheses
-                            style: TextStyle(
-                              color: const Color(0xFF4CD964),
+                            style: const TextStyle(
+                              color: Color(0xFF4CD964),
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
                             ),
@@ -446,7 +435,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  // Similarly fix the _buildSavingsChart method to correctly map dates to weekdays
+  // Savings chart widget
   Widget _buildSavingsChart() {
     // Generate data points for all days of the week
     final Map<int, SavingSummary> savingsMap = {};
@@ -457,8 +446,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       final weekday = s.date.weekday;
       savingsMap[weekday] = s;
     }
-    
-    print('Savings map by weekday: $savingsMap');
 
     // Create spots for every day of the week
     final spots = List<FlSpot>.generate(7, (index) {
@@ -503,7 +490,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         if (count > 0)
                           Text(
                             '($count)',  // Display count in parentheses
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.amber,
                               fontSize: 9,
                               fontWeight: FontWeight.bold,

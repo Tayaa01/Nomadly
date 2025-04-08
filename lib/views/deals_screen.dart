@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../widgets/custom_bottom_nav.dart';
+// import '../widgets/custom_bottom_nav.dart'; // REMOVE THIS LINE
 import '../providers/destination_provider.dart';
 import '../services/deals_service.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/app_drawer.dart'; // Add this import
 
 class DealsScreen extends StatefulWidget {
   const DealsScreen({super.key});
@@ -84,31 +85,11 @@ class _DealsScreenState extends State<DealsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E1E),
-        elevation: 0,
-        title: Consumer<DestinationProvider>(
-          builder: (context, destinationProvider, _) {
-            return Text(
-              destinationProvider.selectedCountry != null
-                  ? 'Deals in ${destinationProvider.selectedCountry}'
-                  : 'Travel Deals',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            );
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF4CD964)),
-            onPressed: _loadDeals,
-          ),
-        ],
+        title: const Text('Deals'),
+        // ...existing app bar code...
       ),
+      drawer: const AppDrawer(currentRoute: '/deals'), // Add this line
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF4CD964)),
@@ -118,20 +99,6 @@ class _DealsScreenState extends State<DealsScreen> {
               : _deals.isEmpty
                   ? _buildEmptyView()
                   : _buildDealsView(),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 1, // Ensure this is updated to match the deals index
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/currency-converter');
-          } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/translation');
-          } else if (index == 4) {
-            Navigator.pushReplacementNamed(context, '/statistics');
-          }
-        },
-      ),
     );
   }
 
