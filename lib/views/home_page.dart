@@ -430,7 +430,7 @@ class _HomePageState extends State<HomePage> {
                   : _buildIntegratedTipsSection(destinationProvider),
             ),
 
-            // Travel Planner Promo
+            // Travel Planner Promo - UPDATED TO BE LESS CURVED
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -451,7 +451,7 @@ class _HomePageState extends State<HomePage> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12), // Changed from 16 to 12
                     ),
                     child: Row(
                       children: [
@@ -503,7 +503,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Currency services promo
+            // Currency services promo - UPDATED TO BE LESS CURVED
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
@@ -520,7 +520,7 @@ class _HomePageState extends State<HomePage> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12), // Changed from 16 to 12
                       border: Border.all(
                         color: const Color(0xFF4CD964).withOpacity(0.3),
                       ),
@@ -1193,7 +1193,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: const Color(0xFF333333),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
             ),
             child: Row(
@@ -1302,7 +1302,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF333333),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.5)),
                               ),
                               child: Row(
@@ -1370,7 +1370,7 @@ class _HomePageState extends State<HomePage> {
           color: isSelected 
               ? const Color(0xFF4CD964) 
               : const Color(0xFF333333),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: isSelected ? [
             BoxShadow(
               color: const Color(0xFF4CD964).withOpacity(0.3),
