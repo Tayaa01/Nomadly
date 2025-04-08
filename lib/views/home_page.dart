@@ -962,7 +962,7 @@ class _HomePageState extends State<HomePage> {
     
     // Use a more reliable source for random images (Picsum)
     // This avoids the 404 errors from Unsplash
-    return 'https://picsum.photos/seed/${simpleQuery}${Random().nextInt(1000)}/400/300';
+    return 'https://picsum.photos/seed/$simpleQuery${Random().nextInt(1000)}/400/300';
   }
 
   String _getTimeOfDay() {

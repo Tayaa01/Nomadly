@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
+import '../widgets/app_drawer.dart'; // Add this import
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -148,6 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: '/profile'), // Add drawer
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF4CD964)),

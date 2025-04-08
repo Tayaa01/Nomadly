@@ -344,4 +344,42 @@ class AuthService {
       print('Error printing preferences: $e');
     }
   }
+
+  // Get current user info
+  Future<AuthUser?> getCurrentUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) return null;
+      
+      // For demo purposes, we'll decode the JWT to get user info
+      // In production, you'd typically make an API call to get full user details
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final data = json.decode(decoded);
+      
+      return AuthUser(
+        id: data['sub'],
+        email: data['email'],
+        countryCode: data['countryCode'],
+      );
+    } catch (e) {
+      print('Error getting current user: $e');
+      return null;
+    }
+  }
+}
+
+// Rename the User class to AuthUser to avoid conflicts
+class AuthUser {
+  final String id;
+  final String email;
+  final String? countryCode;
+
+  AuthUser({required this.id, required this.email, this.countryCode});
 }

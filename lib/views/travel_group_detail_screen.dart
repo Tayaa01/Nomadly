@@ -7,24 +7,25 @@ import '../viewmodels/travel_group_viewmodel.dart';
 import 'shared_expense_form_screen.dart';
 import 'balance_visualization_screen.dart';
 import 'expense_distribution_screen.dart';
-import 'settlement_management_screen.dart';
 
+// Update UI elements and translate French to English
 class TravelGroupDetailScreen extends StatefulWidget {
   final String groupId;
   final bool isDarkMode;
   final Function toggleTheme;
 
   const TravelGroupDetailScreen({
-    Key? key,
+    super.key,
     required this.groupId,
     required this.isDarkMode,
     required this.toggleTheme,
-  }) : super(key: key);
+  });
 
   @override
   State<TravelGroupDetailScreen> createState() => _TravelGroupDetailScreenState();
 }
 
+// Improve TabController handling
 class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
@@ -35,7 +36,20 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     
-    // Charger les données du groupe
+    // Add listener to update state when tab changes
+    _tabController.addListener(() {
+      // Only perform actions when the tab change is completed
+      if (!_tabController.indexIsChanging) {
+        // If the new tab is the settlements tab (index 2), recalculate settlements
+        if (_tabController.index == 2) {
+          Provider.of<TravelGroupViewModel>(context, listen: false).calculateSettlements();
+        }
+        
+        setState(() {});
+      }
+    });
+    
+    // Load group data
     Future.microtask(() {
       Provider.of<TravelGroupViewModel>(context, listen: false).setCurrentGroup(widget.groupId);
     });
@@ -48,24 +62,42 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     super.dispose();
   }
 
-  // Afficher le dialogue pour ajouter un nouveau membre
+  // Show dialog to add a new member - Translated from French
   void _showAddMemberDialog() {
     _memberNameController.clear();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Ajouter un membre'),
+        backgroundColor: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          'Add Member', // Changed from "Ajouter un membre"
+          style: TextStyle(
+            color: widget.isDarkMode ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Form(
           key: _formKey,
           child: TextFormField(
             controller: _memberNameController,
+            style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
             decoration: InputDecoration(
-              labelText: 'Nom du membre',
-              hintText: 'Ex: Jean',
+              labelText: 'Member Name', // Changed from "Nom du membre"
+              hintText: 'Ex: John', // Changed from "Ex: Jean"
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: const Color(0xFF4CD964).withOpacity(0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF4CD964), width: 2),
+              ),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Veuillez entrer un nom';
+                return 'Please enter a name'; // Changed from "Veuillez entrer un nom"
               }
               return null;
             },
@@ -74,7 +106,10 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Annuler'),
+            child: Text(
+              'Cancel', // Changed from "Annuler"
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -83,14 +118,19 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
                 Navigator.pop(context);
               }
             },
-            child: Text('Ajouter'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CD964),
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('Add'), // Changed from "Ajouter"
           ),
         ],
       ),
     );
   }
 
-  // Ajouter un nouveau membre au groupe
+  // Add a new member to the group
   void _addNewMember() {
     final viewModel = Provider.of<TravelGroupViewModel>(context, listen: false);
     
@@ -108,35 +148,50 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
         final group = viewModel.currentGroup;
         
         return Scaffold(
+          backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
           appBar: AppBar(
-            title: Text(group?.name ?? 'Détails du groupe'),
+            backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
+            elevation: 0,
+            title: Text(
+              group?.name ?? 'Group Details', // Changed from "Détails du groupe"
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             actions: [
               IconButton(
-                icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                icon: Icon(
+                  widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                ),
                 onPressed: () => widget.toggleTheme(),
               ),
             ],
             bottom: TabBar(
               controller: _tabController,
+              labelColor: const Color(0xFF4CD964),
+              unselectedLabelColor: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+              indicatorColor: const Color(0xFF4CD964),
               tabs: [
-                Tab(text: 'Membres'),
-                Tab(text: 'Dépenses'),
-                Tab(text: 'Règlements'),
+                Tab(text: 'Members'), // Changed from "Membres"
+                Tab(text: 'Expenses'), // Changed from "Dépenses"
+                Tab(text: 'Settlements'), // Changed from "Règlements"
               ],
             ),
           ),
           body: viewModel.isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF4CD964)))
               : (viewModel.errorMessage.isNotEmpty
                   ? Center(
                       child: Text(
                         viewModel.errorMessage,
-                        style: TextStyle(color: Colors.red),
+                        style: const TextStyle(color: Colors.red),
                         textAlign: TextAlign.center,
                       ),
                     )
                   : (group == null
-                      ? Center(child: Text('Groupe non trouvé'))
+                      ? Center(child: Text('Group not found')) // Changed from "Groupe non trouvé"
                       : TabBarView(
                           controller: _tabController,
                           children: [
@@ -151,7 +206,7 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     );
   }
 
-  // Construire l'onglet des membres
+  // Build the members tab
   Widget _buildMembersTab(TravelGroupViewModel viewModel, TravelGroup group) {
     return ListView.builder(
       itemCount: group.members.length,
@@ -159,59 +214,86 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
         final member = group.members[index];
         final balance = viewModel.getMemberBalance(member.id);
         
-        return ListTile(
-          leading: CircleAvatar(
-            child: Text(member.name[0].toUpperCase()),
-            backgroundColor: Colors.blue,
-          ),
-          title: Text(member.name),
-          subtitle: Text(
-            balance > 0
-                ? 'Doit recevoir: ${balance.toStringAsFixed(2)} €'
-                : balance < 0
-                    ? 'Doit payer: ${(-balance).toStringAsFixed(2)} €'
-                    : 'Solde: 0.00 €',
-            style: TextStyle(
-              color: balance > 0
-                  ? Colors.green
-                  : balance < 0
-                      ? Colors.red
-                      : null,
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          elevation: 2,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: const Color(0xFF4CD964),
+              child: Text(
+                member.name[0].toUpperCase(),
+                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          trailing: IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: () {
-              // Confirmer la suppression du membre
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('Supprimer le membre'),
-                  content: Text('Êtes-vous sûr de vouloir supprimer ${member.name} du groupe ?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('Annuler'),
+            title: Text(
+              member.name,
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(
+              balance > 0
+                  ? 'To receive: ${balance.toStringAsFixed(2)} €' // Changed from "Doit recevoir"
+                  : balance < 0
+                      ? 'To pay: ${(-balance).toStringAsFixed(2)} €' // Changed from "Doit payer"
+                      : 'Balance: 0.00 €', // Changed from "Solde"
+              style: TextStyle(
+                color: balance > 0
+                    ? Colors.green
+                    : balance < 0
+                        ? Colors.red
+                        : widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+              ),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () {
+                // Confirm member deletion
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    title: Text(
+                      'Delete Member', // Changed from "Supprimer le membre"
+                      style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        viewModel.removeMemberFromCurrentGroup(member.id);
-                        Navigator.pop(context);
-                      },
-                      child: Text('Supprimer'),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    content: Text(
+                      'Are you sure you want to remove ${member.name} from the group?', // Changed from French
+                      style: TextStyle(color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800]),
                     ),
-                  ],
-                ),
-              );
-            },
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Cancel', style: TextStyle(color: Colors.grey)), // Changed from "Annuler"
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          viewModel.removeMemberFromCurrentGroup(member.id);
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text('Delete'), // Changed from "Supprimer"
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         );
       },
     );
   }
 
-  // Construire l'onglet des dépenses
+  // Build the expenses tab
   Widget _buildExpensesTab(TravelGroupViewModel viewModel, TravelGroup group) {
     if (viewModel.sharedExpenses.isEmpty) {
       return Center(
@@ -221,19 +303,28 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
             Icon(
               Icons.receipt_long,
               size: 80,
-              color: Colors.grey,
+              color: widget.isDarkMode ? Colors.grey[700] : Colors.grey[300],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              'Aucune dépense partagée',
-              style: TextStyle(fontSize: 16),
+              'No shared expenses', // Changed from "Aucune dépense partagée"
+              style: TextStyle(
+                fontSize: 18,
+                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => _navigateToAddExpense(group),
-              icon: Icon(Icons.add),
-              label: Text('Ajouter une dépense'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CD964),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Add an expense'), // Changed from "Ajouter une dépense"
             ),
           ],
         ),
@@ -246,86 +337,136 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
         final expense = viewModel.sharedExpenses[index];
         final payer = group.members.firstWhere(
           (m) => m.id == expense.payerId,
-          orElse: () => GroupMember(name: 'Inconnu'),
+          orElse: () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
         );
         
         return Card(
-          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          elevation: 4,
           child: InkWell(
             onTap: () => _navigateToEditExpense(group, expense),
+            borderRadius: BorderRadius.circular(12),
             child: Column(
               children: [
                 ListTile(
                   title: Text(
                     expense.description,
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                    ),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Payé par: ${payer.name}',
-                        style: TextStyle(fontSize: 12),
+                        'Paid by: ${payer.name}', // Changed from "Payé par"
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        ),
                       ),
                       Text(
-                        'Date: ${DateFormat('dd/MM/yyyy').format(expense.date)}',
-                        style: TextStyle(fontSize: 12),
+                        'Date: ${DateFormat('MM/dd/yyyy').format(expense.date)}', // Changed date format
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        ),
                       ),
                       Text(
-                        'Type de partage: ${_getSplitTypeText(expense.splitType)}',
-                        style: TextStyle(fontSize: 12),
+                        'Split type: ${_getSplitTypeText(expense.splitType)}', // Changed from "Type de partage"
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        ),
                       ),
                     ],
                   ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${expense.amount.toStringAsFixed(2)} ${expense.currency}',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, size: 20),
-                        onPressed: () {
-                          // Confirmer la suppression de la dépense
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text('Supprimer la dépense'),
-                              content: Text('Êtes-vous sûr de vouloir supprimer cette dépense ?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text('Annuler'),
+                  trailing: SizedBox(
+                    width: 90, // Fixed width to prevent overflow
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${expense.amount.toStringAsFixed(2)} ${expense.currency}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF4CD964),
+                            fontSize: 14, // Slightly smaller font
+                          ),
+                          overflow: TextOverflow.ellipsis, // Prevent text overflow
+                        ),
+                        // Use a smaller, more compact delete button
+                        GestureDetector(
+                          onTap: () {
+                            // Existing delete dialog code can remain the same
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                title: Text(
+                                  'Delete Expense', // Changed from "Supprimer la dépense"
+                                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                                 ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    viewModel.deleteSharedExpense(expense.id);
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text('Supprimer'),
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                content: Text(
+                                  'Are you sure you want to delete this expense?', // Changed from French
+                                  style: TextStyle(color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800]),
                                 ),
-                              ],
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text('Cancel', style: TextStyle(color: Colors.grey)), // Changed from "Annuler"
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      viewModel.deleteSharedExpense(expense.id);
+                                      Navigator.pop(context);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: Text('Delete'), // Changed from "Supprimer"
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Delete', // More compact than an icon
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          );
-                        },
-                      ),
-                    ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(right: 16, bottom: 8),
+                  padding: const EdgeInsets.only(right: 16, bottom: 8),
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: () => _navigateToExpenseDistribution(group, expense),
-                      icon: Icon(Icons.pie_chart, size: 16),
-                      label: Text('Voir la répartition'),
+                      icon: const Icon(Icons.pie_chart, size: 16, color: Color(0xFF4CD964)),
+                      label: Text(
+                        'View distribution', // Changed from "Voir la répartition"
+                        style: const TextStyle(color: Color(0xFF4CD964)),
+                      ),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        minimumSize: Size(0, 0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
@@ -339,36 +480,38 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     );
   }
 
-  // Construire l'onglet des règlements
+  // Build the settlements tab
   Widget _buildSettlementsTab(TravelGroupViewModel viewModel, TravelGroup group) {
     if (viewModel.settlements.isEmpty) {
       return Center(
-        child: SingleChildScrollView( // Wrap in SingleChildScrollView to prevent overflow
+        child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.account_balance_wallet,
                 size: 80,
-                color: Colors.grey,
+                color: widget.isDarkMode ? Colors.grey[700] : Colors.grey[300],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
-                'Aucun règlement à effectuer',
-                style: TextStyle(fontSize: 16),
+                'No settlements to make', // Changed from "Aucun règlement à effectuer"
+                style: TextStyle(
+                  fontSize: 18,
+                  color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => viewModel.calculateSettlements(),
-                icon: Icon(Icons.refresh),
-                label: Text('Calculer les règlements'),
-              ),
-              SizedBox(height: 16),
+              const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () => _navigateToBalanceVisualization(group),
-                icon: Icon(Icons.bar_chart),
-                label: Text('Visualiser les soldes'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF333333),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                icon: const Icon(Icons.bar_chart),
+                label: const Text('Visualize Balances'), // Changed from "Visualiser les soldes"
               ),
             ],
           ),
@@ -381,68 +524,67 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center, // Center the single button
             children: [
-              ElevatedButton.icon(
-                onPressed: () => viewModel.calculateSettlements(),
-                icon: Icon(Icons.refresh),
-                label: Text('Recalculer'),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () => _navigateToBalanceVisualization(group),
-                    icon: Icon(Icons.bar_chart),
-                    label: Text('Visualiser les soldes'),
+              // Remove the Recalculate button and keep only the Balance button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _navigateToBalanceVisualization(group),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF333333),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Slightly larger now
                   ),
-                  SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SettlementManagementScreen(
-                          groupId: group.id,
-                          isDarkMode: widget.isDarkMode,
-                          toggleTheme: widget.toggleTheme,
-                        ),
-                      ),
-                    ),
-                    icon: Icon(Icons.account_balance_wallet),
-                    label: Text('Gérer les règlements'),
+                  icon: const Icon(Icons.bar_chart, size: 18), // Slightly larger icon
+                  label: const Text(
+                    'Visualize Balances', // Use full text now that we have more space
+                    style: TextStyle(fontSize: 14), // Slightly larger text
                   ),
-                ],
+                ),
               ),
             ],
           ),
         ),
-        Expanded( // Use Expanded to ensure the ListView takes up remaining space
+        Expanded(
           child: ListView.builder(
             itemCount: viewModel.settlements.length,
             itemBuilder: (context, index) {
               final settlement = viewModel.settlements[index];
               final fromMember = group.members.firstWhere(
                 (m) => m.id == settlement.fromMemberId,
-                orElse: () => GroupMember(name: 'Inconnu'),
+                orElse: () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
               );
               final toMember = group.members.firstWhere(
                 (m) => m.id == settlement.toMemberId,
-                orElse: () => GroupMember(name: 'Inconnu'),
+                orElse: () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
               );
               
               return Card(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                elevation: 2,
                 child: ListTile(
                   leading: CircleAvatar(
-                    child: Icon(settlement.isSettled ? Icons.check : Icons.arrow_forward),
                     backgroundColor: settlement.isSettled ? Colors.green : Colors.orange,
+                    child: Icon(
+                      settlement.isSettled ? Icons.check : Icons.arrow_forward,
+                      color: Colors.white,
+                    ),
                   ),
                   title: Text(
-                    '${fromMember.name} doit payer ${toMember.name}',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    '${fromMember.name} owes ${toMember.name}', // Changed from "doit payer"
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                    ),
                   ),
                   subtitle: Text(
-                    settlement.isSettled ? 'Réglé le ${DateFormat('dd/MM/yyyy').format(settlement.date)}' : 'En attente de règlement',
+                    settlement.isSettled 
+                        ? 'Settled on ${DateFormat('MM/dd/yyyy').format(settlement.date)}' // Changed from "Réglé le"
+                        : 'Pending settlement', // Changed from "En attente de règlement"
+                    style: TextStyle(color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700]),
                   ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -450,12 +592,22 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
                     children: [
                       Text(
                         '${settlement.amount.toStringAsFixed(2)} ${settlement.currency}',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF4CD964),
+                        ),
                       ),
                       if (!settlement.isSettled)
                         TextButton(
                           onPressed: () => viewModel.markSettlementAsSettled(settlement.id),
-                          child: Text('Marquer comme réglé'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF4CD964),
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text('Mark as settled'), // Changed from "Marquer comme réglé"
                         ),
                     ],
                   ),
@@ -468,27 +620,36 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     );
   }
 
-  // Construire le bouton flottant en fonction de l'onglet actif
+  // Build the floating action button according to the active tab
   Widget _buildFloatingActionButton(TravelGroupViewModel viewModel, int tabIndex) {
+    // Make sure we have a valid group before showing expense-related FABs
+    if (viewModel.currentGroup == null && tabIndex == 1) {
+      return Container(); // No FAB if there's no group
+    }
+    
     switch (tabIndex) {
-      case 0: // Onglet Membres
+      case 0: // Members tab
         return FloatingActionButton(
           onPressed: _showAddMemberDialog,
-          child: Icon(Icons.person_add),
-          tooltip: 'Ajouter un membre',
+          backgroundColor: const Color(0xFF4CD964),
+          tooltip: 'Add a member',
+          child: const Icon(Icons.person_add, color: Colors.black),
         );
-      case 1: // Onglet Dépenses
+      case 1: // Expenses tab
         return FloatingActionButton(
-          onPressed: () => _navigateToAddExpense(viewModel.currentGroup!),
-          child: Icon(Icons.add),
-          tooltip: 'Ajouter une dépense',
+          onPressed: viewModel.currentGroup != null
+              ? () => _navigateToAddExpense(viewModel.currentGroup!)
+              : null,
+          backgroundColor: const Color(0xFF4CD964),
+          tooltip: 'Add an expense',
+          child: const Icon(Icons.add, color: Colors.black),
         );
       default:
-        return Container(); // Pas de bouton pour l'onglet Règlements
+        return Container(); // No button for the Settlements tab
     }
   }
 
-  // Naviguer vers l'écran d'ajout de dépense
+  // Navigate to add expense screen
   void _navigateToAddExpense(TravelGroup group) {
     Navigator.push(
       context,
@@ -502,7 +663,7 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     );
   }
 
-  // Naviguer vers l'écran de modification de dépense
+  // Navigate to edit expense screen
   void _navigateToEditExpense(TravelGroup group, SharedExpense expense) {
     Navigator.push(
       context,
@@ -517,7 +678,7 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     );
   }
   
-  // Naviguer vers l'écran de visualisation des soldes
+  // Navigate to balance visualization screen
   void _navigateToBalanceVisualization(TravelGroup group) {
     Navigator.push(
       context,
@@ -531,7 +692,7 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     );
   }
 
-  // Naviguer vers l'écran de visualisation de la répartition des dépenses
+  // Navigate to expense distribution screen
   void _navigateToExpenseDistribution(TravelGroup group, SharedExpense expense) {
     Navigator.push(
       context,
@@ -546,17 +707,17 @@ class _TravelGroupDetailScreenState extends State<TravelGroupDetailScreen> with 
     );
   }
 
-  // Obtenir le texte correspondant au type de répartition
+  // Get text for split type
   String _getSplitTypeText(SplitType splitType) {
     switch (splitType) {
       case SplitType.equal:
-        return 'Répartition égale';
+        return 'Equal split'; // Changed from "Répartition égale"
       case SplitType.custom:
-        return 'Montants personnalisés';
+        return 'Custom amounts'; // Changed from "Montants personnalisés"
       case SplitType.percentage:
-        return 'Pourcentages';
-      default:
-        return 'Inconnu';
+        return 'Percentages'; // Changed from "Pourcentages"
+      case SplitType.weighted:
+        return 'Weighted split'; // Changed from "Inconnu"
     }
   }
 }

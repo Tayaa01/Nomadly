@@ -38,7 +38,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
   String _selectedTargetLanguage = 'fr';
   String _selectedCategory = 'All';
   bool _isOfflineMode = false;
-  String _searchQuery = '';
+  final String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
   final List<Map<String, String>> _languages = [

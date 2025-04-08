@@ -272,6 +272,102 @@ class TravelGroupService {
     
     return settlements;
   }
+
+  // Update the clearSettlementsForGroup method to be more careful
+  Future<void> clearSettlementsForGroup(String groupId) async {
+    try {
+      // First get all settlements for the group
+      final allSettlements = await getSettlementsForGroup(groupId);
+      
+      // Only delete unsettled settlements
+      final unsettledSettlements = allSettlements.where((s) => !s.isSettled).toList();
+      
+      // Delete only unsettled settlements
+      for (var settlement in unsettledSettlements) {
+        await deleteSettlement(settlement.id);
+      }
+    } catch (e) {
+      print('Error clearing settlements: $e');
+      rethrow;
+    }
+  }
+
+  // Add a new method to cleanupDuplicateSettlements
+  Future<void> cleanupDuplicateSettlements(String groupId) async {
+    try {
+      // First get all settlements for the group
+      final allSettlements = await getSettlementsForGroup(groupId);
+      
+      // Track unique fromMember-toMember pairs
+      Map<String, List<Settlement>> settlementsByPair = {};
+      
+      // Group settlements by fromMember-toMember pairs
+      for (var settlement in allSettlements) {
+        String key = '${settlement.fromMemberId}-${settlement.toMemberId}';
+        if (!settlementsByPair.containsKey(key)) {
+          settlementsByPair[key] = [];
+        }
+        settlementsByPair[key]!.add(settlement);
+      }
+      
+      // For each pair, keep only the most recent settlement (or the settled one)
+      for (var pairSettlements in settlementsByPair.values) {
+        if (pairSettlements.length > 1) {
+          // Sort by date (most recent first)
+          pairSettlements.sort((a, b) => b.date.compareTo(a.date));
+          
+          // Find settled settlements
+          bool hasSettled = pairSettlements.any((s) => s.isSettled);
+          
+          if (hasSettled) {
+            // Keep the most recent settled settlement
+            var settledSettlements = pairSettlements.where((s) => s.isSettled).toList()
+              ..sort((a, b) => b.date.compareTo(a.date));
+            
+            Settlement keepSettlement = settledSettlements.first;
+            
+            // Delete all others
+            for (var settlement in pairSettlements) {
+              if (settlement.id != keepSettlement.id) {
+                await deleteSettlement(settlement.id);
+              }
+            }
+          } else {
+            // Keep only the most recent one (already sorted)
+            Settlement keepSettlement = pairSettlements.first;
+            
+            // Delete all others
+            for (var settlement in pairSettlements.skip(1)) {
+              await deleteSettlement(settlement.id);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error cleaning up duplicate settlements: $e');
+      rethrow;
+    }
+  }
+
+  // Add this method if it doesn't exist
+  Future<void> deleteSettlement(String settlementId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final settlementsJson = prefs.getStringList(_settlementsStorageKey) ?? [];
+      
+      // Filter out the settlement to delete
+      final updatedSettlements = settlementsJson.where((json) {
+        final map = jsonDecode(json);
+        return map['id'] != settlementId;
+      }).toList();
+      
+      // Save the updated list back to SharedPreferences
+      await prefs.setStringList(_settlementsStorageKey, updatedSettlements);
+    } catch (e) {
+      print('Error deleting settlement: $e');
+      rethrow;
+    }
+  }
 }
 
 // Fonction utilitaire pour prendre le minimum de deux nombres

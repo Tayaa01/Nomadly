@@ -9,24 +9,17 @@ class SharedExpense extends Expense {
   final SplitType splitType; // Type de répartition
 
   SharedExpense({
-    String? id,
-    required double amount,
-    required String category,
-    required DateTime date,
-    required String description,
-    required String currency,
+    super.id,
+    required super.amount,
+    required super.category,
+    required super.date,
+    required super.description,
+    required super.currency,
     required this.groupId,
     required this.payerId,
     required this.splitAmounts,
     required this.splitType,
-  }) : super(
-          id: id,
-          amount: amount,
-          category: category,
-          date: date,
-          description: description,
-          currency: currency,
-        );
+  });
 
   // Méthode pour créer une copie d'une dépense partagée avec des modifications
   @override

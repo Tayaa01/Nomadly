@@ -39,6 +39,20 @@ class ApiConfig {
     'Accept': 'application/json',
   };
 
+  // Add list of supported currencies
+  static const List<String> SUPPORTED_CURRENCIES = [
+    'EUR',
+    'USD',
+    'GBP',
+    'JPY',
+    'CAD',
+    'AUD',
+    'CHF',
+    'CNY',
+    'INR',
+    'TND', // Tunisian Dinar
+  ];
+
   // Helper to create authenticated headers
   static Map<String, String> getAuthHeaders(String token) {
     return {

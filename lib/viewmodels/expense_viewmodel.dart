@@ -1,109 +1,118 @@
 import 'package:flutter/material.dart';
-import '../models/expense.dart';
-import '../services/expense_service.dart';
+import '../models/transaction.dart';
+import '../services/transaction_service.dart';
 
 class ExpenseViewModel extends ChangeNotifier {
-  final ExpenseService _expenseService = ExpenseService();
-  List<Expense> _expenses = [];
+  final TransactionService _transactionService = TransactionService();
+
+  List<Transaction> _transactions = [];
   bool _isLoading = false;
   String _errorMessage = '';
 
   // Getters
-  List<Expense> get expenses => _expenses;
+  List<Transaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  // Initialiser le ViewModel
+  // Initialize the ViewModel
   Future<void> init() async {
-    await loadExpenses();
+    await fetchTransactions();
   }
 
-  // Charger toutes les dépenses
-  Future<void> loadExpenses() async {
+  // Fetch all transactions from backend
+  Future<void> fetchTransactions() async {
     _setLoading(true);
     try {
-      _expenses = await _expenseService.getAllExpenses();
-      _expenses.sort((a, b) => b.date.compareTo(a.date)); // Tri par date décroissante
+      _transactions = await _transactionService.getTransactions();
+      // Sort by date (newest first)
+      _transactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       _errorMessage = '';
     } catch (e) {
-      _errorMessage = 'Erreur lors du chargement des dépenses: ${e.toString()}';
+      _errorMessage = 'Error loading transactions: ${e.toString()}';
+      print('Error fetching transactions: $e');
     } finally {
       _setLoading(false);
     }
   }
 
-  // Ajouter une nouvelle dépense
-  Future<void> addExpense(Expense expense) async {
+  // Add a new transaction to backend
+  Future<void> addTransaction(Transaction transaction) async {
     _setLoading(true);
     try {
-      await _expenseService.addExpense(expense);
-      await loadExpenses(); // Recharger la liste
+      final newTransaction = await _transactionService.addTransaction(transaction);
+
+      // Add to local list and sort
+      _transactions.add(newTransaction);
+      _transactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      _errorMessage = '';
     } catch (e) {
-      _errorMessage = 'Erreur lors de l\'ajout de la dépense: ${e.toString()}';
+      _errorMessage = 'Error adding transaction: ${e.toString()}';
+      print('Error adding transaction: $e');
+      rethrow; // Rethrow to let the UI handle the error
     } finally {
       _setLoading(false);
     }
   }
 
-  // Mettre à jour une dépense existante
-  Future<void> updateExpense(Expense expense) async {
-    _setLoading(true);
-    try {
-      await _expenseService.updateExpense(expense);
-      await loadExpenses(); // Recharger la liste
-    } catch (e) {
-      _errorMessage = 'Erreur lors de la mise à jour de la dépense: ${e.toString()}';
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // Supprimer une dépense
-  Future<void> deleteExpense(String id) async {
-    _setLoading(true);
-    try {
-      await _expenseService.deleteExpense(id);
-      await loadExpenses(); // Recharger la liste
-    } catch (e) {
-      _errorMessage = 'Erreur lors de la suppression de la dépense: ${e.toString()}';
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // Obtenir les dépenses par catégorie pour le graphique
-  Future<Map<String, double>> getExpensesByCategory() async {
-    try {
-      return await _expenseService.getExpensesByCategory();
-    } catch (e) {
-      _errorMessage = 'Erreur lors du calcul des dépenses par catégorie: ${e.toString()}';
-      return {};
-    }
-  }
-
-  // Obtenir les dépenses par jour pour le graphique
-  Future<Map<DateTime, double>> getExpensesByDay() async {
-    try {
-      return await _expenseService.getExpensesByDay();
-    } catch (e) {
-      _errorMessage = 'Erreur lors du calcul des dépenses par jour: ${e.toString()}';
-      return {};
-    }
-  }
-
-  // Calculer le total des dépenses
+  // Calculate total expenses in EUR (simplified)
   Future<double> getTotalExpenses() async {
-    try {
-      return await _expenseService.getTotalExpenses();
-    } catch (e) {
-      _errorMessage = 'Erreur lors du calcul du total des dépenses: ${e.toString()}';
-      return 0.0;
+    if (_transactions.isEmpty) return 0.0;
+
+    // Use a local variable to accumulate the sum
+    double total = 0.0;
+
+    // Sum up all transaction amounts
+    for (var transaction in _transactions) {
+      total += transaction.originalAmount;
     }
+
+    return total;
   }
 
-  // Méthode utilitaire pour définir l'état de chargement
+  // Helper method to set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
+  }
+
+  // Add these methods to support the expense chart screen
+  Future<Map<String, double>> getExpensesByCategory() async {
+    // Since we're using currency-based charts now, redirect to currency method
+    return getExpensesByCurrency();
+  }
+
+  Future<Map<String, double>> getExpensesByCurrency() async {
+    if (_transactions.isEmpty) return {};
+
+    final Map<String, double> result = {};
+
+    for (var transaction in _transactions) {
+      final currency = transaction.originalCurrency;
+      final amount = transaction.originalAmount;
+
+      result[currency] = (result[currency] ?? 0) + amount;
+    }
+
+    return result;
+  }
+
+  Future<Map<DateTime, double>> getExpensesByDay() async {
+    if (_transactions.isEmpty) return {};
+
+    final Map<DateTime, double> result = {};
+
+    for (var transaction in _transactions) {
+      // Create date without time part
+      final date = DateTime(
+        transaction.createdAt.year,
+        transaction.createdAt.month,
+        transaction.createdAt.day,
+      );
+
+      result[date] = (result[date] ?? 0) + transaction.originalAmount;
+    }
+
+    return result;
   }
 }

@@ -1,4 +1,3 @@
-import '../models/shared_expense.dart';
 
 /// Classe qui définit les options avancées pour la répartition des dépenses
 class ExpenseSplitOptions {

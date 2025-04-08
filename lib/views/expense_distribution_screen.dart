@@ -13,12 +13,12 @@ class ExpenseDistributionScreen extends StatefulWidget {
   final Function toggleTheme;
 
   const ExpenseDistributionScreen({
-    Key? key,
+    super.key,
     required this.groupId,
     required this.expenseId,
     required this.isDarkMode,
     required this.toggleTheme,
-  }) : super(key: key);
+  });
 
   @override
   State<ExpenseDistributionScreen> createState() => _ExpenseDistributionScreenState();
@@ -36,27 +36,39 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
       appBar: AppBar(
-        title: Text('Répartition de la dépense'),
+        backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
+        elevation: 0,
+        title: Text(
+          'Expense Distribution', // Changed from "Répartition de la dépense"
+          style: TextStyle(
+            color: widget.isDarkMode ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            icon: Icon(
+              widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              color: widget.isDarkMode ? Colors.white : Colors.black,
+            ),
             onPressed: () => widget.toggleTheme(),
           ),
         ],
       ),
       body: Consumer<TravelGroupViewModel>(builder: (context, viewModel, child) {
         if (viewModel.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF4CD964)));
         }
 
         if (viewModel.errorMessage.isNotEmpty) {
-          return Center(child: Text('Erreur: ${viewModel.errorMessage}'));
+          return Center(child: Text('Error: ${viewModel.errorMessage}')); // Changed from "Erreur"
         }
 
         final group = viewModel.currentGroup;
         if (group == null) {
-          return Center(child: Text('Groupe non trouvé'));
+          return Center(child: Text('Group not found')); // Changed from "Groupe non trouvé"
         }
 
         final expense = viewModel.sharedExpenses.firstWhere(
@@ -65,7 +77,7 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
             amount: 0,
             category: '',
             date: DateTime.now(),
-            description: 'Dépense non trouvée',
+            description: 'Expense not found', // Changed from "Dépense non trouvée"
             currency: 'EUR',
             groupId: widget.groupId,
             payerId: '',
@@ -75,23 +87,23 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
         );
 
         if (expense.id != widget.expenseId) {
-          return Center(child: Text('Dépense non trouvée'));
+          return Center(child: Text('Expense not found')); // Changed from "Dépense non trouvée"
         }
 
         final payer = group.members.firstWhere(
           (m) => m.id == expense.payerId,
-          orElse: () => GroupMember(name: 'Inconnu'),
+          orElse: () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
         );
 
         return SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildExpenseHeader(expense, payer),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               _buildDistributionChart(expense, group),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               _buildDistributionList(expense, group),
             ],
           ),
@@ -104,39 +116,59 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               expense.description,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20, 
+                fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? Colors.white : Colors.black,
+              ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              'Montant: ${expense.amount.toStringAsFixed(2)} ${expense.currency}',
-              style: TextStyle(fontSize: 16),
+              'Amount: ${expense.amount.toStringAsFixed(2)} ${expense.currency}', // Changed from "Montant"
+              style: TextStyle(
+                fontSize: 16,
+                color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+              ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Payé par: ${payer.name}',
-              style: TextStyle(fontSize: 16),
+              'Paid by: ${payer.name}', // Changed from "Payé par"
+              style: TextStyle(
+                fontSize: 16,
+                color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+              ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Date: ${DateFormat('dd/MM/yyyy').format(expense.date)}',
-              style: TextStyle(fontSize: 16),
+              'Date: ${DateFormat('MM/dd/yyyy').format(expense.date)}', // Changed date format and from "Date"
+              style: TextStyle(
+                fontSize: 16,
+                color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+              ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Catégorie: ${expense.category}',
-              style: TextStyle(fontSize: 16),
+              'Category: ${expense.category}', // Changed from "Catégorie"
+              style: TextStyle(
+                fontSize: 16,
+                color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+              ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Type de répartition: ${_getSplitTypeText(expense.splitType)}',
-              style: TextStyle(fontSize: 16),
+              'Split type: ${_getSplitTypeText(expense.splitType)}', // Changed from "Type de répartition"
+              style: TextStyle(
+                fontSize: 16,
+                color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+              ),
             ),
           ],
         ),
@@ -144,6 +176,7 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
     );
   }
 
+  // Fix potential issues with PieChart rendering
   Widget _buildDistributionChart(SharedExpense expense, TravelGroup group) {
     final List<PieChartSectionData> sections = [];
     final List<Color> colors = [
@@ -159,50 +192,65 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
       Colors.cyan,
     ];
 
-    int colorIndex = 0;
-    expense.splitAmounts.forEach((memberId, amount) {
-      final member = group.members.firstWhere(
-        (m) => m.id == memberId,
-        orElse: () => GroupMember(name: 'Inconnu'),
-      );
+    // Only create pie sections if there are valid split amounts
+    if (expense.splitAmounts.isNotEmpty && expense.amount > 0) {
+      int colorIndex = 0;
+      expense.splitAmounts.forEach((memberId, amount) {
+        // Skip entries with zero amount to avoid division by zero errors
+        if (amount > 0) {
+          final member = group.members.firstWhere(
+            (m) => m.id == memberId,
+            orElse: () => GroupMember(name: 'Unknown'),
+          );
 
-      final percentage = (amount / expense.amount) * 100;
-      sections.add(
-        PieChartSectionData(
-          color: colors[colorIndex % colors.length],
-          value: amount,
-          title: '${percentage.toStringAsFixed(1)}%',
-          radius: 100,
-          titleStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-          badgeWidget: _Badge(member.name[0].toUpperCase()),
-          badgePositionPercentageOffset: 1.1,
-        ),
-      );
-      colorIndex++;
-    });
+          final percentage = (amount / expense.amount) * 100;
+          sections.add(
+            PieChartSectionData(
+              color: colors[colorIndex % colors.length],
+              value: amount,
+              title: '${percentage.toStringAsFixed(1)}%',
+              radius: 100,
+              titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+              badgeWidget: _Badge(member.name[0].toUpperCase()),
+              badgePositionPercentageOffset: 1.1,
+            ),
+          );
+          colorIndex++;
+        }
+      });
+    }
 
     return Container(
       height: 300,
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+        color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: PieChart(
-        PieChartData(
-          sections: sections,
-          centerSpaceRadius: 40,
-          sectionsSpace: 2,
-          pieTouchData: PieTouchData(enabled: true),
-        ),
-      ),
+      child: sections.isEmpty 
+        ? Center(
+            child: Text(
+              'No split data available for visualization',
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+              ),
+            ),
+          )
+        : PieChart(
+            PieChartData(
+              sections: sections,
+              centerSpaceRadius: 40,
+              sectionsSpace: 2,
+              pieTouchData: PieTouchData(enabled: true),
+            ),
+          ),
     );
   }
 
@@ -213,29 +261,45 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       child: ListView.separated(
         shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: sortedEntries.length,
-        separatorBuilder: (context, index) => Divider(height: 1),
+        separatorBuilder: (context, index) => const Divider(height: 1),
         itemBuilder: (context, index) {
           final entry = sortedEntries[index];
           final member = group.members.firstWhere(
             (m) => m.id == entry.key,
-            orElse: () => GroupMember(name: 'Inconnu'),
+            orElse: () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
           );
           final percentage = (entry.value / expense.amount) * 100;
 
           return ListTile(
             leading: CircleAvatar(
-              child: Text(member.name[0].toUpperCase()),
-              backgroundColor: Colors.blue,
+              backgroundColor: const Color(0xFF4CD964),
+              child: Text(
+                member.name[0].toUpperCase(),
+                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              ),
             ),
-            title: Text(member.name),
-            subtitle: Text('${percentage.toStringAsFixed(1)}% du total'),
+            title: Text(
+              member.name,
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(
+              '${percentage.toStringAsFixed(1)}% of total', // Changed from "du total"
+              style: TextStyle(color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700]),
+            ),
             trailing: Text(
               '${entry.value.toStringAsFixed(2)} ${expense.currency}',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF4CD964),
+              ),
             ),
           );
         },
@@ -246,13 +310,13 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
   String _getSplitTypeText(SplitType splitType) {
     switch (splitType) {
       case SplitType.equal:
-        return 'Répartition égale';
+        return 'Equal split'; // Changed from "Répartition égale"
       case SplitType.custom:
-        return 'Montants personnalisés';
+        return 'Custom amounts'; // Changed from "Montants personnalisés"
       case SplitType.percentage:
-        return 'Pourcentages';
-      default:
-        return 'Inconnu';
+        return 'Percentages'; // Changed from "Pourcentages"
+      case SplitType.weighted:
+        return 'Weighted split'; // Changed from "Inconnu"
     }
   }
 }
@@ -275,14 +339,14 @@ class _Badge extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
             blurRadius: 3,
-            offset: Offset(0, 1),
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Center(
         child: Text(
           text,
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
         ),
       ),
     );

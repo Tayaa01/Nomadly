@@ -4,7 +4,7 @@ import '../services/auth_service.dart';
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
 
-  const AppDrawer({Key? key, required this.currentRoute}) : super(key: key);
+  const AppDrawer({super.key, required this.currentRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +65,7 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Divider with subtle shadow
           Container(
             height: 1,
@@ -79,7 +79,7 @@ class AppDrawer extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Main menu items
           Expanded(
             child: SingleChildScrollView(
@@ -87,7 +87,7 @@ class AppDrawer extends StatelessWidget {
               child: Column(
                 children: [
                   _buildCategoryLabel(context, 'MAIN', isDarkMode),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Home',
@@ -97,7 +97,7 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Trip Planner',
@@ -107,7 +107,7 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Deals',
@@ -117,10 +117,10 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   const SizedBox(height: 16),
                   _buildCategoryLabel(context, 'TOOLS', isDarkMode),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Currency Converter',
@@ -130,7 +130,7 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Translation',
@@ -140,10 +140,10 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   const SizedBox(height: 16),
                   _buildCategoryLabel(context, 'FINANCE', isDarkMode),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Expense Tracker',
@@ -153,7 +153,7 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Group Expenses',
@@ -163,7 +163,7 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Statistics',
@@ -173,10 +173,10 @@ class AppDrawer extends StatelessWidget {
                     isDarkMode,
                     primaryColor,
                   ),
-                  
+
                   const SizedBox(height: 16),
                   _buildCategoryLabel(context, 'ACCOUNT', isDarkMode),
-                  
+
                   _buildDrawerItem(
                     context,
                     'Profile',
@@ -190,7 +190,7 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Logout button at the bottom
           Container(
             decoration: BoxDecoration(

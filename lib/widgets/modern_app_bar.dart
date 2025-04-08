@@ -13,7 +13,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color? backgroundColor;
 
   const ModernAppBar({
-    Key? key,
+    super.key,
     required this.title,
     this.actions,
     required this.isDarkMode,
@@ -24,7 +24,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.elevation = 0,
     this.centerTitle = true,
     this.backgroundColor,
-  }) : super(key: key);
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(56);

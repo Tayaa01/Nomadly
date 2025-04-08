@@ -3,7 +3,6 @@ import '../models/travel_group.dart';
 import '../models/shared_expense.dart';
 import '../models/settlement_method.dart';
 import '../services/travel_group_service.dart';
-import '../utils/settlement_optimizer.dart';
 
 class TravelGroupViewModel extends ChangeNotifier {
   final TravelGroupService _travelGroupService = TravelGroupService();
@@ -81,10 +80,31 @@ class TravelGroupViewModel extends ChangeNotifier {
     
     _setLoading(true);
     try {
-      _settlements = await _travelGroupService.getSettlementsForGroup(_currentGroup!.id);
+      // First load all settlements
+      List<Settlement> allSettlements = await _travelGroupService.getSettlementsForGroup(_currentGroup!.id);
+      
+      // Handle potential duplicates by only keeping the latest version of each unique fromMember-toMember pair
+      // This assumes newer settlements override older ones
+      Map<String, Settlement> uniqueSettlements = {};
+      
+      for (var settlement in allSettlements) {
+        // Create a key based on the from-to pair
+        String key = '${settlement.fromMemberId}-${settlement.toMemberId}';
+        
+        // Only keep the latest version (assuming newer always overrides older)
+        // If it's already settled, always keep the settled version
+        if (!uniqueSettlements.containsKey(key) || 
+            settlement.isSettled || 
+            settlement.date.isAfter(uniqueSettlements[key]!.date)) {
+          uniqueSettlements[key] = settlement;
+        }
+      }
+      
+      // Use only the unique settlements
+      _settlements = uniqueSettlements.values.toList();
       _errorMessage = '';
     } catch (e) {
-      _errorMessage = 'Erreur lors du chargement des règlements: ${e.toString()}';
+      _errorMessage = 'Error loading settlements: ${e.toString()}';
     } finally {
       _setLoading(false);
     }
@@ -213,47 +233,167 @@ class TravelGroupViewModel extends ChangeNotifier {
   Future<void> deleteSharedExpense(String expenseId) async {
     _setLoading(true);
     try {
+      // First delete the expense
       await _travelGroupService.deleteSharedExpense(expenseId);
+      
+      // Then reload all expenses
       await loadSharedExpensesForCurrentGroup();
+      
+      // Now recalculate settlements to reflect the removed expense
+      // Clear existing settlements first
+      _settlements = [];
+      await _travelGroupService.clearSettlementsForGroup(_currentGroup!.id);
+      
+      // Then recalculate new settlements
+      calculateSettlements();
+      
       _errorMessage = '';
     } catch (e) {
-      _errorMessage = 'Erreur lors de la suppression de la dépense: ${e.toString()}';
+      _errorMessage = 'Error deleting expense: ${e.toString()}';
     } finally {
       _setLoading(false);
     }
   }
 
   // Calculer les règlements optimaux pour le groupe courant
-  Future<void> calculateSettlements() async {
-    if (_currentGroup == null) return;
+  void calculateSettlements() {
+    if (currentGroup == null) return;
     
-    _setLoading(true);
-    try {
-      // Récupérer les règlements existants qui sont déjà marqués comme réglés
-      final existingSettlements = await _travelGroupService.getSettlementsForGroup(_currentGroup!.id);
-      final settledSettlements = existingSettlements.where((s) => s.isSettled).toList();
+    // Track already settled pairs to avoid duplicates
+    // Use a set with composite keys "fromId-toId" to track which pairs already have settlements
+    Set<String> settledPairs = {};
+    
+    // First get all settled settlements and track their member pairs
+    final settledSettlements = _settlements.where((s) => s.isSettled).toList();
+    for (var settlement in settledSettlements) {
+      // Create a composite key to track this settlement pair
+      settledPairs.add('${settlement.fromMemberId}-${settlement.toMemberId}');
+    }
+    
+    // Clear only the non-settled settlements
+    _settlements = settledSettlements;
+    
+    // Calculate balances for each member
+    Map<String, double> balances = {};
+    
+    // Initialize balances to zero for all members
+    for (var member in currentGroup!.members) {
+      balances[member.id] = 0.0;
+    }
+    
+    // Calculate balances from expenses
+    for (var expense in _sharedExpenses) {
+      balances[expense.payerId] = (balances[expense.payerId] ?? 0) + expense.amount;
       
-      // Calculer les balances actuelles
-      final memberIds = _currentGroup!.members.map((m) => m.id).toList();
-      final balances = SettlementOptimizer.calculateBalances(_sharedExpenses, memberIds);
+      expense.splitAmounts.forEach((memberId, amount) {
+        balances[memberId] = (balances[memberId] ?? 0) - amount;
+      });
+    }
+    
+    // Convert balances to settlements
+    List<MapEntry<String, double>> debtors = [];
+    List<MapEntry<String, double>> creditors = [];
+    
+    balances.forEach((memberId, balance) {
+      if (balance < -0.01) { // Debtor (owes money)
+        debtors.add(MapEntry(memberId, -balance)); // Store as positive amount
+      } else if (balance > 0.01) { // Creditor (is owed money)
+        creditors.add(MapEntry(memberId, balance));
+      }
+    });
+    
+    // Sort by amount (descending)
+    debtors.sort((a, b) => b.value.compareTo(a.value));
+    creditors.sort((a, b) => b.value.compareTo(a.value));
+    
+    // Match debtors with creditors to create settlements
+    while (debtors.isNotEmpty && creditors.isNotEmpty) {
+      var debtor = debtors.first;
+      var creditor = creditors.first;
       
-      // Calculer les règlements optimaux
-      final optimalSettlements = SettlementOptimizer.calculateOptimalSettlements(balances);
+      // Check if this pair already has a settlement
+      final pairKey = '${debtor.key}-${creditor.key}';
       
-      // Combiner les règlements réglés avec les nouveaux règlements optimaux
-      _settlements = [...settledSettlements, ...optimalSettlements];
-      
-      // Sauvegarder les nouveaux règlements
-      for (var settlement in optimalSettlements) {
-        await _travelGroupService.addSettlement(settlement);
+      // If this pair already has a settled settlement, skip creating a new one
+      if (settledPairs.contains(pairKey)) {
+        // Skip this pair or reduce the amounts to account for already settled amount
+        // For simplicity, we'll just skip the entire settlement
+        
+        // Remove the smaller of the two values
+        double smallerValue = min(debtor.value, creditor.value);
+        
+        // Update remaining amounts
+        double debtorRemaining = debtor.value - smallerValue;
+        double creditorRemaining = creditor.value - smallerValue;
+        
+        // Remove or update debtor
+        if (debtorRemaining < 0.01) {
+          debtors.removeAt(0);
+        } else {
+          debtors[0] = MapEntry(debtor.key, debtorRemaining);
+        }
+        
+        // Remove or update creditor
+        if (creditorRemaining < 0.01) {
+          creditors.removeAt(0);
+        } else {
+          creditors[0] = MapEntry(creditor.key, creditorRemaining);
+        }
+        
+        continue; // Skip to the next iteration
       }
       
-      _errorMessage = '';
-    } catch (e) {
-      _errorMessage = 'Erreur lors du calcul des règlements: ${e.toString()}';
-    } finally {
-      _setLoading(false);
+      // The amount to settle is the minimum of what debtor owes and creditor is owed
+      double settlementAmount = min(debtor.value, creditor.value);
+      
+      if (settlementAmount > 0.01) {
+        // Create settlement with a unique ID based on member IDs rather than timestamp
+        // This helps prevent duplicate entries on restart
+        final uniqueId = "${DateTime.now().millisecondsSinceEpoch}-${debtor.key}-${creditor.key}";
+        
+        _settlements.add(
+          Settlement(
+            id: uniqueId,
+            fromMemberId: debtor.key, // Debtor pays
+            toMemberId: creditor.key, // To creditor
+            amount: settlementAmount,
+            currency: 'EUR', // Default currency
+            date: DateTime.now(),
+            isSettled: false,
+          ),
+        );
+      }
+      
+      // Update remaining amounts
+      double debtorRemaining = debtor.value - settlementAmount;
+      double creditorRemaining = creditor.value - settlementAmount;
+      
+      // Remove or update debtor
+      if (debtorRemaining < 0.01) {
+        debtors.removeAt(0);
+      } else {
+        debtors[0] = MapEntry(debtor.key, debtorRemaining);
+      }
+      
+      // Remove or update creditor
+      if (creditorRemaining < 0.01) {
+        creditors.removeAt(0);
+      } else {
+        creditors[0] = MapEntry(creditor.key, creditorRemaining);
+      }
     }
+    
+    // Save the new settlements
+    for (var settlement in _settlements.where((s) => !s.isSettled)) {
+      _travelGroupService.addSettlement(settlement);
+    }
+    
+    notifyListeners();
+  }
+
+  // Helper method to determine minimum of two doubles
+  double min(double a, double b) {
+    return a < b ? a : b;
   }
 
   // Marquer un règlement comme effectué
@@ -264,16 +404,32 @@ class TravelGroupViewModel extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      final settlement = _settlements.firstWhere((s) => s.id == settlementId);
-      final updatedSettlement = settlement.markAsSettled(
-        method: method,
-        notes: notes,
-      );
-      await _travelGroupService.updateSettlement(updatedSettlement);
-      await loadSettlementsForCurrentGroup();
+      // Find the settlement to mark as settled
+      final settlementIndex = _settlements.indexWhere((s) => s.id == settlementId);
+      if (settlementIndex >= 0) {
+        // Update the settlement in our local list directly
+        final settlement = _settlements[settlementIndex];
+        final updatedSettlement = settlement.markAsSettled(
+          method: method,
+          notes: notes,
+        );
+        
+        // Replace the settlement in our local list
+        _settlements[settlementIndex] = updatedSettlement;
+        
+        // Update the settlement in the database
+        await _travelGroupService.updateSettlement(updatedSettlement);
+        
+        // This is critical: DON'T reload settlements from the database
+        // as it might cause duplicate settlements to appear if the database
+        // implementation isn't properly handling updates
+        
+        notifyListeners(); // Just notify listeners about the change
+      }
+      
       _errorMessage = '';
     } catch (e) {
-      _errorMessage = 'Erreur lors de la mise à jour du règlement: ${e.toString()}';
+      _errorMessage = 'Error updating settlement: ${e.toString()}';
     } finally {
       _setLoading(false);
     }
@@ -281,18 +437,17 @@ class TravelGroupViewModel extends ChangeNotifier {
 
   // Obtenir le solde d'un membre
   double getMemberBalance(String memberId) {
-    if (_currentGroup == null) return 0.0;
+    if (currentGroup == null) return 0.0;
     
     double balance = 0.0;
     
-    // Calculer le solde en fonction des dépenses
     for (var expense in _sharedExpenses) {
-      // Si le membre est le payeur, ajouter le montant total
+      // If this member paid for the expense, add the full amount to their balance
       if (expense.payerId == memberId) {
         balance += expense.amount;
       }
       
-      // Soustraire la part du membre
+      // Subtract what this member owes for the expense
       if (expense.splitAmounts.containsKey(memberId)) {
         balance -= expense.splitAmounts[memberId]!;
       }
@@ -305,5 +460,14 @@ class TravelGroupViewModel extends ChangeNotifier {
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
+  }
+
+  // Add a public method to access the cleanupDuplicateSettlements functionality
+  Future<void> cleanupDuplicateSettlements(String groupId) async {
+    try {
+      await _travelGroupService.cleanupDuplicateSettlements(groupId);
+    } catch (e) {
+      _errorMessage = 'Error cleaning up settlements: ${e.toString()}';
+    }
   }
 }

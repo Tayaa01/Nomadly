@@ -9,11 +9,11 @@ class DebtFlowChart extends StatefulWidget {
   final bool isDarkMode;
 
   const DebtFlowChart({
-    Key? key,
+    super.key,
     required this.settlements,
     required this.members,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   State<DebtFlowChart> createState() => _DebtFlowChartState();

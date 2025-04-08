@@ -7,7 +7,7 @@ import 'sign_in_page.dart';
 import 'welcome_page.dart';
 
 class AppSplashScreen extends StatefulWidget {
-  const AppSplashScreen({Key? key}) : super(key: key);
+  const AppSplashScreen({super.key});
 
   @override
   State<AppSplashScreen> createState() => _AppSplashScreenState();
