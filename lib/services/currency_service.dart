@@ -130,7 +130,7 @@ class CurrencyService {
       return response.data;
     } catch (e) {
       print('Error calling API: $e');
-      throw e;  // Re-throw to be handled by the ViewModel
+      rethrow;  // Re-throw to be handled by the ViewModel
     }
   }
 

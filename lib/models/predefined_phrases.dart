@@ -1,4 +1,17 @@
+import 'package:flutter/material.dart';
+
 class PredefinedPhrases {
+  // Replace emoji icons with Flutter icons
+  static Map<String, IconData> categoryIcons = {
+    'General': Icons.language_outlined,
+    'Restaurant': Icons.restaurant_outlined,
+    'Hotel': Icons.hotel_outlined,
+    'Transport': Icons.directions_bus_outlined,
+    'Emergency': Icons.emergency_outlined,
+    'Shopping': Icons.shopping_bag_outlined,
+    'Other': Icons.help_outline,
+  };
+
   static Map<String, List<Map<String, String>>> phrasesByCategory = {
     'General': [
       {'text': 'Hello', 'translation': 'Bonjour'},
@@ -39,17 +52,7 @@ class PredefinedPhrases {
     ],
   };
 
-  static Map<String, String> categoryIcons = {
-    'General': '🌐',
-    'Restaurant': '🍽️',
-    'Hotel': '🏨',
-    'Transport': '🚆',
-    'Emergency': '🚨',
-    'Shopping': '🛍️',
-    'Other': '📝',
-  };
-
-  static void addCustomCategory(String category, {String icon = '📝'}) {
+  static void addCustomCategory(String category, {IconData icon = Icons.label_outline}) {
     if (!phrasesByCategory.containsKey(category)) {
       phrasesByCategory[category] = [];
       categoryIcons[category] = icon;

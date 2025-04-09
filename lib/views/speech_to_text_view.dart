@@ -11,7 +11,7 @@ import '../models/predefined_phrases.dart';
 import '../services/translation_cache_service.dart';
 import 'package:flutter/services.dart';
 import '../widgets/app_drawer.dart';  // Change import from custom_bottom_nav to app_drawer
-import '../widgets/modern_app_bar.dart'; // Import modern app bar
+// Import modern app bar
 
 class SpeechToTextView extends StatefulWidget {
   const SpeechToTextView({super.key});
@@ -36,8 +36,6 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
 
   String _selectedSourceLanguage = 'en';
   String _selectedTargetLanguage = 'fr';
-  String _selectedCategory = 'All';
-  bool _isOfflineMode = false;
   final String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -162,176 +160,124 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     super.initState();
     _speech = stt.SpeechToText();
     _ttsService = TtsService();
+
+    // Start loading immediately and don't wait for it to complete
     _initializePrefs();
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    // Ajouter un timer pour nettoyer les discussions toutes les heures
-    Timer.periodic(Duration(hours: 1), (_) => _cleanupOldDiscussions());
+
+    // Add periodic cleanup
+    Timer.periodic(const Duration(hours: 1), (_) => _cleanupOldDiscussions());
   }
 
   Future<void> _initializePrefs() async {
-    _prefs = await SharedPreferences.getInstance();
-    _loadDiscussions();
-  }
+    try {
+      print('Initializing SharedPreferences');
+      _prefs = await SharedPreferences.getInstance();
 
-  void _loadDiscussions() {
-    final discussionsJson = _prefs.getStringList('discussions') ?? [];
-    _discussions = discussionsJson
-        .map((json) => Discussion.fromJson(jsonDecode(json)))
-        .toList();
-    
-    _cleanupOldDiscussions();
-  }
+      // Now load discussions after prefs is initialized
+      await _loadDiscussions();
 
-  void _cleanupOldDiscussions() {
-    bool hasRemovedDiscussions = false;
-    
-    _discussions.removeWhere((discussion) {
-      if (discussion.isFavorite) return false; // Ne pas supprimer les favoris
-      final isOld = discussion.isExpired();
-      if (isOld) hasRemovedDiscussions = true;
-      return isOld;
-    });
-    
-    if (hasRemovedDiscussions) {
-      _saveDiscussions();
-      setState(() {});
+      // Force UI update after discussions are loaded
+      if (mounted) {
+        setState(() {
+          print('State updated after loading discussions');
+        });
+      }
+    } catch (e) {
+      print('Error in _initializePrefs: $e');
     }
   }
 
-  void _saveDiscussions() {
-    final discussionsJson = _discussions
-        .map((discussion) => jsonEncode(discussion.toJson()))
-        .toList();
-    _prefs.setStringList('discussions', discussionsJson);
+  Future<void> _loadDiscussions() async {
+    try {
+      // Check if the key exists and print all available keys for debugging
+      final keys = _prefs.getKeys();
+      print('Available SharedPreferences keys: $keys');
+      print('Checking for "discussions" key: ${_prefs.containsKey('discussions')}');
+
+      final discussionsJson = _prefs.getStringList('discussions') ?? [];
+      print('Loading ${discussionsJson.length} discussions from SharedPreferences');
+
+      if (discussionsJson.isEmpty) {
+        print('No discussions found in SharedPreferences');
+        _discussions = [];
+        return;
+      }
+
+      final loadedDiscussions = <Discussion>[];
+
+      for (var json in discussionsJson) {
+        try {
+          final discussion = Discussion.fromJson(jsonDecode(json));
+          loadedDiscussions.add(discussion);
+        } catch (e) {
+          print('Error parsing discussion JSON: $e');
+        }
+      }
+
+      print('Successfully loaded ${loadedDiscussions.length} discussions');
+
+      // Update the discussions list and trigger a UI update
+      setState(() {
+        _discussions = loadedDiscussions;
+      });
+
+      _cleanupOldDiscussions();
+    } catch (e) {
+      print('Exception in _loadDiscussions: $e');
+      setState(() {
+        _discussions = [];
+      });
+    }
+  }
+
+  Future<void> _saveDiscussions() async {
+    try {
+      final discussionsJson = _discussions
+          .map((discussion) => jsonEncode(discussion.toJson()))
+          .toList();
+
+      print('Saving ${discussionsJson.length} discussions to SharedPreferences');
+
+      final result = await _prefs.setStringList('discussions', discussionsJson);
+
+      if (result) {
+        print('Discussions successfully saved to SharedPreferences');
+      } else {
+        print('Failed to save discussions to SharedPreferences');
+      }
+
+      // Verify save worked by reading back
+      final saved = _prefs.getStringList('discussions') ?? [];
+      print('Verified ${saved.length} discussions saved');
+    } catch (e) {
+      print('Exception in _saveDiscussions: $e');
+    }
   }
 
   void _createNewDiscussion() {
     _showCategorySelector(createNew: true);
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _debounce?.cancel();
-    _ttsService.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
 
-  Future<void> _translateText() async {
-    if (_text.isEmpty || _text == 'Say something' || _isRequestPending) return;
+  void _cleanupOldDiscussions() {
+    bool hasRemovedDiscussions = false;
 
-    setState(() {
-      _isRequestPending = true;
+    _discussions.removeWhere((discussion) {
+      if (discussion.isFavorite) return false; // Ne pas supprimer les favoris
+      final isOld = discussion.isExpired();
+      if (isOld) hasRemovedDiscussions = true;
+      return isOld;
     });
 
-    try {
-      String translation;
-      
-      // Check cache in offline mode
-      if (_isOfflineMode) {
-        translation = await TranslationCacheService.getCachedTranslation(
-          _text,
-          _selectedSourceLanguage,
-          _selectedTargetLanguage,
-        ) ?? 'No offline translation available';
-      } else {
-        // Online translation
-        final response = await _performOnlineTranslation();
-        translation = response['translation'] ?? 'Translation failed';
-        
-        // Cache the translation
-        await TranslationCacheService.cacheTranslation(
-          _text,
-          translation,
-          _selectedSourceLanguage,
-          _selectedTargetLanguage,
-        );
-      }
-
-      setState(() {
-        _translatedText = translation;
-        if (_currentDiscussion != null) {
-          _currentDiscussion!.messages.add(Message(
-            text: _text,
-            translation: _translatedText,
-            timestamp: DateTime.now(),
-            isUser: true,
-            detectedLanguage: _selectedSourceLanguage,
-          ));
-          _saveDiscussions();
-        }
-      });
-
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Translation error: $e')),
-      );
-    } finally {
-      setState(() {
-        _isRequestPending = false;
-      });
+    if (hasRemovedDiscussions) {
+      _saveDiscussions();
+      setState(() {});
     }
-  }
-
-  Future<void> _speak(String text, String language) async {
-    print('Trying to speak: $text in language: $language');
-    try {
-      await _ttsService.speak(text, language);
-    } catch (e) {
-      print('Error in _speak: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error playing audio: $e')),
-      );
-    }
-  }
-
-  void _showLanguageSelector(bool isSource) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => ListView.builder(
-        itemCount: _languages.length,
-        itemBuilder: (context, index) {
-          final language = _languages[index];
-          final bool isTtsSupported = _supportedTtsLanguages.contains(language['code']);
-          return ListTile(
-            title: Row(
-              children: [
-                Text(
-                  language['name']!,
-                  style: TextStyle(color: Colors.white),
-                ),
-                if (!isTtsSupported)
-                  Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Text(
-                      '(Translation only)',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ),
-              ],
-            ),
-            onTap: () {
-              setState(() {
-                if (isSource) {
-                  _selectedSourceLanguage = language['code']!;
-                } else {
-                  _selectedTargetLanguage = language['code']!;
-                }
-              });
-              Navigator.pop(context);
-            },
-          );
-        },
-      ),
-    );
   }
 
   void _listen() async {
@@ -360,7 +306,7 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               if (val.hasConfidenceRating && val.confidence > 0) {
               }
             });
-            
+
             // Only start translation when speech recognition is done
             if (val.finalResult) {
               if (_text.isNotEmpty && _text != 'Say something') {
@@ -379,26 +325,74 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     }
   }
 
-  @override 
+  Future<void> _translateText() async {
+    if (_text.isEmpty || _text == 'Say something' || _isRequestPending) return;
+
+    setState(() {
+      _isRequestPending = true;
+    });
+
+    try {
+      // Get the translation from the API
+      final response = await _performOnlineTranslation();
+      final translation = response['translation'] ?? 'Translation failed';
+      
+      // Cache the translation for potential future offline use
+      await TranslationCacheService.cacheTranslation(
+        _text,
+        translation,
+        _selectedSourceLanguage,
+        _selectedTargetLanguage,
+      );
+
+      setState(() {
+        _translatedText = translation;
+        if (_currentDiscussion != null) {
+          _currentDiscussion!.messages.add(Message(
+            text: _text,
+            translation: _translatedText,
+            timestamp: DateTime.now(),
+            isUser: true,
+            detectedLanguage: _selectedSourceLanguage,
+          ));
+          _saveDiscussions();
+        }
+      });
+    } catch (e) {
+      print('Translation error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Translation error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isRequestPending = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
-      appBar: ModernAppBar(
-        title: _currentDiscussion == null ? 'Translate' : _currentDiscussion!.category,
-        isDarkMode: isDarkMode,
-        centerTitle: false,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1E1E1E),
         elevation: 0,
-        leading: _currentDiscussion == null 
-            ? null 
+        title: Text(
+          _currentDiscussion == null ? 'Translate' : _currentDiscussion!.category,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: _currentDiscussion == null
+            ? null
             : IconButton(
-                icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                 onPressed: () => setState(() => _currentDiscussion = null),
               ),
         actions: _buildAppBarActions(),
       ),
-      drawer: const AppDrawer(currentRoute: '/translation'), // Add drawer navigation
+      drawer: const AppDrawer(currentRoute: '/translation'),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -411,302 +405,209 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             ? _buildDiscussionsListView()
             : _buildDiscussionView(),
       ),
-      floatingActionButton: _currentDiscussion == null 
-          ? FloatingActionButton.extended(
+      floatingActionButton: _currentDiscussion == null
+          ? FloatingActionButton(
               onPressed: _createNewDiscussion,
-              icon: const Icon(Icons.add, color: Colors.black),
-              label: const Text(
-                'New Discussion',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
               backgroundColor: const Color(0xFF4CD964),
+              child: const Icon(Icons.add, color: Colors.black),
             )
           : null,
-      // Remove bottomNavigationBar property
     );
   }
-
 
   List<Widget> _buildAppBarActions() {
     if (_currentDiscussion == null) {
+      // For the discussions list screen - remove the online/offline toggle
+      return [];
+    } else {
+      // For the discussion view, keep language selectors
       return [
-        IconButton(
-          icon: Icon(_isOfflineMode ? Icons.cloud_off : Icons.cloud),
-          color: Colors.white,
-          onPressed: () => setState(() => _isOfflineMode = !_isOfflineMode),
+        // Combined language selector button
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF333333),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                // Show dialog with both language options
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: const Color(0xFF1E1E1E),
+                    title: const Text(
+                      'Select Languages',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildLanguageSelectionButton(
+                          'Source Language',
+                          _selectedSourceLanguage,
+                          () {
+                            Navigator.pop(context);
+                            _showLanguageSelector(true);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLanguageSelectionButton(
+                          'Target Language',
+                          _selectedTargetLanguage,
+                          () {
+                            Navigator.pop(context);
+                            _showLanguageSelector(false);
+                          },
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Close',
+                          style: TextStyle(color: Color(0xFF4CD964)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _selectedSourceLanguage.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.arrow_forward,
+                      color: Color(0xFF4CD964),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _selectedTargetLanguage.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Category button
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF4CD964).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF4CD964).withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _showCategorySelector(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      PredefinedPhrases.categoryIcons[_currentDiscussion!.category] ?? Icons.label_outline,
+                      color: const Color(0xFF4CD964),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _currentDiscussion!.category,
+                      style: const TextStyle(
+                        color: Color(0xFF4CD964),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ];
     }
-    return [
-      IconButton(
-        icon: const Icon(Icons.language, color: Colors.white),
-        onPressed: () => _showLanguageSelector(true),
-        tooltip: 'Source Language',
-      ),
-      IconButton(
-        icon: const Icon(Icons.translate, color: Colors.white),
-        onPressed: () => _showLanguageSelector(false),
-        tooltip: 'Target Language',
-      ),
-      IconButton(
-        icon: const Icon(Icons.category, color: Colors.white),
-        onPressed: _showCategorySelector,
-      ),
-    ];
   }
 
-  Widget _buildDiscussionsListView() {
-    final filteredDiscussions = _discussions.where((discussion) {
-      if (_searchQuery.isEmpty) {
-        return _selectedCategory == 'All' || discussion.category == _selectedCategory;
+  // Helper method for language selection buttons
+  Widget _buildLanguageSelectionButton(String label, String languageCode, VoidCallback onTap) {
+    // Find language name from code
+    String languageName = 'Unknown';
+    for (var lang in _languages) {
+      if (lang['code'] == languageCode) {
+        languageName = lang['name']!;
+        break;
       }
-      
-      final query = _searchQuery.toLowerCase();
-      final matchesCategory = _selectedCategory == 'All' || discussion.category == _selectedCategory;
-      final matchesSearch = discussion.messages.any((message) =>
-        message.text.toLowerCase().contains(query) ||
-        message.translation.toLowerCase().contains(query));
-      
-      return matchesCategory && matchesSearch;
-    }).toList();
+    }
 
-    return Column(
-      children: [
-        _buildCategoryFilter(),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.blue[300], size: 16),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Discussions are automatically deleted after 24 hours',
-                  style: TextStyle(color: Colors.blue[300], fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (filteredDiscussions.isEmpty)
-          Expanded(
-            child: Center(
-              child: Text(
-                _selectedCategory == 'All'
-                    ? 'No discussions yet'
-                    : 'No discussions in this category',
-                style: TextStyle(color: Colors.white70),
-              ),
-            ),
-          )
-        else
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredDiscussions.length,
-              itemBuilder: (context, index) {
-                final discussion = filteredDiscussions[index];
-                return _buildDiscussionListItem(discussion);
-              },
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryFilter() {
-    return SizedBox(
-      height: 60,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return ListView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            children: [
-              'All',
-              ...PredefinedPhrases.phrasesByCategory.keys,
-            ].map((category) => _buildCategoryChip(category)).toList()
-            ..add(
-              Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: ActionChip(
-                  avatar: Icon(Icons.add, color: Colors.white, size: 18),
-                  label: Text('New category'),
-                  onPressed: _showAddCategoryDialog,
-                  backgroundColor: Colors.grey[800],
-                  labelStyle: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCategoryChip(String category) {
-    final isSelected = _selectedCategory == category;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        avatar: Text(
-          PredefinedPhrases.categoryIcons[category] ?? '📝',
-          style: const TextStyle(fontSize: 14),
-        ),
-        label: Text(category),
-        selected: isSelected,
-        onSelected: (selected) {
-          setState(() => _selectedCategory = selected ? category : 'All');
-        },
-        backgroundColor: const Color(0xFF333333),
-        selectedColor: const Color(0xFF4CD964),
-        labelStyle: TextStyle(
-          color: isSelected ? Colors.black : Colors.white,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-    );
-  }
-
-  Widget _buildDiscussionView() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWeb = screenWidth > 600; // Considérer comme web si largeur > 600px
-
-    return Column(
-      children: [
-        _buildPredefinedPhrases(),
-        Expanded(
-          child: Container(
-            constraints: isWeb
-                ? BoxConstraints(maxWidth: 800) // Limiter la largeur sur web
-                : null,
-            child: ListView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: _currentDiscussion!.messages.length,
-              itemBuilder: (context, index) {
-                final message = _currentDiscussion!.messages[index];
-                return _buildMessageBubble(message);
-              },
-            ),
-          ),
-        ),
-        Container(
-          constraints: isWeb
-              ? BoxConstraints(maxWidth: 800) // Limiter la largeur sur web
-              : null,
-          child: _buildInputArea(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPredefinedPhrases() {
-    final phrases = PredefinedPhrases.phrasesByCategory[_currentDiscussion!.category] ?? [];
-    if (phrases.isEmpty) return SizedBox.shrink();
-
-    return SizedBox(
-      height: 50,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: phrases.length,
-        itemBuilder: (context, index) {
-          final phrase = phrases[index];
-          return Padding(
-            padding: EdgeInsets.only(right: 8),
-            child: ActionChip(
-              label: Text(phrase['text']!),
-              onPressed: () => _onPredefinedPhraseSelected(phrase),
-              backgroundColor: Colors.grey[800],
-              labelStyle: TextStyle(color: Colors.white),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(Message message) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: message.isUser 
-              ? const Color(0xFF4CD964)
-              : const Color(0xFF333333),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          color: const Color(0xFF333333),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              message.text,
+              label,
               style: TextStyle(
-                color: message.isUser ? Colors.black : Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+                color: Colors.grey[400],
+                fontSize: 12,
               ),
             ),
             const SizedBox(height: 8),
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    message.translation,
-                    style: TextStyle(
-                      color: message.isUser 
-                          ? Colors.black.withOpacity(0.7)
-                          : Colors.white.withOpacity(0.7),
-                      fontSize: 14,
-                    ),
+                Text(
+                  languageName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (_supportedTtsLanguages.contains(
-                  message.isUser ? _selectedTargetLanguage : message.detectedLanguage
-                ))
-                  IconButton(
-                    icon: Icon(
-                      Icons.volume_up,
-                      color: message.isUser 
-                          ? Colors.black.withOpacity(0.7)
-                          : Colors.white.withOpacity(0.7),
-                      size: 20,
-                    ),
-                    onPressed: () => _speak(
-                      message.isUser ? message.translation : message.text,
-                      message.isUser ? _selectedTargetLanguage : message.detectedLanguage,
-                    ),
-                  ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Color(0xFF4CD964),
+                  size: 16,
+                ),
               ],
-            ),
-            SizedBox(height: 4),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Text(
-                _getTimeAgo(message.timestamp),
-                style: TextStyle(
-                  color: message.isUser 
-                      ? Colors.black.withOpacity(0.5)
-                      : Colors.white.withOpacity(0.5),
-                  fontSize: 10,
-                ),
-              ),
             ),
           ],
         ),
@@ -714,7 +615,470 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     );
   }
 
-  Widget _buildInputArea() {
+  Widget _buildDiscussionsListView() {
+    // Filter discussions without categories - no need for category filtering now
+    final filteredDiscussions = _discussions.where((discussion) {
+      if (_searchQuery.isEmpty) {
+        return true; // Show all discussions since we're removing category filtering
+      }
+
+      final query = _searchQuery.toLowerCase();
+      final matchesSearch = discussion.messages.any((message) =>
+          message.text.toLowerCase().contains(query) ||
+          message.translation.toLowerCase().contains(query));
+
+      return matchesSearch;
+    }).toList();
+
+    return Column(
+      children: [
+        // Keep the info message with clear button
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 8), // Adjusted top margin
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[300], size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Discussions are automatically deleted after 24 hours unless favorited',
+                      style: TextStyle(color: Colors.blue[300], fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => _confirmClearNonFavorites(),
+                  icon: const Icon(Icons.delete_sweep, size: 16),
+                  label: const Text('Clear Now', style: TextStyle(fontSize: 13)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red[400],
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Colors.red[400]!.withOpacity(0.5)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // List of discussions or empty state
+        Expanded(
+          child: filteredDiscussions.isEmpty
+              ? _buildEmptyDiscussionsState()
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredDiscussions.length,
+                  itemBuilder: (context, index) {
+                    final discussion = filteredDiscussions[index];
+                    return _buildStyledDiscussionItem(discussion);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyDiscussionsState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(100),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4CD964).withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.translate,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No discussions yet',
+            style: TextStyle(
+              color: Colors.grey[300],
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Start a new conversation for translation',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 16,
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: _createNewDiscussion,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('New Discussion'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CD964),
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyledDiscussionItem(Discussion discussion) {
+    final lastMessage = discussion.messages.isNotEmpty ? discussion.messages.last : null;
+    final hoursLeft = discussion.isFavorite ? null : 24 - DateTime.now().difference(discussion.createdAt).inHours;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => setState(() => _currentDiscussion = discussion),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF333333),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        PredefinedPhrases.categoryIcons[discussion.category] ?? Icons.label_outline,
+                        color: const Color(0xFF4CD964),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CD964),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              discussion.category,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (hoursLeft != null)
+                            Text(
+                              'Expires in ${hoursLeft}h',
+                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            discussion.isFavorite ? Icons.star : Icons.star_border,
+                            color: discussion.isFavorite ? const Color(0xFF4CD964) : Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              discussion.toggleFavorite();
+                              _saveDiscussions();
+                            });
+                          },
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        const SizedBox(width: 16),
+                        IconButton(
+                          icon: const Icon(Icons.more_vert, color: Colors.grey),
+                          onPressed: () => _showDiscussionOptions(discussion),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                if (lastMessage != null) ...[
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    height: 1,
+                    color: Colors.grey.withOpacity(0.15),
+                  ),
+                  Text(
+                    lastMessage.text,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    lastMessage.translation,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        _getTimeAgo(lastMessage.timestamp),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiscussionView() {
+    return Column(
+      children: [
+        _buildStyledPredefinedPhrases(),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _currentDiscussion!.messages.length,
+            itemBuilder: (context, index) {
+              final message = _currentDiscussion!.messages[index];
+              return _buildStyledMessageBubble(message);
+            },
+          ),
+        ),
+        _buildStyledInputArea(),
+      ],
+    );
+  }
+
+  Widget _buildStyledPredefinedPhrases() {
+    final phrases = PredefinedPhrases.phrasesByCategory[_currentDiscussion!.category] ?? [];
+    if (phrases.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: phrases.length,
+        itemBuilder: (context, index) {
+          final phrase = phrases[index];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF333333),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  onTap: () => _onPredefinedPhraseSelected(phrase),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Text(
+                      phrase['text']!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStyledMessageBubble(Message message) {
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color: message.isUser
+              ? const Color(0xFF4CD964)
+              : const Color(0xFF333333),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message.text,
+                style: TextStyle(
+                  color: message.isUser ? Colors.black : Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                height: 1,
+                color: message.isUser
+                    ? Colors.black.withOpacity(0.1)
+                    : Colors.white.withOpacity(0.1),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      message.translation,
+                      style: TextStyle(
+                        color: message.isUser
+                            ? Colors.black.withOpacity(0.7)
+                            : Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  if (_supportedTtsLanguages.contains(
+                      message.isUser ? _selectedTargetLanguage : message.detectedLanguage))
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _speak(
+                          message.isUser ? message.translation : message.text,
+                          message.isUser ? _selectedTargetLanguage : message.detectedLanguage,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.volume_up,
+                            color: message.isUser
+                                ? Colors.black.withOpacity(0.5)
+                                : Colors.white.withOpacity(0.5),
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _getTimeAgo(message.timestamp),
+                    style: TextStyle(
+                      color: message.isUser
+                          ? Colors.black.withOpacity(0.5)
+                          : Colors.white.withOpacity(0.5),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyledInputArea() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -742,22 +1106,33 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
                       controller: _messageController,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
-                        hintText: 'Type a message',
+                        hintText: 'Type to translate...',
                         hintStyle: TextStyle(color: Colors.grey),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(16),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                       onSubmitted: _onTextSubmitted,
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening 
-                          ? const Color(0xFF4CD964)
-                          : Colors.grey,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _listen,
+                      borderRadius: BorderRadius.circular(24),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          child: Icon(
+                            _isListening ? Icons.mic : Icons.mic_none,
+                            color: _isListening
+                                ? const Color(0xFF4CD964)
+                                : Colors.grey,
+                            size: 24,
+                          ),
+                        ),
+                      ),
                     ),
-                    onPressed: _listen,
                   ),
                 ],
               ),
@@ -769,9 +1144,21 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
               color: Color(0xFF4CD964),
               shape: BoxShape.circle,
             ),
-            child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.black),
-              onPressed: () => _onTextSubmitted(_messageController.text),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(24),
+              child: InkWell(
+                onTap: () => _onTextSubmitted(_messageController.text),
+                borderRadius: BorderRadius.circular(24),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Icon(
+                    Icons.send,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -779,42 +1166,131 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     );
   }
 
+  Future<Map<String, String>> _performOnlineTranslation() async {
+    final String url = 'https://lingva.ml/api/v1/$_selectedSourceLanguage/$_selectedTargetLanguage/${Uri.encodeComponent(_text)}';
+
+    print('Sending translation request with text: $_text');
+    print('Source language: $_selectedSourceLanguage, Target language: _selectedTargetLanguage');
+    final response = await http.get(Uri.parse(url));
+
+    print('Received response with status code: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return {
+        'translation': data['translation'] ?? 'Translation failed',
+      };
+    } else {
+      final errorMessage = jsonDecode(response.body)['error'] ?? 'Unknown error';
+      throw Exception('Failed to translate: ${response.statusCode}, Message: $errorMessage');
+    }
+  }
+
   void _showCategorySelector({bool createNew = false}) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ListView.builder(
-        itemCount: PredefinedPhrases.phrasesByCategory.length,
-        itemBuilder: (context, index) {
-          final category = PredefinedPhrases.phrasesByCategory.keys.elementAt(index);
-          return ListTile(
-            title: Text(category, style: TextStyle(color: Colors.white)),
-            onTap: () {
-              if (createNew) {
-                final newDiscussion = Discussion(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  messages: [],
-                  createdAt: DateTime.now(),
-                  category: category,
+      isScrollControlled: true, // Make it taller
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Add a header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.category_outlined,
+                  color: Color(0xFF4CD964),
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  createNew ? 'Select Category for New Discussion' : 'Change Category',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFF333333)),
+          // Categories list
+          Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: PredefinedPhrases.phrasesByCategory.length,
+              itemBuilder: (context, index) {
+                final category = PredefinedPhrases.phrasesByCategory.keys.elementAt(index);
+                return ListTile(
+                  leading: Icon(
+                    PredefinedPhrases.categoryIcons[category] ?? Icons.label_outline,
+                    color: const Color(0xFF4CD964),
+                    size: 24,
+                  ),
+                  title: Text(
+                    category,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    if (createNew) {
+                      final newDiscussion = Discussion(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        messages: [],
+                        createdAt: DateTime.now(),
+                        category: category,
+                      );
+                      setState(() {
+                        _discussions.add(newDiscussion);
+                        _currentDiscussion = newDiscussion;
+                      });
+                      _saveDiscussions();
+                    } else {
+                      setState(() {
+                        _currentDiscussion!.category = category;
+                      });
+                      _saveDiscussions();
+                    }
+                    Navigator.pop(context);
+                  },
                 );
-                setState(() {
-                  _discussions.add(newDiscussion);
-                  _currentDiscussion = newDiscussion;
-                });
-                _saveDiscussions();
-              } else {
-                setState(() {
-                  _currentDiscussion!.category = category;
-                });
-                _saveDiscussions();
-              }
-              Navigator.pop(context);
-            },
-          );
-        },
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                  label: const Text('Cancel'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _showAddCategoryDialog,
+                  icon: const Icon(Icons.add),
+                  label: const Text('New Category'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF4CD964),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -834,184 +1310,123 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     });
   }
 
-  Future<Map<String, String>> _performOnlineTranslation() async {
-    final String url = 'https://lingva.ml/api/v1/$_selectedSourceLanguage/$_selectedTargetLanguage/${Uri.encodeComponent(_text)}';
-
-    print('Sending translation request with text: $_text');
-    print('Source language: $_selectedSourceLanguage, Target language: $_selectedTargetLanguage');
-    final response = await http.get(Uri.parse(url));
-
-    print('Received response with status code: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return {
-        'translation': data['translation'] ?? 'Translation failed',
-      };
-    } else {
-      final errorMessage = jsonDecode(response.body)['error'] ?? 'Unknown error';
-      throw Exception('Failed to translate: ${response.statusCode}, Message: $errorMessage');
-    }
-  }
-
-  Widget _buildDiscussionListItem(Discussion discussion) {
-    final lastMessage = discussion.messages.isNotEmpty
-        ? discussion.messages.last
-        : null;
-    
-    final now = DateTime.now();
-    final hoursLeft = discussion.isFavorite ? null : 24 - now.difference(discussion.createdAt).inHours;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF333333),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            PredefinedPhrases.categoryIcons[discussion.category] ?? '📝',
-            style: const TextStyle(fontSize: 24),
-          ),
-        ),
-        title: Text(
-          lastMessage?.text ?? 'Empty discussion',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CD964),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    discussion.category,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (hoursLeft != null)
-                  Text(
-                    '${hoursLeft}h left',
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
-                  ),
-              ],
-            ),
-            if (lastMessage != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                lastMessage.translation,
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(
-                discussion.isFavorite ? Icons.star : Icons.star_border,
-                color: discussion.isFavorite 
-                    ? const Color(0xFF4CD964)
-                    : Colors.grey,
-              ),
-              onPressed: () {
-                setState(() {
-                  discussion.toggleFavorite();
-                  _saveDiscussions();
-                });
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.grey),
-              onPressed: () => _showDiscussionOptions(discussion),
-            ),
-          ],
-        ),
-        onTap: () => setState(() => _currentDiscussion = discussion),
-      ),
-    );
-  }
-
   void _showDiscussionOptions(Discussion discussion) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            leading: Icon(Icons.category, color: Colors.white),
-            title: Text('Change category', style: TextStyle(color: Colors.white)),
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+            child: Text(
+              'Discussion Options',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFF333333)),
+          
+          // Options
+          _buildOptionTile(
+            icon: Icons.category_outlined,
+            color: const Color(0xFF4CD964),
+            title: 'Change category',
             onTap: () {
               Navigator.pop(context);
               _showCategorySelector();
             },
           ),
-          ListTile(
-            leading: Icon(Icons.file_download, color: Colors.white),
-            title: Text('Export as text', style: TextStyle(color: Colors.white)),
+          
+          _buildOptionTile(
+            icon: Icons.file_copy_outlined,
+            color: Colors.blue,
+            title: 'Export as text',
             onTap: () async {
               Navigator.pop(context);
               final text = discussion.exportToText();
               await Clipboard.setData(ClipboardData(text: text));
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Discussion exported to clipboard')),
+                const SnackBar(
+                  content: Text('Discussion copied to clipboard'),
+                  backgroundColor: Color(0xFF333333),
+                ),
               );
             },
           ),
-          ListTile(
-            leading: Icon(Icons.delete, color: Colors.red),
-            title: Text('Delete discussion', style: TextStyle(color: Colors.red)),
+          
+          _buildOptionTile(
+            icon: Icons.delete_outline,
+            color: Colors.red,
+            title: 'Delete discussion',
+            isDestructive: true,
             onTap: () {
               Navigator.pop(context);
               _deleteDiscussion(discussion);
             },
           ),
+          
+          const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOptionTile({
+    required IconData icon, 
+    required Color color, 
+    required String title, 
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                color: isDestructive ? Colors.red : Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1020,19 +1435,51 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text('Delete discussion?', style: TextStyle(color: Colors.white)),
-        content: Text(
-          'This action cannot be undone.',
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            const Icon(
+              Icons.delete_outline,
+              color: Colors.red,
+              size: 28,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Delete Discussion',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'This action cannot be undone. All messages in this discussion will be permanently deleted.',
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            child: Text('Cancel', style: TextStyle(color: Colors.white70)),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[400],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: const Text('CANCEL'),
             onPressed: () => Navigator.pop(context),
           ),
-          TextButton(
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('DELETE'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[400],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
             onPressed: () {
               Navigator.pop(context);
               setState(() {
@@ -1045,6 +1492,117 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             },
           ),
         ],
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      ),
+    );
+  }
+
+  void _confirmClearNonFavorites() {
+    // Count how many non-favorite discussions would be deleted
+    final nonFavoriteCount = _discussions.where((d) => !d.isFavorite).length;
+
+    if (nonFavoriteCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No non-favorite discussions to clear'),
+          backgroundColor: Color(0xFF333333),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.amber[700],
+              size: 28,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Clear Discussions',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This will delete $nonFavoriteCount non-favorited discussion${nonFavoriteCount > 1 ? 's' : ''}.',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'This action cannot be undone.',
+                      style: TextStyle(color: Colors.red[300], fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[400],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: const Text('CANCEL'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.delete_sweep, size: 18),
+            label: const Text('CLEAR'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[400],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _discussions.removeWhere((d) => !d.isFavorite);
+                _saveDiscussions();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Non-favorite discussions cleared'),
+                    backgroundColor: Color(0xFF333333),
+                  ),
+                );
+              });
+            },
+          ),
+        ],
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       ),
     );
   }
@@ -1183,7 +1741,205 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     }
   }
 
+  Future<void> _speak(String text, String language) async {
+    if (text.isEmpty) return;
+    
+    // Show loading indicator while processing
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Playing audio...'),
+        duration: Duration(milliseconds: 800),
+        backgroundColor: Color(0xFF333333),
+      ),
+    );
 
+    try {
+      // Use the TTS service to speak the text
+      await _ttsService.speak(text, language);
+    } catch (e) {
+      print('Error in _speak: $e');
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not play audio: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    }
+  }
 
+  void _showLanguageSelector(bool isSource) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with title
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[600],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.language,
+                          color: Color(0xFF4CD964),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          isSource ? 'Select Source Language' : 'Select Target Language',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFF333333)),
+            
+            // Search field
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF333333),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Search languages',
+                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onChanged: (value) {
+                    // Add filtering logic if needed
+                  },
+                ),
+              ),
+            ),
+            
+            // Languages list
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _languages.length,
+                itemBuilder: (context, index) {
+                  final language = _languages[index];
+                  final isSelected = isSource 
+                      ? _selectedSourceLanguage == language['code']
+                      : _selectedTargetLanguage == language['code'];
+                  final isTtsSupported = _supportedTtsLanguages.contains(language['code']);
+                  
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (isSource) {
+                          _selectedSourceLanguage = language['code']!;
+                        } else {
+                          _selectedTargetLanguage = language['code']!;
+                        }
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      color: isSelected ? const Color(0xFF4CD964).withOpacity(0.15) : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  language['name']!,
+                                  style: TextStyle(
+                                    color: isSelected ? const Color(0xFF4CD964) : Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                                if (!isTtsSupported)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      'Translation only',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle,
+                              color: Color(0xFF4CD964),
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  @override
+  void dispose() {
+    // Clean up controllers
+    _messageController.dispose();
+    _searchController.dispose();
+    
+    // Cancel any timers
+    _debounce?.cancel();
+    
+    // Stop animation controller
+    _animationController.dispose();
+    
+    // Close TTS service
+    _ttsService.dispose();
+    
+    super.dispose();
+  }
 }

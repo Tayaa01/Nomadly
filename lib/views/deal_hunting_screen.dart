@@ -157,7 +157,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
           final rawRecommendations = response['recommendations'];
           if (rawRecommendations is List) {
             recommendations = rawRecommendations
-                .where((item) => item is Map<String, dynamic>)
+                .whereType<Map<String, dynamic>>()
                 .cast<Map<String, dynamic>>()
                 .toList();
           }
@@ -452,6 +452,34 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
   Widget _buildEnhancedCategoryChip(String category, IconData icon) {
     final isSelected = _category == category;
     
+    // Custom icons that better match the app's style
+    IconData customIcon;
+    switch (category) {
+      case 'clothes':
+        customIcon = Icons.checkroom_outlined;
+        break;
+      case 'electronics':
+        customIcon = Icons.devices_outlined;
+        break;
+      case 'shoes':
+        customIcon = Icons.format_paint_outlined;
+        break;
+      case 'furniture':
+        customIcon = Icons.weekend_outlined;
+        break;
+      case 'toys':
+        customIcon = Icons.toys_outlined;
+        break;
+      case 'beauty':
+        customIcon = Icons.spa_outlined;
+        break;
+      case 'sports':
+        customIcon = Icons.fitness_center_outlined;
+        break;
+      default:
+        customIcon = icon;
+    }
+    
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -462,12 +490,13 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected 
               ? const Color(0xFF4CD964).withOpacity(0.2) 
               : Colors.black.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(30),
+          // More rectangular shape with rounded corners to match home screen
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? const Color(0xFF4CD964) : Colors.transparent,
             width: 1,
@@ -476,7 +505,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
         child: Row(
           children: [
             Icon(
-              icon,
+              customIcon,
               color: isSelected ? const Color(0xFF4CD964) : Colors.grey[400],
               size: 16,
             ),
@@ -590,11 +619,13 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
-                  vertical: 12,
+                  vertical: 14,
                 ),
+                // Rectangular with consistent radius
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
               icon: const Icon(Icons.search, size: 20),
               label: const Text(
@@ -670,7 +701,8 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(16),
+        // Consistent border radius with home screen
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
@@ -680,7 +712,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -749,7 +781,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                 // Divider
                 Divider(color: Colors.grey.withOpacity(0.2), height: 1),
                 
-                // Action row
+                // Action row with rectangular button
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: ElevatedButton.icon(
@@ -758,11 +790,13 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: const Color(0xFF4CD964),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      // More rectangular shape with consistent radius
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       minimumSize: const Size(double.infinity, 48),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 0,
                     ),
                     onPressed: url != null ? () => _openLink(url) : null,
                   ),
