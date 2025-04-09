@@ -334,7 +334,6 @@ class TravelGroupService {
             }
           } else {
             // Keep only the most recent one (already sorted)
-            Settlement keepSettlement = pairSettlements.first;
             
             // Delete all others
             for (var settlement in pairSettlements.skip(1)) {

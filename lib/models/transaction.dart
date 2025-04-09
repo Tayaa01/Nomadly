@@ -5,13 +5,17 @@ class Transaction {
   final String originalCurrency;
   final String description;
   final DateTime createdAt;
+  final double? convertedAmount;
+  final String? convertedCurrency;
 
   Transaction({
     this.id,
     required this.originalAmount,
     required this.originalCurrency,
     required this.description,
-    required this.createdAt,
+    required this.createdAt, 
+    this.convertedAmount,
+    this.convertedCurrency,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,12 @@ class Transaction {
       originalCurrency: json['originalCurrency'],
       description: json['description'],
       createdAt: DateTime.parse(json['createdAt']),
+      convertedAmount: (json['convertedAmount'] is int)
+          ? (json['convertedAmount'] as int).toDouble()
+          : json['convertedAmount'].toDouble(),
+      convertedCurrency: json['convertedCurrency'],
+      
+
     );
   }
 
@@ -33,6 +43,8 @@ class Transaction {
       'originalCurrency': originalCurrency,
       'description': description,
       'createdAt': createdAt.toIso8601String(),
+      'convertedAmount': convertedAmount,
+      'convertedCurrency': convertedCurrency,
     };
   }
 }

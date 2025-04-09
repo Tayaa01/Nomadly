@@ -75,9 +75,7 @@ class ExpenseSplitOptions {
         return _calculatePercentageSplit(totalAmount);
       case SplitType.weighted:
         return _calculateWeightedSplit(totalAmount);
-      default:
-        return _calculateEqualSplit(totalAmount);
-    }
+      }
   }
 
   /// Calcule une répartition égale entre les membres inclus
@@ -155,9 +153,7 @@ extension SplitTypeExtension on SplitType {
         return 'Pourcentage';
       case SplitType.weighted:
         return 'Pondérée';
-      default:
-        return 'Inconnue';
-    }
+      }
   }
   
   String get description {
@@ -170,9 +166,7 @@ extension SplitTypeExtension on SplitType {
         return 'Attribue un pourcentage de la dépense à chaque membre';
       case SplitType.weighted:
         return 'Répartit la dépense selon un poids attribué à chaque membre';
-      default:
-        return '';
-    }
+      }
   }
 }
 

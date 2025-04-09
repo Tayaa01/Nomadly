@@ -333,6 +333,187 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
     }
   }
 
+  // Group transactions by date for better organization
+  Map<DateTime, List<Transaction>> _groupTransactionsByDate(List<Transaction> transactions) {
+    final groupedTransactions = <DateTime, List<Transaction>>{};
+    
+    for (final transaction in transactions) {
+      // Create date without time part
+      final date = DateTime(
+        transaction.createdAt.year,
+        transaction.createdAt.month,
+        transaction.createdAt.day,
+      );
+      
+      if (!groupedTransactions.containsKey(date)) {
+        groupedTransactions[date] = [];
+      }
+      
+      groupedTransactions[date]!.add(transaction);
+    }
+    
+    // Sort dates in descending order (newest first)
+    final sortedKeys = groupedTransactions.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+    
+    return {
+      for (var key in sortedKeys) key: groupedTransactions[key]!
+    };
+  }
+
+  // Format date header nicely
+  String _formatDateHeader(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    
+    if (date == today) {
+      return 'Today';
+    } else if (date == yesterday) {
+      return 'Yesterday';
+    } else if (date.isAfter(today.subtract(const Duration(days: 7)))) {
+      return DateFormat('EEEE').format(date); // Day name (e.g., "Monday")
+    } else if (date.year == now.year) {
+      return DateFormat('MMMM d').format(date); // Month and day (e.g., "April 15")
+    } else {
+      return DateFormat('MMM d, yyyy').format(date); // With year for older dates
+    }
+  }
+
+  // Build a visually appealing transaction card
+  Widget _buildTransactionCard(Transaction transaction) {
+    // Determine if this is incoming or outgoing (negative amount)
+    final isOutgoing = true; // Assume all are expenses for now
+    
+    // Get currency symbol
+    final currencySymbol = _getCurrencySymbol(transaction.originalCurrency);
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Transaction icon with colored background
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isOutgoing 
+                        ? const Color(0xFF4CD964).withOpacity(0.1)
+                        // ignore: dead_code
+                        : const Color(0xFF5AC8FA).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    // ignore: dead_code
+                    isOutgoing ? Icons.arrow_upward : Icons.arrow_downward,
+                    // ignore: dead_code
+                    color: isOutgoing ? const Color(0xFF4CD964) : const Color(0xFF5AC8FA),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                
+                // Description and date
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        transaction.description,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: widget.isDarkMode ? Colors.white : Colors.black,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('h:mm a').format(transaction.createdAt),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Amount
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Show primary amount (converted if available)
+                    Text(
+                      transaction.convertedAmount != null
+                          ? '${_getCurrencySymbol(transaction.convertedCurrency ?? '')}${transaction.convertedAmount!.toStringAsFixed(2)}'
+                          : '$currencySymbol${transaction.originalAmount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isOutgoing 
+                            ? const Color(0xFF4CD964)
+                            // ignore: dead_code
+                            : const Color(0xFF5AC8FA),
+                      ),
+                    ),
+                    
+                    // Show secondary amount if available
+                    if (transaction.convertedAmount != null && transaction.convertedCurrency != transaction.originalCurrency)
+                      Text(
+                        '$currencySymbol${transaction.originalAmount.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            
+            // If we have original and converted amounts, show a divider and conversion details
+            if (transaction.convertedAmount != null && transaction.convertedCurrency != transaction.originalCurrency) ...[
+              const Divider(height: 24),
+              Row(
+                children: [
+                  const Icon(Icons.swap_vert, size: 16, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Converted from ${transaction.originalCurrency} to ${transaction.convertedCurrency}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper to get currency symbol
+  String _getCurrencySymbol(String currencyCode) {
+    switch (currencyCode) {
+      case 'USD': return '\$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      case 'TND': return 'DT';
+      default: return currencyCode;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -412,56 +593,40 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                 ],
               ),
             );
+          } else {
+            // Group transactions by date
+            final groupedTransactions = _groupTransactionsByDate(viewModel.transactions);
+            
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: groupedTransactions.length,
+              itemBuilder: (context, index) {
+                final dateGroup = groupedTransactions.keys.elementAt(index);
+                final transactions = groupedTransactions[dateGroup]!;
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Date header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        _formatDateHeader(dateGroup),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+                        ),
+                      ),
+                    ),
+                    
+                    // Transactions for this date
+                    ...transactions.map((transaction) => _buildTransactionCard(transaction)),
+                  ],
+                );
+              },
+            );
           }
-          
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: viewModel.transactions.length,
-            itemBuilder: (context, index) {
-              final transaction = viewModel.transactions[index];
-              return Card(
-                color: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                elevation: 2,
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CD964).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.receipt_long,
-                      color: Color(0xFF4CD964),
-                    ),
-                  ),
-                  title: Text(
-                    transaction.description,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: widget.isDarkMode ? Colors.white : Colors.black,
-                    ),
-                  ),
-                  subtitle: Text(
-                    DateFormat('dd/MM/yyyy').format(transaction.createdAt),
-                    style: TextStyle(
-                      color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                    ),
-                  ),
-                  trailing: Text(
-                    '${transaction.originalAmount.toStringAsFixed(2)} ${transaction.originalCurrency}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF4CD964),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
         },
       ),
     );

@@ -44,8 +44,6 @@ class TransactionService {
       }
 
       // Get user's currency for converted currency
-      final user = await _authService.getCurrentUser();
-      final convertedCurrency = user?.countryCode == 'TN' ? 'TND' : 'EUR';
 
       final response = await http.post(
         Uri.parse('${ApiConfig.BASE_URL}/transactions'),
@@ -59,7 +57,7 @@ class TransactionService {
           'currency': transaction.originalCurrency,
           'date': transaction.createdAt.toIso8601String().split('T')[0],
           'description': transaction.description,
-          'convertedCurrency': convertedCurrency
+
         }),
       );
 
