@@ -71,3 +71,4 @@ flutter:
     - assets/tips.json
     - tips.json
     - assets/images/
+    - assets/country_images.json

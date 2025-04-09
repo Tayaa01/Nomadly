@@ -166,7 +166,7 @@ class _MyAppState extends State<MyApp> {
           isDarkMode: isDarkMode,
         ),
         '/translation': (context) => const SpeechToTextView(),
-        '/travel-deals': (context) => const DealsScreen(), // Updated route for Travel Deals
+        '/travel-deals': (context) => DealsScreen(isDarkMode: isDarkMode), // Fixed: Added isDarkMode parameter
         '/deal-hunting': (context) => const DealHuntingScreen(), // New route for Deal Hunting
         '/tips': (context) => const TipsScreen(), // Add this route for tips
         '/statistics': (context) => const StatisticsScreen(),
@@ -199,7 +199,7 @@ class _MyAppState extends State<MyApp> {
       case '/profile':
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case '/travel-deals':
-        return MaterialPageRoute(builder: (_) => const DealsScreen());
+        return MaterialPageRoute(builder: (_) => DealsScreen(isDarkMode: isDarkMode)); // Fixed: Added isDarkMode parameter
       case '/deal-hunting':
         return MaterialPageRoute(builder: (_) => const DealHuntingScreen());
       case '/planner':

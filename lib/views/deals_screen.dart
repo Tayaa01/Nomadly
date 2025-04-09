@@ -6,9 +6,13 @@ import '../services/deals_service.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/app_drawer.dart'; // Add this import
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 class DealsScreen extends StatefulWidget {
-  const DealsScreen({super.key});
+  final bool isDarkMode;
+
+  const DealsScreen({super.key, required this.isDarkMode});
 
   @override
   State<DealsScreen> createState() => _DealsScreenState();
@@ -18,11 +22,13 @@ class _DealsScreenState extends State<DealsScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _deals = [];
   String? _errorMessage;
+  Map<String, dynamic> _countryImages = {};
 
   @override
   void initState() {
     super.initState();
     _loadDeals();
+    _loadCountryImages();
   }
 
   Future<void> _loadDeals() async {
@@ -60,6 +66,17 @@ class _DealsScreenState extends State<DealsScreen> {
           _errorMessage = 'Failed to load deals: $e';
         });
       }
+    }
+  }
+
+  Future<void> _loadCountryImages() async {
+    try {
+      final String jsonString = await rootBundle.loadString('assets/country_images.json');
+      setState(() {
+        _countryImages = json.decode(jsonString);
+      });
+    } catch (e) {
+      print('Error loading country images: $e');
     }
   }
 
@@ -199,6 +216,7 @@ class _DealsScreenState extends State<DealsScreen> {
             discount: deal['discount'],
             imageUrl: deal['imageUrl'],
             link: deal['link'],
+            index: index, // Pass the index to ensure each deal gets a different image
           );
         },
       ),
@@ -212,9 +230,36 @@ class _DealsScreenState extends State<DealsScreen> {
     String? discount,
     String? imageUrl,
     String? link,
+    required int index,
   }) {
-    // Generate a better fallback image if none provided
-    final fallbackImageUrl = imageUrl ?? _generateDynamicImageUrl(title, description);
+    // Extract destination from description or title for better image matching
+    String destination = '';
+    final destinationProvider = Provider.of<DestinationProvider>(context, listen: false);
+    if (destinationProvider.selectedCountry != null) {
+      destination = destinationProvider.selectedCountry!;
+    } else {
+      // Try to extract destination from description or title
+      final combinedText = '$title $description'.toLowerCase();
+      
+      // List of common destinations to check for
+      final destinations = ['paris', 'france', 'italy', 'rome', 'london', 'uk', 'japan', 'tokyo', 'new york', 
+                           'spain', 'barcelona', 'australia', 'sydney', 'morocco', 'egypt', 'dubai', 'thailand'];
+      
+      for (final dest in destinations) {
+        if (combinedText.contains(dest)) {
+          destination = dest;
+          break;
+        }
+      }
+      
+      // Default if no destination found
+      if (destination.isEmpty) {
+        destination = 'travel';
+      }
+    }
+    
+    // Get a relevant touristic image for this deal
+    final tourismImageUrl = _getDestinationImage(destination, title, index);
     
     // Format price if it exists
     String? formattedPrice = price;
@@ -254,12 +299,12 @@ class _DealsScreenState extends State<DealsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Deal image
+            // Deal image with improved image loading
             SizedBox(
               height: 180,
               width: double.infinity,
               child: CachedNetworkImage(
-                imageUrl: fallbackImageUrl,
+                imageUrl: tourismImageUrl, // Use our new tourism image
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: const Color(0xFF333333),
@@ -270,7 +315,16 @@ class _DealsScreenState extends State<DealsScreen> {
                     ),
                   ),
                 ),
-                errorWidget: (context, url, error) => _buildFallbackImage(title),
+                errorWidget: (context, url, error) => Container(
+                  color: const Color(0xFF333333),
+                  child: Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Colors.grey[600],
+                      size: 40,
+                    ),
+                  ),
+                ),
               ),
             ),
             
@@ -378,98 +432,88 @@ class _DealsScreenState extends State<DealsScreen> {
     );
   }
 
-  // Add these helper methods to the DealsScreen class:
-
-  // Create a more attractive fallback image with text
-  Widget _buildFallbackImage(String title) {
-    // Use a simplified query without complex terms
-    final simpleQuery = 'travel';
+  // Fix: Ensure this method always returns a non-null string
+  String _getDestinationImage(String destination, String dealTitle, int index) {
+    // Normalize destination for lookup
+    destination = destination.trim();
     
-    return CachedNetworkImage(
-      imageUrl: 'https://source.unsplash.com/random/600x400/?$simpleQuery',
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(
-        color: const Color(0xFF333333),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.image, color: Colors.grey[600], size: 40),
-              const SizedBox(height: 8),
-              Text(
-                'Loading image...',
-                style: TextStyle(color: Colors.grey[500]),
-              ),
-            ],
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) => _buildLocalFallbackImage(title),
-    );
-  }
-  
-  // Fix the _buildLocalFallbackImage method to handle missing assets
-  Widget _buildLocalFallbackImage(String title) {
-    return Container(
-      color: const Color(0xFF333333),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Replace asset loading with a solid color container
-          Container(
-            color: const Color(0xFF1E1E1E),
-            child: Center(
-              child: Icon(
-                Icons.flight_takeoff,
-                color: const Color(0xFF4CD964),
-                size: 64,
-              ),
-            ),
-          ),
-          // Gradient overlay to ensure text is readable
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
-                ],
-              ),
-            ),
-          ),
-          // Text overlay
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Text(
-              title.length > 30 ? '${title.substring(0, 30)}...' : title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    // Find matching country in the JSON
+    String countryKey = '';
+    for (String key in _countryImages.keys) {
+      if (key.toLowerCase() == destination.toLowerCase() || 
+          destination.toLowerCase().contains(key.toLowerCase())) {
+        countryKey = key;
+        break;
+      }
+    }
+    
+    // If no match was found, use default country
+    if (countryKey.isEmpty && _countryImages.isNotEmpty) {
+      countryKey = "United States"; // Default to United States if country wasn't found
+      
+      // Make sure the default country exists in our dataset
+      if (!_countryImages.containsKey(countryKey)) {
+        // If United States isn't available, use the first country in the dataset
+        countryKey = _countryImages.keys.first;
+      }
+    }
+    
+    // If we found a matching country with tourism images
+    if (countryKey.isNotEmpty && 
+        _countryImages.containsKey(countryKey) && 
+        _countryImages[countryKey]['tourism'] is List && 
+        (_countryImages[countryKey]['tourism'] as List).isNotEmpty) {
+      
+      // Get tourism images for this country
+      final tourismImages = _countryImages[countryKey]['tourism'] as List;
+      
+      // Use the index to cycle through different tourism images
+      final imageIndex = index % tourismImages.length;
+      return tourismImages[imageIndex];
+    }
+    
+    // Special image arrays by deal type (original fallback)
+    final List<String> foodImages = [
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000',
+      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000',
+      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1000',
+      'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1000',
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000',
+    ];
 
-  // Fix the array declaration in _generateDynamicImageUrl method
-  String _generateDynamicImageUrl(String title, String description) {
-    // Simplify the query to just use travel-related terms
-    final List<String> travelTerms = [
-      'travel', 'vacation', 'tour', 'journey', 'destination'
+    final List<String> activityImages = [
+      'https://images.unsplash.com/photo-1530789253388-582c481c54b0?q=80&w=1000',
+      'https://images.unsplash.com/photo-1576158114254-e748df57e8fb?q=80&w=1000',
+      'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?q=80&w=1000',
+      'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000',
+      'https://images.unsplash.com/photo-1604537466158-719b1972feb8?q=80&w=1000',
+    ];
+
+    // Check deal type in title
+    final dealTitleLower = dealTitle.toLowerCase();
+    
+    if (dealTitleLower.contains('food') || 
+        dealTitleLower.contains('restaurant') || 
+        dealTitleLower.contains('eat') ||
+        dealTitleLower.contains('cuisine') ||
+        dealTitleLower.contains('dining')) {
+      return foodImages[index % foodImages.length];
+    } else if (dealTitleLower.contains('activity') || 
+               dealTitleLower.contains('tour') || 
+               dealTitleLower.contains('adventure') ||
+               dealTitleLower.contains('experience')) {
+      return activityImages[index % activityImages.length];
+    }
+
+    // Final fallback to general tourism images
+    final List<String> generalTourismImages = [
+      'https://images.unsplash.com/photo-1503220317375-aaad61436b1b?q=80&w=1000',
+      'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=1000',
+      'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=1000',
+      'https://images.unsplash.com/photo-1500835556837-99ac94a94552?q=80&w=1000',
+      'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=1000',
     ];
     
-    // Pick a random travel term
-    final randomTerm = travelTerms[DateTime.now().millisecond % travelTerms.length];
-    
-    // Use a more reliable format
-    return 'https://source.unsplash.com/random/600x400/?$randomTerm';
+    return generalTourismImages[index % generalTourismImages.length];
   }
 }

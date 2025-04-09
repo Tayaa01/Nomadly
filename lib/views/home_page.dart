@@ -1508,4 +1508,64 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
+
+  // Fix: Add default return values for these image methods to ensure non-null returns
+  String _getDestinationImage(String destination, bool isFlightImage, bool isHotelImage) {
+    // Safety check for empty JSON data
+    if (_countryImages.isEmpty) {
+      // If we still don't have country images loaded, return default images
+      if (isFlightImage) {
+        return 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1000';
+      }
+      if (isHotelImage) {
+        return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000';
+      }
+      return 'https://images.unsplash.com/photo-1503220317375-aaad61436b1b?q=80&w=1000';
+    }
+    
+    // ...existing code...
+    
+    // Default fallback for flights
+    if (isFlightImage) {
+      return 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1000';
+    }
+    
+    // Default fallback for hotels
+    if (isHotelImage) {
+      return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000';
+    }
+    
+    // Generic travel image fallback
+    return 'https://images.unsplash.com/photo-1503220317375-aaad61436b1b?q=80&w=1000';
+  }
+
+  // Fix: Add default return value for _getUniqueHotelImage
+  String _getUniqueHotelImage(int index, String hotelName, String destination) {
+    // Safety check for empty JSON data
+    if (_countryImages.isEmpty) {
+      // Return a default hotel image based on index
+      final List<String> fallbackHotelImages = [
+        'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000',
+        'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=1000',
+        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000',
+        'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?q=80&w=1000',
+        'https://images.unsplash.com/photo-1606046604972-77cc76aee944?q=80&w=1000',
+      ];
+      return fallbackHotelImages[index % fallbackHotelImages.length];
+    }
+    
+    // ...existing code...
+    
+    // Fallback hotel images
+    final List<String> fallbackHotelImages = [
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000',
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=1000',
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000',
+      'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?q=80&w=1000',
+      'https://images.unsplash.com/photo-1606046604972-77cc76aee944?q=80&w=1000',
+    ];
+    
+    // Return fallback based on index
+    return fallbackHotelImages[index % fallbackHotelImages.length];
+  }
 }
