@@ -4,9 +4,11 @@ import '../services/currency_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'; // Uncomment this import
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_service.dart'; // Update these imports to include the auth service for getting user preferences
 
 class CurrencyViewModel extends ChangeNotifier {
   final CurrencyService _currencyService = CurrencyService();
+  final AuthService _authService = AuthService(); // Add this service to access user information
   String? scannedAmount;
   double? convertedAmount;
   String? convertedCurrencySymbol;
@@ -34,6 +36,22 @@ class CurrencyViewModel extends ChangeNotifier {
   // Keys for storing preferences
   static const String COUNTRY_CODE_KEY = 'country_code';
   static const String COUNTRY_NAME_KEY = 'country_name';
+
+  // Add these properties to store scan results
+  XFile? _scannedImage;
+  Map<String, dynamic>? _scanResults;
+  bool _isScanning = false;
+  bool _hasScannedResults = false;
+
+  // Add this property near the other boolean properties
+  bool _showSuccessMessage = false;
+
+  // Getters
+  XFile? get scannedImage => _scannedImage;
+  Map<String, dynamic>? get scanResults => _scanResults;
+  bool get isScanning => _isScanning;
+  bool get hasScannedResults => _hasScannedResults;
+  bool get showSuccessMessage => _showSuccessMessage;
 
   CurrencyViewModel() {
     // Load saved country or get user's location
@@ -71,12 +89,29 @@ class CurrencyViewModel extends ChangeNotifier {
   }
 
   // Get user's current location and determine country
-  Future<void> getUserLocation() async {
-    isLoadingLocation = true;
-    errorMessage = null;
-    notifyListeners();
-
+  Future<void> getUserLocation({bool forceRefresh = false}) async {
     try {
+      // Set isLoadingLocation to true
+      isLoadingLocation = true;
+      notifyListeners();
+      
+      // Skip loading from preferences if forceRefresh is true
+      if (!forceRefresh) {
+        // Check if we have a saved country from preferences
+        final prefs = await SharedPreferences.getInstance();
+        final savedCountryCode = prefs.getString('country_code');
+        final savedCountryName = prefs.getString('country_name');
+        
+        if (savedCountryCode != null && savedCountryName != null) {
+          print('Loaded saved country: $savedCountryName ($savedCountryCode)');
+          currentCountryCode = savedCountryCode;
+          sourceCountryName = savedCountryName;
+          isLoadingLocation = false;
+          notifyListeners();
+          return;
+        }
+      }
+      
       // Check permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -170,31 +205,127 @@ class CurrencyViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> takePhoto() async {
+  // Method to scan and show results without adding transaction
+  Future<void> scanForPreview() async {
+    if (_isScanning) return;
+    
+    _isScanning = true;
+    errorMessage = null;
+    notifyListeners();
+
     try {
-      isImageProcessing = true;
-      notifyListeners();
-
+      // Take a photo using image picker
       final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-        maxWidth: 1024,
-        maxHeight: 1024,
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+      
+      if (photo == null) {
+        _isScanning = false;
+        notifyListeners();
+        return;
+      }
+      
+      _scannedImage = photo;
+      
+      // Get user country for target currency
+      final user = await _authService.getCurrentUser();
+      final userCountryCode = user?.countryCode ?? 'TN'; // Default to TN if user country not available
+      
+      // Source currency is from the location/bill country (detected or selected)
+      final sourceCurrency = currentCountryCode == 'TN' ? 'TND' : 'EUR';
+      
+      // Target currency is the user's preferred currency
+      final targetCurrency = userCountryCode == 'TN' ? 'TND' : 'EUR';
+      
+      print('Scanning with sourceCurrency: $sourceCurrency, targetCurrency: $targetCurrency');
+      
+      // Call new endpoint to analyze and convert
+      final result = await _currencyService.analyzeAndConvertImage(
+        photo,
+        sourceCurrency: sourceCurrency,
+        targetCurrency: targetCurrency,
       );
-
-      if (photo != null) {
-        selectedImage = photo;
-        amountController.clear();
-        print('Photo taken: ${photo.path}');
+      
+      _scanResults = result;
+      
+      // Display the results
+      if (result['analysis'] != null && result['conversion'] != null) {
+        final analysis = result['analysis'];
+        final conversion = result['conversion'];
+        
+        amountController.text = analysis['amount'].toString();
+        scannedAmount = '${analysis['amount']} ${conversion['from']}';
+        convertedAmount = conversion['result'];
+        convertedCurrencySymbol = conversion['to'];
+        _hasScannedResults = true;
+        _isScanning = false;
+        notifyListeners();
+      } else {
+        throw Exception('Failed to analyze image');
       }
     } catch (e) {
-      print('Error taking photo: $e');
-      errorMessage = "Error capturing image: $e";
-    } finally {
-      isImageProcessing = false;
+      print('Error scanning image: $e');
+      errorMessage = 'Failed to analyze image: ${e.toString()}';
+      _isScanning = false;
       notifyListeners();
     }
+  }
+
+  // Method to add transaction using previously scanned image
+  Future<void> addTransaction() async {
+    if (_scannedImage == null || isConverting) return;
+    
+    isConverting = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Add transaction using the existing image - was missing actual API call
+      final result = await _currencyService.addTransactionFromImage(
+        _scannedImage!,
+        countryCode: currentCountryCode,
+      );
+      
+      print('Transaction added response: $result');
+      
+      // Show success message
+      _showSuccessMessage = true;
+      isConverting = false;
+      _hasScannedResults = false;
+      _scanResults = null;
+      _scannedImage = null;
+      notifyListeners();
+      
+      // Hide success message after a few seconds
+      Future.delayed(const Duration(seconds: 3), () {
+        if (_showSuccessMessage) {
+          _showSuccessMessage = false;
+          notifyListeners();
+        }
+      });
+    } catch (e) {
+      print('Error adding transaction: $e');
+      errorMessage = 'Failed to add transaction: ${e.toString()}';
+      isConverting = false;
+      notifyListeners();
+    }
+  }
+
+  // Method to clear current scan and start over
+  void clearScan() {
+    _scannedImage = null;
+    _scanResults = null;
+    _hasScannedResults = false;
+    _showSuccessMessage = false;  // Clear success message
+    amountController.text = '';
+    scannedAmount = null;
+    convertedAmount = null;
+    convertedCurrencySymbol = null;
+    errorMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> takePhoto() async {
+    await scanForPreview();
   }
 
   Future<void> convertCurrency() async {
@@ -207,7 +338,8 @@ class CurrencyViewModel extends ChangeNotifier {
         print('Converting currency with image: ${selectedImage!.path}');
         final data = await _currencyService.analyzeAndConvertImage(
           selectedImage!,
-          countryCode: currentCountryCode, // Pass the detected country code
+          sourceCurrency: currentCountryCode == 'TN' ? 'TND' : 'EUR', // Fixed parameter name
+          targetCurrency: 'TND' // Set a default target currency
         );
 
         print('API response: $data');
@@ -311,6 +443,7 @@ class CurrencyViewModel extends ChangeNotifier {
     taxRefundMessage = null;
     taxRefundTips = [];
     showTips = false;
+    _showSuccessMessage = false;
     notifyListeners();
   }
 }

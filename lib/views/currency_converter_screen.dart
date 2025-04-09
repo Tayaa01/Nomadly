@@ -249,156 +249,40 @@ class CurrencyConverterScreen extends StatelessWidget {
                             ),
                           ),
 
-                        // Results Display (if any)
-                        if (viewModel.convertedAmount != null) ...[
+                        // Success message when transaction is added
+                        if (viewModel.showSuccessMessage)
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            margin: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E1E1E),
+                              color: Colors.green.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: const Color(0xFF4CD964),
-                                width: 1,
+                                color: Colors.green.withOpacity(0.3),
                               ),
                             ),
-                            child: Column(
+                            child: Row(
                               children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'From ${viewModel.sourceCountryName ?? ""}',
-                                      style: TextStyle(
-                                        color: Colors.grey[400],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    Text(
-                                      'To ${viewModel.targetCountryName ?? ""}',
-                                      style: TextStyle(
-                                        color: Colors.grey[400],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.green,
                                 ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      viewModel.scannedAmount ?? "",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'Transaction added successfully!',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 14,
                                     ),
-                                    const Icon(
-                                      Icons.arrow_forward,
-                                      color: Color(0xFF4CD964),
-                                      size: 24,
-                                    ),
-                                    Text(
-                                      '${viewModel.convertedAmount?.toStringAsFixed(2)} ${viewModel.convertedCurrencySymbol}',
-                                      style: const TextStyle(
-                                        color: Color(0xFF4CD964),
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 24),
-                        ],
 
-                        // Action Buttons with updated style
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF333333),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                onPressed:
-                                    viewModel.isImageProcessing
-                                        ? null
-                                        : viewModel.takePhoto,
-                                icon:
-                                    viewModel.isImageProcessing
-                                        ? const SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  Color(0xFF4CD964),
-                                                ),
-                                          ),
-                                        )
-                                        : const Icon(
-                                          Icons.camera_alt_rounded,
-                                          color: Color(0xFF4CD964),
-                                        ),
-                                label: const Text(
-                                  'Scan Bill',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4CD964),
-                                  foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                onPressed:
-                                    viewModel.isConverting || viewModel.selectedImage == null
-                                        ? null
-                                        : viewModel.convertCurrency,
-                                child:
-                                    viewModel.isConverting
-                                        ? const SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                        : const Text(
-                                          'Convert',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Action Buttons - replaced with new implementation
+                        _buildActionButtons(viewModel),
 
                         // Tax Refund Tips (if any)
                         if (viewModel.showTips) ...[
@@ -577,7 +461,6 @@ class CurrencyConverterScreen extends StatelessWidget {
     );
   }
 
-
   // Add a button in the UI section of the screen
   Widget _buildStatisticsButton(BuildContext context) {
     return Container(
@@ -598,5 +481,191 @@ class CurrencyConverterScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Replace the action buttons section with this improved version
+  Widget _buildActionButtons(CurrencyViewModel viewModel) {
+    if (viewModel.hasScannedResults) {
+      // Show "Add Transaction" and "New Scan" buttons after successful scan
+      return Column(
+        children: [
+          // Results Display (if available)
+          Container(
+            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF4CD964),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Scan Results',
+                  style: const TextStyle(
+                    color: Color(0xFF4CD964),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'From ${viewModel.sourceCountryName ?? ""}',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      'To ${viewModel.targetCountryName ?? ""}',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      viewModel.scannedAmount ?? "",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward,
+                      color: Color(0xFF4CD964),
+                      size: 24,
+                    ),
+                    Text(
+                      '${viewModel.convertedAmount?.toStringAsFixed(2) ?? ""} ${viewModel.convertedCurrencySymbol ?? ""}',
+                      style: const TextStyle(
+                        color: Color(0xFF4CD964),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                // Add a note about the automatic conversion
+                if (viewModel.scanResults != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.grey[500], size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Rate: ${viewModel.scanResults!['conversion']['rate']?.toStringAsFixed(2) ?? "Unknown"}',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF333333),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: viewModel.clearScan,
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  label: const Text('New Scan'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CD964),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: viewModel.isConverting ? null : viewModel.addTransaction,
+                  icon: viewModel.isConverting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Icon(Icons.add, color: Colors.black),
+                  label: const Text(
+                    'Add Transaction',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      // Show "Scan" button when there are no scan results yet
+      return ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF4CD964),
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        onPressed: viewModel.isScanning ? null : viewModel.scanForPreview,
+        icon: viewModel.isScanning
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.black,
+                ),
+              )
+            : const Icon(Icons.camera_alt_rounded, color: Colors.black),
+        label: const Text(
+          'Scan Bill',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
   }
 }

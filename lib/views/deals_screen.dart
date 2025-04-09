@@ -86,7 +86,7 @@ class _DealsScreenState extends State<DealsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Deals'),
+        title: const Text('Travel Deals'), // Updated title
         // ...existing app bar code...
       ),
       drawer: const AppDrawer(currentRoute: '/deals'), // Add this line

@@ -28,6 +28,9 @@ class ApiConfig {
   static const String TRANSACTIONS_BY_DAY_ENDPOINT = "/transactions/by-day";
   static const String SAVINGS_BY_DAY_ENDPOINT = "/savings/by-day";
 
+  // Add the new endpoint for image analysis without saving a transaction
+  static const String IMAGE_ANALYZE_CONVERT_ENDPOINT = "/image-currency/analyze-and-convert";
+
   // Request timeouts
   static const int CONNECT_TIMEOUT = 30000; // 30 seconds
   static const int RECEIVE_TIMEOUT = 30000; // 30 seconds

@@ -39,10 +39,13 @@ class AppDrawer extends StatelessWidget {
                       color: Colors.white.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: Image.asset(
-                      'assets/logodark.png',
-                      height: 70,
-                      fit: BoxFit.contain,
+                    child: ClipOval( // Ensure the logo is clipped into a circular shape
+                      child: Image.asset(
+                        'assets/logodark.png',
+                        height: 70,
+                        width: 70, // Ensure the logo is square to fit the circle
+                        fit: BoxFit.cover, // Scale the image to cover the circle
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -110,10 +113,20 @@ class AppDrawer extends StatelessWidget {
 
                   _buildDrawerItem(
                     context,
-                    'Deals',
+                    'Travel Deals', // Rename "Deals" to "Travel Deals"
                     Icons.local_offer_rounded,
-                    '/deals',
-                    currentRoute == '/deals',
+                    '/travel-deals', // Update route
+                    currentRoute == '/travel-deals',
+                    isDarkMode,
+                    primaryColor,
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    'Deal Hunting', // Add new "Deal Hunting" option
+                    Icons.search_rounded,
+                    '/deal-hunting', // New route for Deal Hunting
+                    currentRoute == '/deal-hunting',
                     isDarkMode,
                     primaryColor,
                   ),

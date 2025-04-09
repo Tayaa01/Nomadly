@@ -404,8 +404,8 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: isOutgoing 
-                        ? const Color(0xFF4CD964).withOpacity(0.1)
+                    color: isOutgoing
+                      ? const Color(0xFF4CD964).withOpacity(0.1)
                         // ignore: dead_code
                         : const Color(0xFF5AC8FA).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),

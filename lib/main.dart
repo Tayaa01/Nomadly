@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nomadly/views/deal_hunting_screen.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'views/currency_converter_screen.dart';
@@ -165,7 +166,8 @@ class _MyAppState extends State<MyApp> {
           isDarkMode: isDarkMode,
         ),
         '/translation': (context) => const SpeechToTextView(),
-        '/deals': (context) => const DealsScreen(),
+        '/travel-deals': (context) => const DealsScreen(), // Updated route for Travel Deals
+        '/deal-hunting': (context) => const DealHuntingScreen(), // New route for Deal Hunting
         '/tips': (context) => const TipsScreen(), // Add this route for tips
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
@@ -196,8 +198,10 @@ class _MyAppState extends State<MyApp> {
         return MaterialPageRoute(builder: (_) => const HomePage());
       case '/profile':
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
-      case '/deals':
+      case '/travel-deals':
         return MaterialPageRoute(builder: (_) => const DealsScreen());
+      case '/deal-hunting':
+        return MaterialPageRoute(builder: (_) => const DealHuntingScreen());
       case '/planner':
         // Use PageRouteBuilder for a custom transition
         return PageRouteBuilder(

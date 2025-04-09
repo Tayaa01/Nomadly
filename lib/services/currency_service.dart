@@ -44,13 +44,13 @@ class CurrencyService {
     return List<String>.from(response.data);
   }
 
-  Future<Map<String, dynamic>> analyzeAndConvertImage(XFile image, {String? countryCode}) async {
-    // Get auth headers
-    
+  // Add a new method for scan-only functionality
+  Future<Map<String, dynamic>> analyzeAndConvertImage(XFile image, {String? sourceCurrency, String? targetCurrency}) async {
     // Create form data
     final formData = FormData();
+    
     formData.files.add(MapEntry(
-      'receipt',
+      'image', // Note: parameter name is 'image' for this endpoint
       await MultipartFile.fromFile(
         image.path,
         filename: 'receipt.jpg',
@@ -58,28 +58,80 @@ class CurrencyService {
       ),
     ));
     
-    // Add detected country code if available - use 'country' parameter as shown in the cURL example
-    if (countryCode != null) {
-      formData.fields.add(MapEntry('country', countryCode));
+    // Add source and target currencies
+    if (sourceCurrency != null) {
+      formData.fields.add(MapEntry('sourceCurrency', sourceCurrency));
     }
     
-    print('Sending API request with image: ${image.path}, country: $countryCode');
+    if (targetCurrency != null) {
+      formData.fields.add(MapEntry('targetCurrency', targetCurrency));
+    }
+    
+    print('Sending image analysis request: ${image.path}, source: $sourceCurrency, target: $targetCurrency');
 
-    // Make the request exactly as shown in the cURL example
+    // Make the request to the new endpoint
     final response = await _dio.post(
-      ApiConfig.CURRENCY_ANALYZE_ENDPOINT,  // Use endpoint from config
+      ApiConfig.IMAGE_ANALYZE_CONVERT_ENDPOINT,
       data: formData,
       options: Options(
         headers: {
-          'Authorization': 'Bearer ${await _authService.getToken()}',
-          'accept': 'application/json',
+          'accept': '*/*',
           'Content-Type': 'multipart/form-data',
         },
       ),
     );
 
-    print('API response status: ${response.statusCode}');
+    print('Image analysis response status: ${response.statusCode}');
     return response.data;
+  }
+
+  // Update the addTransactionFromImage method to use the correct endpoint and parameters
+  Future<Map<String, dynamic>> addTransactionFromImage(XFile image, {String? countryCode}) async {
+    // Get auth token for the request
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Authentication token not available');
+    }
+
+    // Create form data
+    final formData = FormData();
+    formData.files.add(MapEntry(
+      'receipt',  // Server expects 'receipt' as the parameter name
+      await MultipartFile.fromFile(
+        image.path,
+        filename: 'receipt.jpg',
+        contentType: MediaType('image', 'jpeg'),
+      ),
+    ));
+    
+    // Add country code if available
+    if (countryCode != null) {
+      formData.fields.add(MapEntry('country', countryCode));
+    }
+    
+    print('Adding transaction with image: ${image.path}, country: $countryCode');
+
+    try {
+      // Make the authorized request to add a transaction
+      final response = await _dio.post(
+        ApiConfig.CURRENCY_ANALYZE_ENDPOINT,  // Make sure this points to "/tax-free/analyze"
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      print('Add transaction response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
+      return response.data;
+    } catch (e) {
+      print('Error calling API: $e');
+      throw e;  // Re-throw to be handled by the ViewModel
+    }
   }
 
   Future<Map<String, dynamic>> convertCurrency(String amount) async {

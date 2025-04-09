@@ -324,4 +324,59 @@ class DealsService {
     // Use a more reliable format with random photos from the travel collection
     return 'https://source.unsplash.com/random/600x400/?travel,$query';
   }
+
+  // Update the fetchDealsHunt method to use the correct URL format
+  static Future<Map<String, dynamic>> fetchDealsHunt(String country, String category) async {
+    try {
+      // Fix: Change the URL structure to match the correct API endpoint
+      final url = Uri.parse('${ApiConfig.BASE_URL}/deals/hunt?country=$country&category=$category');
+      
+      print('Fetching deals from: $url');
+      
+      final response = await http.get(
+        url, 
+        headers: ApiConfig.commonHeaders,
+      ).timeout(const Duration(seconds: 15));
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        
+        // Check if we have a valid data structure
+        if (jsonData is Map<String, dynamic> && jsonData.containsKey('data')) {
+          // Handle null recommendations
+          if (jsonData['data'] == null || jsonData['data']['recommendations'] == null) {
+            print('API returned null data or recommendations');
+            return {
+              'recommendations': [], 
+              'savingsTips': [],
+              'discounts': [],
+              'reasons': [],
+              'metadata': {'timestamp': DateTime.now().toIso8601String()}
+            };
+          }
+          
+          return jsonData['data'] as Map<String, dynamic>;
+        } else {
+          print('Invalid API response structure: $jsonData');
+          throw Exception('Invalid API response structure');
+        }
+      } else {
+        print('Error response: ${response.body}');
+        throw Exception('Failed to fetch deals: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching deals: $e');
+      // Return empty data structure instead of throwing
+      return {
+        'recommendations': [], 
+        'savingsTips': [],
+        'discounts': [],
+        'reasons': [],
+        'metadata': {'timestamp': DateTime.now().toIso8601String(), 'error': e.toString()}
+      };
+    }
+  }
 }
