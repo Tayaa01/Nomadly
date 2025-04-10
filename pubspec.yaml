@@ -33,6 +33,7 @@ dependencies:
   uuid: ^4.3.3
   flutter_native_splash: ^2.3.2
   cupertino_icons: ^1.0.8
+  shimmer: ^3.0.0 # Add this line for skeleton loading effects
 
 dev_dependencies:
   flutter_test:
