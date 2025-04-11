@@ -1,16 +1,14 @@
-import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import 'package:flutter/foundation.dart';
 import '../models/travel_request.dart';
+import '../services/travel_planner_service.dart'; // Updated import
 
-class ChatProvider with ChangeNotifier {
-  final ApiService _apiService = ApiService();
-  String? _lastGeneratedItinerary;
+class ChatProvider extends ChangeNotifier {
+  final String username;
   bool _isLoading = false;
-  final String _username;
-  final DateTime _sessionStartTime;
+  String? _lastGeneratedItinerary;
+  final TravelPlannerService _travelService = TravelPlannerService(); // Updated service
 
-  ChatProvider(this._username) 
-      : _sessionStartTime = DateTime.utc(2025, 02, 21, 13, 47, 28);  // Updated timestamp
+  ChatProvider(this.username);
 
   bool get isLoading => _isLoading;
   String? get lastGeneratedItinerary => _lastGeneratedItinerary;
@@ -20,18 +18,16 @@ class ChatProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      print('Generating itinerary with request: ${request.toString()}');
-      final itinerary = await _apiService.generateItinerary(request);
+      // Use the renamed service
+      final itinerary = await _travelService.generateItinerary(request);
+      
       _lastGeneratedItinerary = itinerary;
-      print('Itinerary generated successfully');
-
-    } catch (e) {
-      print('Error in ChatProvider: $e');
-      _lastGeneratedItinerary = null;
-      rethrow;
-    } finally {
       _isLoading = false;
       notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
     }
   }
 
@@ -39,9 +35,4 @@ class ChatProvider with ChangeNotifier {
     _lastGeneratedItinerary = null;
     notifyListeners();
   }
-
-  String get sessionInfo => '''
-Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): ${_sessionStartTime.toIso8601String()}
-Current User's Login: $_username
-''';
 }

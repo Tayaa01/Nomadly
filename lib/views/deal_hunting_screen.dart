@@ -193,257 +193,274 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
-    return Scaffold(
-      backgroundColor: isDarkMode ? Colors.black : Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E1E),
-        elevation: 0,
-        title: const Text(
-          'Deal Hunting',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to home screen when back button is pressed
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        return false; // Prevents default back button behavior
+      },
+      child: Scaffold(
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1E1E1E),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              // Use the same navigation logic as the back button
+              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+            },
+          ),
+          title: const Text(
+            'Deal Hunting',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-      ),
-      drawer: const AppDrawer(currentRoute: '/deal-hunting'),
-      body: Column(
-        children: [
-          // Enhanced header section with gradients
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF1E1E1E),
-                  const Color(0xFF1E1E1E).withOpacity(0.9),
+        drawer: const AppDrawer(currentRoute: '/deal-hunting'),
+        body: Column(
+          children: [
+            // Enhanced header section with gradients
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF1E1E1E),
+                    const Color(0xFF1E1E1E).withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Nice illustration or icon for deal hunting
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CD964).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.search,
-                          color: Color(0xFF4CD964),
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Find amazing deals for:',
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              _countryName ?? 'Your Location',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () => _showCountryPicker(),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
+              child: Column(
+                children: [
+                  // Nice illustration or icon for deal hunting
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFF4CD964).withOpacity(0.4),
-                              width: 1,
-                            ),
+                            color: const Color(0xFF4CD964).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Row(
+                          child: const Icon(
+                            Icons.search,
+                            color: Color(0xFF4CD964),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _isDetectingLocation
-                                  ? '...'
-                                  : (_detectedCountry ?? 'US'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                                'Find amazing deals for:',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.arrow_drop_down,
-                                color: Color(0xFF4CD964),
-                                size: 18,
+                              Text(
+                                _countryName ?? 'Your Location',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Enhanced search field
-                Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF4CD964).withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      Icon(
-                        Icons.category,
-                        color: Colors.grey[500],
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _categoryController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'What are you looking for?',
-                            hintStyle: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 16,
+                        InkWell(
+                          onTap: () => _showCountryPicker(),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
                             ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          onChanged: (value) {
-                            _category = value;
-                          },
-                        ),
-                      ),
-                      // Search button with animation
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _isDetectingLocation ? null : _fetchDeals,
-                          borderRadius: BorderRadius.circular(12),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: _isDetectingLocation 
-                                  ? Colors.grey
-                                  : const Color(0xFF4CD964),
-                              borderRadius: const BorderRadius.only(
-                                topRight: Radius.circular(11),
-                                bottomRight: Radius.circular(11),
+                              color: Colors.black.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF4CD964).withOpacity(0.4),
+                                width: 1,
                               ),
                             ),
-                            child: const Icon(
-                              Icons.search,
-                              color: Colors.black,
-                              size: 24,
+                            child: Row(
+                              children: [
+                                Text(
+                                  _isDetectingLocation
+                                    ? '...'
+                                    : (_detectedCountry ?? 'US'),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Color(0xFF4CD964),
+                                  size: 18,
+                                ),
+                              ],
                             ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Enhanced search field
+                  Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF4CD964).withOpacity(0.3),
+                        width: 1,
                       ),
-                    ],
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 12),
+                        Icon(
+                          Icons.category,
+                          color: Colors.grey[500],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _categoryController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'What are you looking for?',
+                              hintStyle: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            onChanged: (value) {
+                              _category = value;
+                            },
+                          ),
+                        ),
+                        // Search button with animation
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _isDetectingLocation ? null : _fetchDeals,
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: _isDetectingLocation 
+                                    ? Colors.grey
+                                    : const Color(0xFF4CD964),
+                                borderRadius: const BorderRadius.only(
+                                  topRight: Radius.circular(11),
+                                  bottomRight: Radius.circular(11),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.search,
+                                color: Colors.black,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                
-                // Enhanced category chips with horizontal scroll
-                Container(
-                  height: 40,
-                  margin: const EdgeInsets.only(top: 16, bottom: 4),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      _buildEnhancedCategoryChip('clothes', Icons.shopping_bag),
-                      _buildEnhancedCategoryChip('electronics', Icons.phone_android),
-                      _buildEnhancedCategoryChip('shoes', Icons.hiking),
-                      _buildEnhancedCategoryChip('furniture', Icons.chair),
-                      _buildEnhancedCategoryChip('toys', Icons.toys),
-                      _buildEnhancedCategoryChip('beauty', Icons.face),
-                      _buildEnhancedCategoryChip('sports', Icons.sports_basketball),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Error message with improved styling
-          if (_errorMessage != null)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 14),
+                  
+                  // Enhanced category chips with horizontal scroll
+                  Container(
+                    height: 40,
+                    margin: const EdgeInsets.only(top: 16, bottom: 4),
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        _buildEnhancedCategoryChip('clothes', Icons.shopping_bag),
+                        _buildEnhancedCategoryChip('electronics', Icons.phone_android),
+                        _buildEnhancedCategoryChip('shoes', Icons.hiking),
+                        _buildEnhancedCategoryChip('furniture', Icons.chair),
+                        _buildEnhancedCategoryChip('toys', Icons.toys),
+                        _buildEnhancedCategoryChip('beauty', Icons.face),
+                        _buildEnhancedCategoryChip('sports', Icons.sports_basketball),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-          // Improved content area with transitions
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : _recommendations.isEmpty && _errorMessage == null
-                      ? _buildEnhancedEmptyState()
-                      : _buildEnhancedDealsList(),
+            // Error message with improved styling
+            if (_errorMessage != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red, fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // Improved content area with transitions
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _isLoading
+                    ? _buildLoadingState()
+                    : _recommendations.isEmpty && _errorMessage == null
+                        ? _buildEnhancedEmptyState()
+                        : _buildEnhancedDealsList(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import SystemNavigator
 import '../widgets/app_drawer.dart';
 import '../widgets/modern_app_bar.dart'; // Import the new modern app bar
 import '../services/travel_services.dart';
@@ -335,34 +336,80 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
-    return Scaffold(
-      appBar: ModernAppBar(
-        title: 'Nomadly',
-        isDarkMode: isDarkMode,
-        centerTitle: false,
-        elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            color: isDarkMode ? Colors.white : Colors.black,
-            onPressed: () {
-              // Notification handling
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_outline_rounded),
-            color: isDarkMode ? Colors.white : Colors.black,
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-          ),
-        ],
+    return WillPopScope(
+      onWillPop: () async {
+        // Show a confirmation dialog before exiting the app
+        final shouldExit = await _showExitConfirmationDialog();
+        if (shouldExit) {
+          SystemNavigator.pop(); // Exit the app
+        }
+        return false; // Handle the back action in this widget
+      },
+      child: Scaffold(
+        appBar: ModernAppBar(
+          title: 'Nomadly',
+          isDarkMode: isDarkMode,
+          centerTitle: false,
+          elevation: 0.5,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              color: isDarkMode ? Colors.white : Colors.black,
+              onPressed: () {
+                // Notification handling
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_outline_rounded),
+              color: isDarkMode ? Colors.white : Colors.black,
+              onPressed: () {
+                Navigator.pushNamed(context, '/profile');
+              },
+            ),
+          ],
+        ),
+        drawer: const AppDrawer(currentRoute: '/home'),
+        body: _errorMessage != null 
+            ? _buildErrorView() 
+            : _buildProgressiveContentView(Provider.of<DestinationProvider>(context)),
       ),
-      drawer: const AppDrawer(currentRoute: '/home'),
-      body: _errorMessage != null 
-          ? _buildErrorView() 
-          : _buildProgressiveContentView(Provider.of<DestinationProvider>(context)),
     );
+  }
+
+  Future<bool> _showExitConfirmationDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text(
+            'Exit App',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'Are you sure you want to exit the app?',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'No',
+                style: TextStyle(color: Color(0xFF4CD964)),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CD964),
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    ) ?? false; // Default to false if dialog is dismissed
   }
 
   Widget _buildErrorView() {

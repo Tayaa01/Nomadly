@@ -176,8 +176,7 @@ class _MyAppState extends State<MyApp> {
         '/tips': (context) => const TipsScreen(), // Add this route for tips
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/planner':
-            (context) => const TravelFormScreen(),
+        '/planner': (context) => const TravelFormScreen(),
         '/travel-results':
             (context) => TravelResultsScreen(destination: ''),
         '/expense-tracker': (context) => ExpenseTrackerScreen(

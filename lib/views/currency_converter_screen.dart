@@ -17,289 +17,305 @@ class CurrencyConverterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     Theme.of(context);
 
-    return ChangeNotifierProvider(
-      create: (_) => CurrencyViewModel(),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF1E1E1E),
-          elevation: 0,
-          title: const Text(
-            'Currency Converter',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(
-                isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                color: const Color(0xFF4CD964),
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to home screen when back button is pressed
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        return false; // Prevents default back button behavior
+      },
+      child: ChangeNotifierProvider(
+        create: (_) => CurrencyViewModel(),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF1E1E1E),
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
               ),
-              onPressed: toggleTheme,
+              onPressed: () {
+                // Use the same navigation logic as the back button
+                Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+              },
             ),
-          ],
-        ),
-        drawer: const AppDrawer(currentRoute: '/currency-converter'),
-        body: Consumer<CurrencyViewModel>(
-          builder: (context, viewModel, child) {
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Top Section with solid color
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E1E),
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(32),
-                        bottomRight: Radius.circular(32),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+            title: const Text(
+              'Currency Converter',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: const Color(0xFF4CD964),
+                ),
+                onPressed: toggleTheme,
+              ),
+            ],
+          ),
+          drawer: const AppDrawer(currentRoute: '/currency-converter'),
+          body: Consumer<CurrencyViewModel>(
+            builder: (context, viewModel, child) {
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Top Section with solid color
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E1E),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // Amount Display
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF333333),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFF4CD964).withOpacity(0.3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Amount Display
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF333333),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF4CD964).withOpacity(0.3),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Amount',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: viewModel.amountController,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        enabled: false, // Disable manual input
+                                        decoration: InputDecoration(
+                                          hintText:
+                                              viewModel.selectedImage != null
+                                                  ? 'Scanning...'
+                                                  : 'Scan image to get amount',
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 24,
+                                          ),
+                                          border: InputBorder.none,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Amount',
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 14,
+                          const SizedBox(height: 24),
+                          
+                          // Display user's countries with change option
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF333333),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF4CD964).withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  color: const Color(0xFF4CD964),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: viewModel.isLoadingLocation
+                                      ? Row(
+                                          children: [
+                                            SizedBox(
+                                              height: 16,
+                                              width: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor: AlwaysStoppedAnimation<Color>(
+                                                  Color(0xFF4CD964),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Detecting your location...',
+                                              style: TextStyle(
+                                                color: Colors.grey[400],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              viewModel.currentCountryCode != null
+                                                  ? 'Using: ${viewModel.sourceCountryName} (${viewModel.currentCountryCode})'
+                                                  : 'No country selected',
+                                              style: TextStyle(
+                                                color: Colors.grey[400],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            GestureDetector(
+                                              onTap: () {
+                                                _showCountryPicker(context, viewModel);
+                                              },
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(top: 4.0),
+                                                child: Text(
+                                                  'Tap to change',
+                                                  style: TextStyle(
+                                                    color: const Color(0xFF4CD964),
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit_location_alt_outlined,
+                                    color: const Color(0xFF4CD964),
+                                    size: 20,
+                                  ),
+                                  onPressed: () => _showCountryPicker(context, viewModel),
+                                  tooltip: 'Change country',
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                        ],
+                      ),
+                    ),
+
+                    // Rest of the content
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Error Message (if any)
+                          if (viewModel.errorMessage != null)
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.red.withOpacity(0.3),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Row(
+                              child: Row(
                                 children: [
+                                  const Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(width: 12),
                                   Expanded(
-                                    child: TextField(
-                                      controller: viewModel.amountController,
+                                    child: Text(
+                                      viewModel.errorMessage!,
                                       style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      enabled: false, // Disable manual input
-                                      decoration: InputDecoration(
-                                        hintText:
-                                            viewModel.selectedImage != null
-                                                ? 'Scanning...'
-                                                : 'Scan image to get amount',
-                                        hintStyle: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 24,
-                                        ),
-                                        border: InputBorder.none,
-                                        contentPadding: EdgeInsets.zero,
+                                        color: Colors.red,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Display user's countries with change option
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF333333),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFF4CD964).withOpacity(0.3),
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                color: const Color(0xFF4CD964),
-                                size: 20,
+
+                          // Success message when transaction is added
+                          if (viewModel.showSuccessMessage)
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.green.withOpacity(0.3),
+                                ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: viewModel.isLoadingLocation
-                                    ? Row(
-                                        children: [
-                                          SizedBox(
-                                            height: 16,
-                                            width: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor: AlwaysStoppedAnimation<Color>(
-                                                Color(0xFF4CD964),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Detecting your location...',
-                                            style: TextStyle(
-                                              color: Colors.grey[400],
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            viewModel.currentCountryCode != null
-                                                ? 'Using: ${viewModel.sourceCountryName} (${viewModel.currentCountryCode})'
-                                                : 'No country selected',
-                                            style: TextStyle(
-                                              color: Colors.grey[400],
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              _showCountryPicker(context, viewModel);
-                                            },
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(top: 4.0),
-                                              child: Text(
-                                                'Tap to change',
-                                                style: TextStyle(
-                                                  color: const Color(0xFF4CD964),
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Colors.green,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Text(
+                                      'Transaction added successfully!',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 14,
                                       ),
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.edit_location_alt_outlined,
-                                  color: const Color(0xFF4CD964),
-                                  size: 20,
-                                ),
-                                onPressed: () => _showCountryPicker(context, viewModel),
-                                tooltip: 'Change country',
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                      ],
-                    ),
-                  ),
-
-                  // Rest of the content
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Error Message (if any)
-                        if (viewModel.errorMessage != null)
-                          Container(
-                            margin: const EdgeInsets.symmetric(vertical: 16),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.red.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.error_outline,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    viewModel.errorMessage!,
-                                    style: const TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 14,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        // Success message when transaction is added
-                        if (viewModel.showSuccessMessage)
-                          Container(
-                            margin: const EdgeInsets.symmetric(vertical: 16),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.green.withOpacity(0.3),
+                                ],
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Colors.green,
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Text(
-                                    'Transaction added successfully!',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
 
-                        // Action Buttons - replaced with new implementation
-                        _buildActionButtons(viewModel),
+                          // Action Buttons - replaced with new implementation
+                          _buildActionButtons(viewModel),
 
-                        // Tax Refund Tips (if any)
-                        if (viewModel.showTips) ...[
-                          // ...existing tax refund UI...
+                          // Tax Refund Tips (if any)
+                          if (viewModel.showTips) ...[
+                            // ...existing tax refund UI...
+                          ],
+
+                          // Add the statistics button
+                          _buildStatisticsButton(context),
                         ],
-
-                        // Add the statistics button
-                        _buildStatisticsButton(context),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-        // Remove bottomNavigationBar property
       ),
     );
   }

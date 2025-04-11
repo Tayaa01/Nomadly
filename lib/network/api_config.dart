@@ -1,7 +1,7 @@
 class ApiConfig {
   // Main base URL for all services
   static const String BASE_URL =
-      "http://localhost:3000";
+      "http://192.168.1.15:3000";
 
   // Endpoints for Auth Service
   static const String REGISTER_ENDPOINT = "/auth/register";
@@ -30,6 +30,14 @@ class ApiConfig {
 
   // Add the new endpoint for image analysis without saving a transaction
   static const String IMAGE_ANALYZE_CONVERT_ENDPOINT = "/image-currency/analyze-and-convert";
+
+  // New endpoint for Travel Planner
+  static const String TRAVEL_ITINERARY_ENDPOINT = "/travel/itinerary";
+
+  // Travel Planner endpoints
+  static const String TRAVEL_PLAN_ENDPOINT = "/travel-planner/plan";
+  static const String TRAVEL_GENERATE_PLAN_ENDPOINT = "/travel-planner/generate-plan";
+  static const String TRAVEL_GENERATE_BUDGET_PLAN_ENDPOINT = "/travel-planner/generate-budget-plan";
 
   // Request timeouts
   static const int CONNECT_TIMEOUT = 30000; // 30 seconds
