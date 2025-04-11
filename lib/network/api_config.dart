@@ -1,7 +1,7 @@
 class ApiConfig {
   // Main base URL for all services
   static const String BASE_URL =
-      "http://192.168.31.171:3000";
+      "http://localhost:3000";
 
   // Endpoints for Auth Service
   static const String REGISTER_ENDPOINT = "/auth/register";
@@ -20,7 +20,7 @@ class ApiConfig {
   // Endpoints for Translation Service
   static const String TRANSLATION_ENDPOINT = "/translation/translate";
 
-  // Endpoints for Deals Serviceç
+  // Endpoints for Deals Service
   static const String DEALS_ENDPOINT = "/deals";
   static const String DEALS_SEARCH_ENDPOINT = "/deals/search";
 

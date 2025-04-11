@@ -22,6 +22,9 @@ import 'views/travel_groups_screen.dart';
 import 'viewmodels/expense_viewmodel.dart';
 import 'viewmodels/currency_viewmodel.dart';
 import 'viewmodels/travel_group_viewmodel.dart';
+import 'providers/theme_provider.dart';
+import 'providers/chat_provider.dart';
+import 'screens/travel_form_screen.dart';
 
 void main() {
   runApp(
@@ -32,6 +35,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => ExpenseViewModel()),
         ChangeNotifierProvider(create: (_) => CurrencyViewModel()),
         ChangeNotifierProvider(create: (_) => TravelGroupViewModel()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_)=> ChatProvider('haddari'))
       ],
       child: const MyApp(),
     ),
@@ -171,7 +176,8 @@ class _MyAppState extends State<MyApp> {
         '/tips': (context) => const TipsScreen(), // Add this route for tips
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/planner':(context) => const TravelPreferencesScreen(),
+        '/planner':
+            (context) => const TravelFormScreen(),
         '/travel-results':
             (context) => TravelResultsScreen(destination: ''),
         '/expense-tracker': (context) => ExpenseTrackerScreen(
@@ -205,7 +211,7 @@ class _MyAppState extends State<MyApp> {
       case '/planner':
         // Use PageRouteBuilder for a custom transition
         return PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const TravelPreferencesScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) => const TravelFormScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(0.0, 1.0);
             const end = Offset.zero;
