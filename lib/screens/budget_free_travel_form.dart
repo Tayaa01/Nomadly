@@ -261,7 +261,7 @@ class _BudgetFreeTravelFormState extends State<BudgetFreeTravelForm> {
     try {
       final request = TravelRequest(
         country: _countryController.text.trim(),
-        budget: 0, // Set budget to 0 for budget-free plan
+        budget: 0, // Set budget to 0 for budget-free plan2
         days: int.parse(_daysController.text),
         startDate: _selectedDate!,
       );

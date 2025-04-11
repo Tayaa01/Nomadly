@@ -1,12 +1,12 @@
 class TravelRequest {
   final String country;
-  final double budget;
+  final double? budget;
   final int days;
   final DateTime startDate;  // Added field
 
   TravelRequest({
     required this.country,
-    required this.budget,
+    this.budget,
     required this.days,
     required this.startDate,
   });

@@ -30,7 +30,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
   int _selectedDayIndex = -1;
   bool _showImportantNotes = false;
   bool _isLoadingWeather = false;
-  String _weatherAdvice = '';
+  Map<int, String> _dailyWeatherAdvice = {}; // Store weather advice for each day
 
   @override
   Widget build(BuildContext context) {
@@ -503,13 +503,24 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           const SizedBox(height: 8),
           if (_isLoadingWeather)
             Center(
-              child: CircularProgressIndicator(
-                color: isDarkMode ? Colors.green : Colors.green.shade700,
+              child: Column(
+                children: [
+                  CircularProgressIndicator(
+                    color: isDarkMode ? Colors.green : Colors.green.shade700,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Fetching weather information...',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
+                ],
               ),
             )
-          else if (_weatherAdvice.isNotEmpty)
+          else if (_dailyWeatherAdvice[_selectedDayIndex] != null)
             Text(
-              _weatherAdvice,
+              _dailyWeatherAdvice[_selectedDayIndex]!,
               style: TextStyle(
                 fontSize: 16,
                 color: isDarkMode ? Colors.white : Colors.black87,
@@ -538,15 +549,60 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Day: $day',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: isDarkMode ? Colors.green : Colors.green.shade700,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Day: $day',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.green : Colors.green.shade700,
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => _fetchWeatherForDay(_selectedDayIndex),
+              icon: Icon(
+                _isLoadingWeather && _selectedDayIndex == _selectedDayIndex
+                    ? Icons.refresh
+                    : Icons.cloud,
+                color: Colors.white,
+              ),
+              label: Text(
+                _isLoadingWeather && _selectedDayIndex == _selectedDayIndex
+                    ? 'Loading...'
+                    : 'Weather',
+                style: const TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? Colors.green : Colors.green.shade600,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
+        if (_dailyWeatherAdvice[_selectedDayIndex] != null)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.black54 : Colors.green.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDarkMode ? Colors.green.withOpacity(0.3) : Colors.green.shade200,
+              ),
+            ),
+            child: Text(
+              _dailyWeatherAdvice[_selectedDayIndex]!,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDarkMode ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
+        const SizedBox(height: 16),
         _buildPlaceText('Morning: $morning', isDarkMode),
         const SizedBox(height: 8),
         _buildPlaceText('Afternoon: $afternoon', isDarkMode),
@@ -554,6 +610,42 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
         _buildPlaceText('Evening: $evening', isDarkMode),
       ],
     );
+  }
+
+  Future<void> _fetchWeatherForDay(int dayIndex) async {
+    if (_selectedDate == null || _countryController.text.isEmpty) {
+      setState(() {
+        _dailyWeatherAdvice[dayIndex] = 'Please select a destination and date to get weather information.';
+        _isLoadingWeather = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingWeather = true;
+      _dailyWeatherAdvice[dayIndex] = '';
+    });
+
+    try {
+      final targetDate = _selectedDate!.add(Duration(days: dayIndex));
+      print('Fetching weather for: ${_countryController.text} on $targetDate'); // Debug log
+      final weatherData = await WeatherService.getWeatherForecast(
+        _countryController.text.trim(),
+        targetDate,
+      );
+      final advice = WeatherService.getTravelAdvice(weatherData);
+      
+      setState(() {
+        _dailyWeatherAdvice[dayIndex] = advice;
+        _isLoadingWeather = false;
+      });
+    } catch (e) {
+      print('Error fetching weather: $e'); // Debug log
+      setState(() {
+        _dailyWeatherAdvice[dayIndex] = 'Unable to fetch weather data. Please try again later.';
+        _isLoadingWeather = false;
+      });
+    }
   }
 
   Widget _buildPlaceText(String text, bool isDarkMode) {
@@ -724,32 +816,6 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
     return 'No important notes found.';
   }
 
-  Future<void> _fetchWeatherAdvice() async {
-    if (_selectedDate == null || _countryController.text.isEmpty) return;
-
-    setState(() {
-      _isLoadingWeather = true;
-    });
-
-    try {
-      final weatherData = await WeatherService.getWeatherForecast(
-        _countryController.text.trim(),
-        _selectedDate!,
-      );
-      final advice = WeatherService.getTravelAdvice(weatherData);
-      
-      setState(() {
-        _weatherAdvice = advice;
-        _isLoadingWeather = false;
-      });
-    } catch (e) {
-      setState(() {
-        _weatherAdvice = 'Unable to fetch weather data. Please try again later.';
-        _isLoadingWeather = false;
-      });
-    }
-  }
-
   void _generatePlan() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
@@ -777,7 +843,10 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
       );
 
       await context.read<ChatProvider>().generateItinerary(request);
-      await _fetchWeatherAdvice(); // Fetch weather advice after generating plan
+      // Clear previous weather data when generating new plan
+      setState(() {
+        _dailyWeatherAdvice.clear();
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
