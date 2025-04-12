@@ -20,7 +20,9 @@ class CurrencyConverterScreen extends StatelessWidget {
     return WillPopScope(
       onWillPop: () async {
         // Navigate to home screen when back button is pressed
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
         return false; // Prevents default back button behavior
       },
       child: ChangeNotifierProvider(
@@ -31,13 +33,12 @@ class CurrencyConverterScreen extends StatelessWidget {
             backgroundColor: const Color(0xFF1E1E1E),
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
                 // Use the same navigation logic as the back button
-                Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/home', (route) => false);
               },
             ),
             title: const Text(
@@ -136,7 +137,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           // Display user's countries with change option
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -156,59 +157,72 @@ class CurrencyConverterScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: viewModel.isLoadingLocation
-                                      ? Row(
-                                          children: [
-                                            SizedBox(
-                                              height: 16,
-                                              width: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  Color(0xFF4CD964),
+                                  child:
+                                      viewModel.isLoadingLocation
+                                          ? Row(
+                                            children: [
+                                              SizedBox(
+                                                height: 16,
+                                                width: 16,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Color(0xFF4CD964)),
                                                 ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Detecting your location...',
-                                              style: TextStyle(
-                                                color: Colors.grey[400],
-                                                fontSize: 14,
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Detecting your location...',
+                                                style: TextStyle(
+                                                  color: Colors.grey[400],
+                                                  fontSize: 14,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        )
-                                      : Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              viewModel.currentCountryCode != null
-                                                  ? 'Using: ${viewModel.sourceCountryName} (${viewModel.currentCountryCode})'
-                                                  : 'No country selected',
-                                              style: TextStyle(
-                                                color: Colors.grey[400],
-                                                fontSize: 14,
+                                            ],
+                                          )
+                                          : Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                viewModel.currentCountryCode !=
+                                                        null
+                                                    ? 'Using: ${viewModel.sourceCountryName} (${viewModel.currentCountryCode})'
+                                                    : 'No country selected',
+                                                style: TextStyle(
+                                                  color: Colors.grey[400],
+                                                  fontSize: 14,
+                                                ),
                                               ),
-                                            ),
-                                            GestureDetector(
-                                              onTap: () {
-                                                _showCountryPicker(context, viewModel);
-                                              },
-                                              child: Padding(
-                                                padding: const EdgeInsets.only(top: 4.0),
-                                                child: Text(
-                                                  'Tap to change',
-                                                  style: TextStyle(
-                                                    color: const Color(0xFF4CD964),
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
+                                              GestureDetector(
+                                                onTap: () {
+                                                  _showCountryPicker(
+                                                    context,
+                                                    viewModel,
+                                                  );
+                                                },
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        top: 4.0,
+                                                      ),
+                                                  child: Text(
+                                                    'Tap to change',
+                                                    style: TextStyle(
+                                                      color: const Color(
+                                                        0xFF4CD964,
+                                                      ),
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
+                                            ],
+                                          ),
                                 ),
                                 IconButton(
                                   icon: Icon(
@@ -216,13 +230,16 @@ class CurrencyConverterScreen extends StatelessWidget {
                                     color: const Color(0xFF4CD964),
                                     size: 20,
                                   ),
-                                  onPressed: () => _showCountryPicker(context, viewModel),
+                                  onPressed:
+                                      () => _showCountryPicker(
+                                        context,
+                                        viewModel,
+                                      ),
                                   tooltip: 'Change country',
                                 ),
                               ],
                             ),
                           ),
-                          
                         ],
                       ),
                     ),
@@ -340,7 +357,7 @@ class CurrencyConverterScreen extends StatelessWidget {
       {'code': 'MA', 'name': 'Morocco'},
       {'code': 'EG', 'name': 'Egypt'},
     ];
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -400,10 +417,10 @@ class CurrencyConverterScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final country = commonCountries[index];
                     return _buildCountryOption(
-                      context, 
-                      viewModel, 
-                      country['code']!, 
-                      country['name']!
+                      context,
+                      viewModel,
+                      country['code']!,
+                      country['name']!,
                     );
                   },
                 ),
@@ -427,16 +444,24 @@ class CurrencyConverterScreen extends StatelessWidget {
   }
 
   // Make country options more visually distinct
-  Widget _buildCountryOption(BuildContext context, CurrencyViewModel viewModel, String code, String name) {
+  Widget _buildCountryOption(
+    BuildContext context,
+    CurrencyViewModel viewModel,
+    String code,
+    String name,
+  ) {
     final isSelected = viewModel.currentCountryCode == code;
-    
+
     return InkWell(
       onTap: () async {
         await viewModel.setCountry(code, name);
         Navigator.of(context).pop();
       },
       child: Container(
-        color: isSelected ? const Color(0xFF4CD964).withOpacity(0.15) : Colors.transparent,
+        color:
+            isSelected
+                ? const Color(0xFF4CD964).withOpacity(0.15)
+                : Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
           child: Row(
@@ -448,18 +473,17 @@ class CurrencyConverterScreen extends StatelessWidget {
                     Text(
                       name,
                       style: TextStyle(
-                        color: isSelected ? const Color(0xFF4CD964) : Colors.white,
+                        color:
+                            isSelected ? const Color(0xFF4CD964) : Colors.white,
                         fontSize: 16,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       code,
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[400], fontSize: 14),
                     ),
                   ],
                 ),
@@ -491,9 +515,7 @@ class CurrencyConverterScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF4CD964),
           foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
@@ -512,10 +534,7 @@ class CurrencyConverterScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E1E),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFF4CD964),
-                width: 1,
-              ),
+              border: Border.all(color: const Color(0xFF4CD964), width: 1),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -534,17 +553,11 @@ class CurrencyConverterScreen extends StatelessWidget {
                   children: [
                     Text(
                       'From ${viewModel.sourceCountryName ?? ""}',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[400], fontSize: 14),
                     ),
                     Text(
                       'To ${viewModel.targetCountryName ?? ""}',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[400], fontSize: 14),
                     ),
                   ],
                 ),
@@ -581,7 +594,11 @@ class CurrencyConverterScreen extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 16),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.grey[500], size: 16),
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.grey[500],
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -598,7 +615,7 @@ class CurrencyConverterScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Action buttons
           Row(
             children: [
@@ -630,17 +647,19 @@ class CurrencyConverterScreen extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  onPressed: viewModel.isConverting ? null : viewModel.addTransaction,
-                  icon: viewModel.isConverting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.black,
-                          ),
-                        )
-                      : const Icon(Icons.add, color: Colors.black),
+                  onPressed:
+                      viewModel.isConverting ? null : viewModel.addTransaction,
+                  icon:
+                      viewModel.isConverting
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.black,
+                            ),
+                          )
+                          : const Icon(Icons.add, color: Colors.black),
                   label: const Text(
                     'Add Transaction',
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -664,22 +683,20 @@ class CurrencyConverterScreen extends StatelessWidget {
           elevation: 0,
         ),
         onPressed: viewModel.isScanning ? null : viewModel.scanForPreview,
-        icon: viewModel.isScanning
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.black,
-                ),
-              )
-            : const Icon(Icons.camera_alt_rounded, color: Colors.black),
+        icon:
+            viewModel.isScanning
+                ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.black,
+                  ),
+                )
+                : const Icon(Icons.camera_alt_rounded, color: Colors.black),
         label: const Text(
           'Scan Bill',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       );
     }
