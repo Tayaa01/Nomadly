@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/destination_provider.dart';
 import '../services/deals_service.dart';
+import '../services/country_images_service.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/app_drawer.dart';
@@ -40,6 +41,16 @@ class _DealsScreenState extends State<DealsScreen> {
       _selectedDestination = destination;
       
       final deals = await DealsService.fetchDeals(destination ?? 'popular destinations');
+      
+      // Update images for deals that don't have an image URL
+      for (var deal in deals) {
+        if (deal['imageUrl'] == null || deal['imageUrl'].toString().isEmpty) {
+          // Use country-specific image if available
+          if (_selectedDestination != null) {
+            deal['imageUrl'] = await CountryImagesService.getRandomTourismImage(_selectedDestination!);
+          }
+        }
+      }
       
       if (mounted) {
         setState(() {
@@ -231,16 +242,64 @@ class _DealsScreenState extends State<DealsScreen> {
                       ),
                     ),
                   ),
-                  errorWidget: (context, url, error) => Container(
-                    height: 180,
-                    color: Colors.grey[800],
-                    child: const Center(
-                      child: Icon(
-                        Icons.error_outline,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
+                  errorWidget: (context, url, error) => FutureBuilder<String>(
+                    future: _selectedDestination != null 
+                        ? CountryImagesService.getRandomTourismImage(_selectedDestination!)
+                        : Future.value(''),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Container(
+                          height: 180,
+                          color: Colors.grey[800],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                        return CachedNetworkImage(
+                          imageUrl: snapshot.data!,
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            height: 180,
+                            color: Colors.grey[800],
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            height: 180,
+                            color: Colors.grey[800],
+                            child: const Center(
+                              child: Icon(
+                                Icons.image,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      return Container(
+                        height: 180,
+                        color: Colors.grey[800],
+                        child: const Center(
+                          child: Icon(
+                            Icons.image,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
