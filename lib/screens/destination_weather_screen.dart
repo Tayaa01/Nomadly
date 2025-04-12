@@ -127,9 +127,9 @@ class _DestinationWeatherScreenState extends State<DestinationWeatherScreen> {
     }
   }
 
-  // Updated background gradient method with enhanced colors
+  // Updated background gradient method with enhanced cloudy/overcast colors
   List<Color> _getBackgroundGradient(bool isDarkMode) {
-    // Default gradients (cloudy/overcast)
+    // Default gradients (clear day/night)
     List<Color> defaultDayGradient = [Colors.lightBlue[100]!, Colors.blue[300]!];
     List<Color> defaultNightGradient = [
       const Color(0xFF1F2B44), // Deep navy blue
@@ -160,34 +160,38 @@ class _DestinationWeatherScreenState extends State<DestinationWeatherScreen> {
       }
     }
     
-    // Partly cloudy (code 2)
+    // Partly cloudy (code 2) - IMPROVED
     else if (weatherCode == 2) {
       if (isDay) {
-        // Light blue with some grey for partly cloudy day
+        // Enhanced partly cloudy day gradient - softer silver-blue tones
         return [
-          const Color(0xFFADD8E6), // Light blue
-          const Color(0xFF778899)  // Light slate gray
+          const Color(0xFFABD1E7), // Soft powder blue
+          const Color(0xFF8BADC2)  // Muted slate blue
         ];
       } else {
-        // Dark blue-grey for partly cloudy night
+        // Enhanced partly cloudy night gradient - deeper atmospheric blues
         return [
-          const Color(0xFF2C3E50), // Dark blue gray
-          const Color(0xFF1B2631)  // Very dark blue gray
+          const Color(0xFF2E394C), // Deep slate blue
+          const Color(0xFF1D2733)  // Rich navy charcoal
         ];
       }
     }
     
-    // Overcast (code 3)
+    // Overcast (code 3) - DARKER IMPROVED
     else if (weatherCode == 3) {
       if (isDay) {
+        // Enhanced overcast day gradient - much darker and dramatic grays
         return [
-          const Color(0xFFB0C4DE), // Light steel blue
-          const Color(0xFF708090)  // Slate gray
+          const Color(0xFF8C9DAD), // Muted slate blue-gray (darker)
+          const Color(0xFF5D6977), // Deep steel gray
+          const Color(0xFF4A545F), // Very dark slate gray
         ];
       } else {
+        // Enhanced overcast night - even deeper atmospheric grays
         return [
-          const Color(0xFF3B4254), // Slate gray blue
-          const Color(0xFF2A2D34)  // Dark slate
+          const Color(0xFF2A333C), // Very dark slate blue
+          const Color(0xFF1C2329), // Almost black blue-gray
+          const Color(0xFF0F1417), // Nearly black with blue undertone
         ];
       }
     }
@@ -195,14 +199,16 @@ class _DestinationWeatherScreenState extends State<DestinationWeatherScreen> {
     // For rain conditions (codes 51-99)
     else if (weatherCode >= 51) {
       if (isDay) {
+        // Enhanced rainy day - cooler blue grays
         return [
-          const Color(0xFF5D8CAE), // Steel blue
-          const Color(0xFF36454F)  // Charcoal
+          const Color(0xFF677E8E), // Steel blue gray
+          const Color(0xFF455664)  // Slate blue gray
         ];
       } else {
+        // Enhanced rainy night - deeper blues
         return [
-          const Color(0xFF253746), // Dark slate blue
-          const Color(0xFF1A1A2E)  // Very dark blue
+          const Color(0xFF23313D), // Deep slate blue
+          const Color(0xFF141C24)  // Almost black blue
         ];
       }
     }
@@ -328,44 +334,68 @@ class _DestinationWeatherScreenState extends State<DestinationWeatherScreen> {
                 if (_localTime.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 14,
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Local time: $_localTime',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: isDarkMode ? Colors.white : Colors.black87,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: Colors.white,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'Local time: $_localTime',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                Text(
-                  'Last updated: $_lastUpdated',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    fontStyle: FontStyle.italic,
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Last updated: $_lastUpdated',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 if (widget.tripStartDate != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 5.0),
-                    child: Text(
-                      'Trip starts: ${DateFormat('MMM d, yyyy').format(widget.tripStartDate!)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: primaryColor,
-                        fontWeight: FontWeight.w600,
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: primaryColor.withOpacity(0.4), width: 1),
+                      ),
+                      child: Text(
+                        'Trip starts: ${DateFormat('MMM d, yyyy').format(widget.tripStartDate!)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
