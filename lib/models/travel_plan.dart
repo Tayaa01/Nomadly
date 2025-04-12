@@ -25,6 +25,7 @@ class TravelPlan {
   final double estimatedBudget;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final Map<String, dynamic>? weatherData; // Added for weather forecast
 
   TravelPlan({
     required this.id,
@@ -39,9 +40,20 @@ class TravelPlan {
     required this.estimatedBudget,
     required this.createdAt,
     required this.updatedAt,
+    this.weatherData, // Added
   });
 
   factory TravelPlan.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic>? weatherData;
+    if (json['weatherData'] != null && json['weatherData'] is Map) {
+      if (json['weatherData']['forecast'] != null && json['weatherData']['forecast'] is List) {
+        weatherData = Map<String, dynamic>.from(json['weatherData']);
+      } else {
+        weatherData = Map<String, dynamic>.from(json['weatherData']);
+        weatherData['forecast'] = [];
+      }
+    }
+
     return TravelPlan(
       id: json['_id'] ?? '',
       userId: json['userId'] ?? '',
@@ -56,14 +68,34 @@ class TravelPlan {
           ?.map((day) => DayContent.fromJson(day))
           .toList() ?? [],
       additionalInfo: json['additionalInfo'] ?? '',
-      estimatedBudget: (json['estimatedBudget'] ?? 0).toDouble(),
+      estimatedBudget: (json['estimatedBudget'] as num?)?.toDouble() ?? 0.0,
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt']) 
           : DateTime.now(),
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt']) 
           : DateTime.now(),
+      weatherData: weatherData, // Added
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    final data = <String, dynamic>{
+      'id': id,
+      'userId': userId,
+      'country': country,
+      'days': days,
+      'startDate': startDate.toIso8601String(),
+      'budget': budget,
+      'isBudgetOptimized': isBudgetOptimized,
+      'daysContent': daysContent.map((day) => {'content': day.content}).toList(),
+      'additionalInfo': additionalInfo,
+      'estimatedBudget': estimatedBudget,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'weatherData': weatherData, // Added
+    };
+    return data;
   }
 
   String get formattedStartDate {

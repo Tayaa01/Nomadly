@@ -8,7 +8,7 @@ import '../services/travel_planner_service.dart';
 import 'travel_plan_display_screen.dart';
 
 class BudgetFreeTravelForm extends StatefulWidget {
-  const BudgetFreeTravelForm({Key? key}) : super(key: key);
+  const BudgetFreeTravelForm({super.key});
 
   @override
   _BudgetFreeTravelFormState createState() => _BudgetFreeTravelFormState();

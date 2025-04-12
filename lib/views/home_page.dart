@@ -14,7 +14,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math';
 import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart'; // Add shimmer package for skeleton UI
 
 class HomePage extends StatefulWidget {

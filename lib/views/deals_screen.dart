@@ -6,8 +6,6 @@ import '../services/country_images_service.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/app_drawer.dart';
-import 'dart:convert';
-import 'package:flutter/services.dart';
 
 class DealsScreen extends StatefulWidget {
   final bool isDarkMode;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+// Import the new screen if needed for type checking, though not strictly required for routing by name
 
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
@@ -150,6 +151,17 @@ class AppDrawer extends StatelessWidget {
                     Icons.translate_rounded,
                     '/translation',
                     currentRoute == '/translation',
+                    isDarkMode,
+                    primaryColor,
+                  ),
+
+                  // Add Weather Forecast item
+                  _buildDrawerItem(
+                    context,
+                    'Weather Forecast', // New item label
+                    Icons.wb_sunny_rounded, // Choose an appropriate icon
+                    '/weather-forecast', // New route name
+                    currentRoute == '/weather-forecast',
                     isDarkMode,
                     primaryColor,
                   ),

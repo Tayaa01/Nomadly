@@ -12,7 +12,7 @@ import '../services/travel_planner_service.dart';
 import 'travel_plan_loading_screen.dart';
 
 class TravelFormScreen extends StatefulWidget {
-  const TravelFormScreen({Key? key}) : super(key: key);
+  const TravelFormScreen({super.key});
 
   @override
   _TravelFormScreenState createState() => _TravelFormScreenState();
@@ -27,7 +27,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
   bool _isLoading = true;
   bool _hasExistingPlan = false;
   TravelPlan? _existingPlan;
-  bool _isGeneratingPlan = false;
+  final bool _isGeneratingPlan = false;
 
   final TravelPlannerService _plannerService = TravelPlannerService();
 
@@ -559,8 +559,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
                   onPrimary: Colors.black,
                   surface: Color(0xFF1E1E1E),
                   onSurface: Colors.white,
-                ),
-                dialogBackgroundColor: const Color(0xFF1E1E1E),
+                ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF1E1E1E)),
               ),
               child: child!,
             );

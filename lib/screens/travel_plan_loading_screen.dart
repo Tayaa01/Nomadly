@@ -11,10 +11,10 @@ class TravelPlanLoadingScreen extends StatefulWidget {
   final bool isBudgetFree;
 
   const TravelPlanLoadingScreen({
-    Key? key,
+    super.key,
     required this.request,
     required this.isBudgetFree,
-  }) : super(key: key);
+  });
 
   @override
   State<TravelPlanLoadingScreen> createState() => _TravelPlanLoadingScreenState();
@@ -228,7 +228,7 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Day tabs skeleton
-                Container(
+                SizedBox(
                   height: 40,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,

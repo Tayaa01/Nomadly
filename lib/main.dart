@@ -13,7 +13,6 @@ import 'views/sign_up_page.dart';
 import 'services/auth_service.dart';
 import 'views/statistics_screen.dart';
 import 'views/profile_screen.dart';
-import 'views/travel_preferences.dart';
 import 'views/travelResultsScreen.dart';
 import 'package:provider/provider.dart';
 import 'providers/destination_provider.dart';
@@ -25,6 +24,7 @@ import 'viewmodels/travel_group_viewmodel.dart';
 import 'providers/theme_provider.dart';
 import 'providers/chat_provider.dart';
 import 'screens/travel_form_screen.dart';
+import 'screens/weather_forecast_screen.dart'; // Import the new screen
 
 void main() {
   runApp(
@@ -187,6 +187,7 @@ class _MyAppState extends State<MyApp> {
           toggleTheme: toggleTheme,
           isDarkMode: isDarkMode,
         ),
+        '/weather-forecast': (context) => const WeatherForecastScreen(), // Add the new route
       },
     );
   }

@@ -4,15 +4,17 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geocoding/geocoding.dart';
+import 'destination_weather_screen.dart'; // Fix this import - it's in the same directory
 import '../models/travel_plan.dart';
 
 class TravelPlanDisplayScreen extends StatefulWidget {
   final TravelPlan plan;
 
   const TravelPlanDisplayScreen({
-    Key? key, 
+    super.key, 
     required this.plan, 
-  }) : super(key: key);
+  });
 
   @override
   _TravelPlanDisplayScreenState createState() => _TravelPlanDisplayScreenState();
@@ -21,7 +23,50 @@ class TravelPlanDisplayScreen extends StatefulWidget {
 class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _showAdditionalInfo = false;
-  
+  String _weatherError = '';
+  final Map<String, String> _countryCapitals = {
+    'United States': 'Washington, D.C.',
+    'USA': 'Washington, D.C.',
+    'Canada': 'Ottawa',
+    'UK': 'London',
+    'United Kingdom': 'London',
+    'France': 'Paris',
+    'Germany': 'Berlin',
+    'Italy': 'Rome',
+    'Spain': 'Madrid',
+    'Japan': 'Tokyo',
+    'China': 'Beijing',
+    'India': 'New Delhi',
+    'Australia': 'Canberra',
+    'Brazil': 'Brasília',
+    'Mexico': 'Mexico City',
+    'Russia': 'Moscow',
+    'South Africa': 'Pretoria',
+    'Egypt': 'Cairo',
+    'Turkey': 'Ankara',
+    'Argentina': 'Buenos Aires',
+    'South Korea': 'Seoul',
+    'Thailand': 'Bangkok',
+    'Indonesia': 'Jakarta',
+    'Malaysia': 'Kuala Lumpur',
+    'Singapore': 'Singapore',
+    'Vietnam': 'Hanoi',
+    'Greece': 'Athens',
+    'Portugal': 'Lisbon',
+    'Ireland': 'Dublin',
+    'Poland': 'Warsaw',
+    'Sweden': 'Stockholm',
+    'Norway': 'Oslo',
+    'Denmark': 'Copenhagen',
+    'Finland': 'Helsinki',
+    'Netherlands': 'Amsterdam',
+    'Belgium': 'Brussels',
+    'Switzerland': 'Bern',
+    'Austria': 'Vienna',
+    'New Zealand': 'Wellington',
+    // Add more countries and capitals as needed
+  };
+
   @override
   void initState() {
     super.initState();
@@ -98,6 +143,14 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.wb_sunny_outlined,
+              color: Color(0xFF4CD964),
+            ),
+            onPressed: _navigateToWeatherForecast,
+            tooltip: 'View Weather Forecast',
+          ),
           IconButton(
             icon: Icon(
               _showAdditionalInfo ? Icons.info : Icons.info_outline,
@@ -198,7 +251,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
       final savingsPercentage = (savings / widget.plan.budget * 100).toStringAsFixed(0);
       
       if (savings > 0) {
-        savingsText = 'You save \$${savings.toStringAsFixed(0)} (${savingsPercentage}%)';
+        savingsText = 'You save \$${savings.toStringAsFixed(0)} ($savingsPercentage%)';
       }
     }
 
@@ -391,7 +444,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
                   } else {
                     return const SizedBox(height: 8);
                   }
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -414,7 +467,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
           const SizedBox(height: 16),
           ...activities.map((activity) => 
             _buildActivityCard(activity)
-          ).toList(),
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -806,6 +859,97 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
     }
     
     return events;
+  }
+
+  Future<void> _navigateToWeatherForecast() async {
+    setState(() {
+      _weatherError = '';
+    });
+
+    try {
+      String searchQuery = widget.plan.country;
+      String displayName = searchQuery;
+      
+      // Check if we have a capital city for this country
+      String? capital = _countryCapitals[searchQuery];
+      if (capital != null) {
+        // Use the capital city for better weather targeting
+        searchQuery = '$capital, ${widget.plan.country}';
+        displayName = capital;
+        print('Using capital city: $searchQuery');
+      } else {
+        // No capital found in our map, try to find a major city from the itinerary
+        if (widget.plan.daysContent.isNotEmpty) {
+          final firstDayContent = widget.plan.daysContent[0].content;
+          
+          // Look for city names in the content
+          final cityPattern = RegExp(r'(visit|in|to|at|explore)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)');
+          final cityMatches = cityPattern.allMatches(firstDayContent);
+          
+          if (cityMatches.isNotEmpty && cityMatches.first.groupCount >= 2) {
+            final capturedCity = cityMatches.first.group(2);
+            if (capturedCity != null && capturedCity.length > 3) {
+              // Use city name + country for more precision
+              searchQuery = '$capturedCity, ${widget.plan.country}';
+              displayName = capturedCity;
+              print('Using city from itinerary: $searchQuery');
+            }
+          }
+        }
+      }
+      
+      // Get coordinates for the location
+      print('Geocoding location: $searchQuery');
+      final List<Location> locations = await locationFromAddress(searchQuery);
+      
+      if (locations.isEmpty) {
+        throw Exception('Could not find location coordinates for $searchQuery');
+      }
+      
+      // Use the first result
+      final location = locations.first;
+      
+      // Debug info
+      print('Found coordinates for $searchQuery: ${location.latitude}, ${location.longitude}');
+      
+      // Navigate to the weather screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DestinationWeatherScreen(
+              latitude: location.latitude,
+              longitude: location.longitude,
+              locationName: displayName,
+              tripStartDate: widget.plan.startDate,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error navigating to weather forecast: $e');
+      setState(() {
+        _weatherError = e.toString();
+      });
+      
+      // Show error in snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not load weather data: ${_weatherError}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+      }
+    }
   }
 }
 
