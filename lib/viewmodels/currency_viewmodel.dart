@@ -53,6 +53,9 @@ class CurrencyViewModel extends ChangeNotifier {
   bool get hasScannedResults => _hasScannedResults;
   bool get showSuccessMessage => _showSuccessMessage;
 
+  // Add this getter for loading state
+  bool get isLoading => isScanning || isConverting || isLoadingLocation;
+
   CurrencyViewModel() {
     // Load saved country or get user's location
     _loadSavedCountry();

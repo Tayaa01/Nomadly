@@ -5,6 +5,7 @@ import 'package:geocoding/geocoding.dart';
 import '../services/weather_service.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/stars_background.dart'; // Import the new stars widget
+import 'package:shimmer/shimmer.dart'; // Import Shimmer package
 
 class WeatherForecastScreen extends StatefulWidget {
   const WeatherForecastScreen({super.key});
@@ -190,6 +191,248 @@ class _WeatherForecastScreenState extends State<WeatherForecastScreen> {
     return isDay ? defaultDayGradient : defaultNightGradient;
   }
 
+  Widget _buildWeatherSkeleton() {
+    // Adjusted colors for higher contrast shimmer
+    final containerBackgroundColor = const Color(0xFF1A2533); // Dark blue-grey background
+    final baseSkeletonColor = const Color(0xFF28384A);       // Slightly lighter base blue-grey
+    final highlightSkeletonColor = const Color(0xFF5A7698);  // Much lighter blue-grey highlight for more pop
+    final cardSkeletonColor = const Color(0xFF202D3D);       // Slightly darker card background
+    final placeholderShapeColor = const Color(0xFF5A7698);   // Match highlight color for shapes
+    final iconColor = const Color(0xFF4CD964); // App's primary green
+
+    return Container(
+      color: containerBackgroundColor,
+      child: Shimmer.fromColors(
+        baseColor: baseSkeletonColor,
+        highlightColor: highlightSkeletonColor,
+        period: const Duration(milliseconds: 1200), // Slightly faster shimmer
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // Header indicating loading process - Refined Layout
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 60, bottom: 25, left: 16, right: 16), // Increased bottom padding
+              decoration: BoxDecoration(
+                color: cardSkeletonColor.withOpacity(0.6), // Adjusted opacity
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(25), // Slightly larger radius
+                  bottomRight: Radius.circular(25),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Loading text placeholder
+                  Container(
+                    width: 240, // Wider text placeholder
+                    height: 22, // Taller text placeholder
+                    decoration: BoxDecoration(
+                      color: placeholderShapeColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    margin: const EdgeInsets.only(bottom: 30), // Increased spacing
+                  ),
+                  // Processing step icons - Refined Layout
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround, // Use spaceAround for better distribution
+                    children: [
+                      _buildProcessingIndicator(Icons.location_searching, "Locating", iconColor, placeholderShapeColor), // Changed icon & text
+                      _buildProcessingIndicator(Icons.cloud_download_outlined, "Fetching", iconColor, placeholderShapeColor), // Changed icon & text
+                      _buildProcessingIndicator(Icons.calendar_month_outlined, "Forecasting", iconColor, placeholderShapeColor), // Changed icon & text
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Top: location and main weather skeleton
+            Padding(
+              padding: const EdgeInsets.only(top: 35, left: 24, right: 24, bottom: 20), // Adjusted padding
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Weather icon skeleton (circle)
+                  Container(
+                    width: 110, // Slightly larger icon
+                    height: 110,
+                    decoration: BoxDecoration(
+                      color: placeholderShapeColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Increased spacing
+                  // Temperature skeleton (larger line)
+                  Container(
+                    width: 100, // Wider temp
+                    height: 52, // Taller temp
+                    decoration: BoxDecoration(
+                      color: placeholderShapeColor,
+                      borderRadius: BorderRadius.circular(14), // Adjusted radius
+                    ),
+                  ),
+                  const SizedBox(height: 12), // Increased spacing
+                  // Description skeleton (smaller line)
+                  Container(
+                    width: 160, // Wider description
+                    height: 20, // Taller description
+                    decoration: BoxDecoration(
+                      color: placeholderShapeColor,
+                      borderRadius: BorderRadius.circular(7), // Adjusted radius
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Hourly forecast skeleton (within a card)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 15.0), // Adjusted padding
+              child: Container( // Card background
+                height: 135, // Slightly taller
+                padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0), // Adjusted padding
+                decoration: BoxDecoration(
+                  color: cardSkeletonColor,
+                  borderRadius: BorderRadius.circular(18.0), // Adjusted radius
+                ),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 8,
+                  itemBuilder: (context, i) => Container(
+                    width: 80, // Slightly wider items
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0), // Adjusted padding
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container( // Time skeleton
+                          width: 40, // Wider time
+                          height: 15, // Taller time
+                          decoration: BoxDecoration(
+                            color: placeholderShapeColor,
+                            borderRadius: BorderRadius.circular(5), // Adjusted radius
+                          ),
+                        ),
+                        const SizedBox(height: 12), // Increased spacing
+                        Container( // Icon skeleton
+                          width: 45, // Larger icon
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: placeholderShapeColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(height: 12), // Increased spacing
+                        Container( // Temp skeleton
+                          width: 35, // Wider temp
+                          height: 18, // Taller temp
+                          decoration: BoxDecoration(
+                            color: placeholderShapeColor,
+                            borderRadius: BorderRadius.circular(5), // Adjusted radius
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // 7-day forecast skeleton title
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 20.0, bottom: 10.0), // Adjusted padding
+              child: Container( // Title line
+                width: 130, // Wider title
+                height: 22, // Taller title
+                decoration: BoxDecoration(
+                  color: placeholderShapeColor,
+                  borderRadius: BorderRadius.circular(7), // Adjusted radius
+                ),
+              ),
+            ),
+
+            // 7-day forecast list skeleton (individual cards)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5), // Adjusted padding
+              child: Column(
+                children: List.generate(7, (i) => Container(
+                  margin: const EdgeInsets.symmetric(vertical: 5.0), // Adjusted spacing
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), // Adjusted padding
+                  height: 70, // Taller items
+                  decoration: BoxDecoration(
+                    color: cardSkeletonColor,
+                    borderRadius: BorderRadius.circular(14), // Adjusted radius
+                  ),
+                  child: Row(
+                    children: [
+                      Container( // Day name skeleton
+                        width: 75, // Wider day name
+                        height: 18, // Taller day name
+                        decoration: BoxDecoration(
+                          color: placeholderShapeColor,
+                          borderRadius: BorderRadius.circular(5), // Adjusted radius
+                        ),
+                      ),
+                      const Spacer(flex: 2),
+                      Container( // Icon skeleton
+                        width: 40, // Larger icon
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: placeholderShapeColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const Spacer(flex: 3),
+                      Container( // Max temp skeleton
+                        width: 35, // Wider temp
+                        height: 18, // Taller temp
+                        decoration: BoxDecoration(
+                          color: placeholderShapeColor,
+                          borderRadius: BorderRadius.circular(5), // Adjusted radius
+                        ),
+                      ),
+                      const SizedBox(width: 14), // Increased spacing
+                      Container( // Min temp skeleton
+                        width: 35, // Wider temp
+                        height: 18, // Taller temp
+                        decoration: BoxDecoration(
+                          color: placeholderShapeColor.withOpacity(0.6), // Adjusted dimmer opacity
+                          borderRadius: BorderRadius.circular(5), // Adjusted radius
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ),
+            ),
+            const SizedBox(height: 25), // Increased bottom padding
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper widget for processing indicators in the header - Adjusted text width
+  Widget _buildProcessingIndicator(IconData icon, String label, Color iconColor, Color placeholderColor) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: iconColor,
+          size: 22, // Slightly larger icon
+        ),
+        const SizedBox(height: 10), // Increased spacing
+        Container( // Skeleton for the label text
+          width: 70, // Adjusted width for shorter labels
+          height: 14, // Taller label placeholder
+          decoration: BoxDecoration(
+            color: placeholderColor,
+            borderRadius: BorderRadius.circular(5), // Adjusted radius
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -240,7 +483,9 @@ class _WeatherForecastScreenState extends State<WeatherForecastScreen> {
           RefreshIndicator(
             onRefresh: _fetchLocationAndWeather,
             color: primaryColor,
-            child: _buildBody(context, isDarkMode, primaryColor),
+            child: _isLoading
+                ? _buildWeatherSkeleton()
+                : _buildBody(context, isDarkMode, primaryColor),
           ),
         ],
       ),

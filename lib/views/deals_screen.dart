@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 import '../providers/destination_provider.dart';
 import '../services/deals_service.dart';
 import '../services/country_images_service.dart';
@@ -21,25 +22,25 @@ class _DealsScreenState extends State<DealsScreen> {
   List<Map<String, dynamic>> _deals = [];
   String? _errorMessage;
   String? _selectedDestination;
-  
+
   @override
   void initState() {
     super.initState();
     _loadDeals();
   }
-  
+
   Future<void> _loadDeals() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
       final destination = Provider.of<DestinationProvider>(context, listen: false).selectedCountry;
       _selectedDestination = destination;
-      
+
       final deals = await DealsService.fetchDeals(destination ?? 'popular destinations');
-      
+
       // Update images for deals that don't have an image URL
       for (var deal in deals) {
         if (deal['imageUrl'] == null || deal['imageUrl'].toString().isEmpty) {
@@ -49,7 +50,7 @@ class _DealsScreenState extends State<DealsScreen> {
           }
         }
       }
-      
+
       if (mounted) {
         setState(() {
           _deals = deals;
@@ -64,6 +65,109 @@ class _DealsScreenState extends State<DealsScreen> {
         });
       }
     }
+  }
+
+  Widget _buildLoadingSkeleton() {
+    return Center(
+      child: ListView.builder(
+        itemCount: 3,
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Shimmer.fromColors(
+              baseColor: const Color(0xFF232323),
+              highlightColor: const Color(0xFF4CD964).withOpacity(0.25),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Large image skeleton
+                    Container(
+                      height: 180,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF232323),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title skeleton
+                          Container(
+                            height: 20,
+                            width: 180,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Description skeleton
+                          Container(
+                            height: 14,
+                            width: 220,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 14,
+                            width: 140,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          // Price skeleton
+                          Container(
+                            height: 28,
+                            width: 90,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          // Button skeleton
+                          Container(
+                            height: 48,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -91,9 +195,7 @@ class _DealsScreenState extends State<DealsScreen> {
         ),
         drawer: const AppDrawer(currentRoute: '/travel-deals'),
         body: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF4CD964)),
-              )
+            ? _buildLoadingSkeleton()
             : _errorMessage != null
                 ? _buildErrorView()
                 : _deals.isEmpty
@@ -200,7 +302,7 @@ class _DealsScreenState extends State<DealsScreen> {
     final imageUrl = deal['imageUrl'] ?? '';
     final price = deal['price'] ?? '';
     final link = deal['link'] as String?;
-    
+
     return GestureDetector(
       onTap: link != null ? () => _openLink(link) : null,
       child: Container(
@@ -256,7 +358,7 @@ class _DealsScreenState extends State<DealsScreen> {
                           ),
                         );
                       }
-                      
+
                       if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                         return CachedNetworkImage(
                           imageUrl: snapshot.data!,
@@ -285,7 +387,7 @@ class _DealsScreenState extends State<DealsScreen> {
                           ),
                         );
                       }
-                      
+
                       return Container(
                         height: 180,
                         color: Colors.grey[800],
@@ -301,7 +403,7 @@ class _DealsScreenState extends State<DealsScreen> {
                   ),
                 ),
               ),
-            
+
             // Content section
             Padding(
               padding: const EdgeInsets.all(16),
@@ -329,7 +431,7 @@ class _DealsScreenState extends State<DealsScreen> {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  
+
                   // Price tag
                   if (price.isNotEmpty)
                     Container(
@@ -350,9 +452,9 @@ class _DealsScreenState extends State<DealsScreen> {
                         ),
                       ),
                     ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Action button
                   SizedBox(
                     width: double.infinity,

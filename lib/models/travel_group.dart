@@ -15,7 +15,7 @@ class TravelGroup {
     id = id ?? const Uuid().v4(),
     createdAt = createdAt ?? DateTime.now();
 
-  // Méthode pour créer une copie d'un groupe avec des modifications
+  // Method to create a copy of a group with modifications
   TravelGroup copyWith({
     String? id,
     String? name,
@@ -30,7 +30,7 @@ class TravelGroup {
     );
   }
 
-  // Méthode pour convertir l'objet en Map pour le stockage
+  // Convert the object to a Map for storage
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -40,7 +40,7 @@ class TravelGroup {
     };
   }
 
-  // Méthode pour créer un objet à partir d'un Map
+  // Create an object from a Map
   factory TravelGroup.fromMap(Map<String, dynamic> map) {
     return TravelGroup(
       id: map['id'],
@@ -66,7 +66,7 @@ class GroupMember {
     this.photoUrl,
   }) : id = id ?? const Uuid().v4();
 
-  // Méthode pour créer une copie d'un membre avec des modifications
+  // Method to create a copy of a member with modifications
   GroupMember copyWith({
     String? id,
     String? name,
@@ -81,7 +81,7 @@ class GroupMember {
     );
   }
 
-  // Méthode pour convertir l'objet en Map pour le stockage
+  // Convert the object to a Map for storage
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -91,7 +91,7 @@ class GroupMember {
     };
   }
 
-  // Méthode pour créer un objet à partir d'un Map
+  // Create an object from a Map
   factory GroupMember.fromMap(Map<String, dynamic> map) {
     return GroupMember(
       id: map['id'],

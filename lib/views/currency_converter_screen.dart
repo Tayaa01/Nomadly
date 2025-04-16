@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../widgets/app_drawer.dart'; // Change import
 
@@ -62,6 +63,9 @@ class CurrencyConverterScreen extends StatelessWidget {
           drawer: const AppDrawer(currentRoute: '/currency-converter'),
           body: Consumer<CurrencyViewModel>(
             builder: (context, viewModel, child) {
+              if (viewModel.isLoading) {
+                return _buildLoadingSkeleton(context);
+              }
               return SingleChildScrollView(
                 child: Column(
                   children: [
@@ -700,5 +704,57 @@ class CurrencyConverterScreen extends StatelessWidget {
         ),
       );
     }
+  }
+
+  // Add a skeleton loader widget
+  Widget _buildLoadingSkeleton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Shimmer.fromColors(
+        baseColor: const Color(0xFF232323),
+        highlightColor: const Color(0xFF4CD964).withOpacity(0.25),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Amount skeleton
+            Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              margin: const EdgeInsets.only(bottom: 24),
+            ),
+            // Country skeleton
+            Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              margin: const EdgeInsets.only(bottom: 24),
+            ),
+            // Scan button skeleton
+            Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              margin: const EdgeInsets.only(bottom: 16),
+            ),
+            // Statistics button skeleton
+            Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              margin: const EdgeInsets.only(bottom: 16),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

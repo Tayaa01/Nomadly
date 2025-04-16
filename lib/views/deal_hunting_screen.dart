@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/deals_service.dart';
 import '../widgets/app_drawer.dart';
 import '../viewmodels/currency_viewmodel.dart';
@@ -453,7 +454,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: _isLoading
-                    ? _buildLoadingState()
+                    ? _buildLoadingSkeleton()
                     : _recommendations.isEmpty && _errorMessage == null
                         ? _buildEnhancedEmptyState()
                         : _buildEnhancedDealsList(),
@@ -541,43 +542,111 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
     );
   }
 
-  // Enhanced loading state with animation
-  Widget _buildLoadingState() {
+  // Skeleton loader matching the travel plan/deals style
+  Widget _buildLoadingSkeleton() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(16),
+      child: ListView.builder(
+        itemCount: 3,
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Shimmer.fromColors(
+              baseColor: const Color(0xFF232323),
+              highlightColor: const Color(0xFF4CD964).withOpacity(0.25),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Large image skeleton
+                    Container(
+                      height: 180,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF232323),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title skeleton
+                          Container(
+                            height: 20,
+                            width: 180,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Description skeleton
+                          Container(
+                            height: 14,
+                            width: 220,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 14,
+                            width: 140,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          // Price skeleton
+                          Container(
+                            height: 28,
+                            width: 90,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          // Button skeleton
+                          Container(
+                            height: 48,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: const CircularProgressIndicator(
-              color: Color(0xFF4CD964),
-              strokeWidth: 3,
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Hunting for the best deals...',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Looking for $_category deals in $_countryName',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 14,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
+
+  // Enhanced loading state with animation
 
   // Empty state with illustration
   Widget _buildEnhancedEmptyState() {

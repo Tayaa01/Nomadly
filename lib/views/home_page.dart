@@ -437,24 +437,30 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // New skeleton UI components
+  // New skeleton UI components - Updated Styles
   Widget _buildUserGreetingSkeleton() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[900]!,
-      highlightColor: Colors.grey[800]!,
+      baseColor: const Color(0xFF333333), // Match loading screen
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3), // Match loading screen
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 100,
             height: 14,
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333), // Use base color for content
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
           const SizedBox(height: 8),
           Container(
             width: 150,
             height: 24,
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333), // Use base color for content
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
         ],
       ),
@@ -463,36 +469,39 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildDestinationSelectorSkeleton() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[900]!,
-      highlightColor: Colors.grey[800]!,
+      baseColor: const Color(0xFF333333), // Match loading screen
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3), // Match loading screen
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 160,
             height: 18,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            height: 48,
-            width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFF333333), // Use base color
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: List.generate(4, (index) => 
+          Container( // Search bar skeleton
+            height: 48,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333), // Use base color
+              borderRadius: BorderRadius.circular(12), // Match style
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row( // Country buttons skeleton
+            children: List.generate(4, (index) =>
               Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: Container(
                   width: 80,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFF333333), // Use base color
+                    borderRadius: BorderRadius.circular(12), // Match style
                   ),
                 ),
               )
@@ -505,23 +514,26 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildFlightCardSkeleton() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[900]!,
-      highlightColor: Colors.grey[800]!,
+      baseColor: const Color(0xFF333333), // Match loading screen
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3), // Match loading screen
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          Container( // Title skeleton
             width: 160,
             height: 20,
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333), // Use base color
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
           const SizedBox(height: 16),
-          Container(
+          Container( // Card skeleton
             height: 200,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFF333333), // Use base color
+              borderRadius: BorderRadius.circular(16), // Match style
             ),
           ),
         ],
@@ -531,27 +543,30 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHotelCardsSkeleton() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[900]!,
-      highlightColor: Colors.grey[800]!,
+      baseColor: const Color(0xFF333333), // Match loading screen
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3), // Match loading screen
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          Container( // Title skeleton
             width: 140,
             height: 20,
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333), // Use base color
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: List.generate(2, (index) => 
+          Row( // Hotel cards skeleton
+            children: List.generate(2, (index) =>
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: Container(
                   width: 180,
                   height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF333333), // Use base color
+                    borderRadius: BorderRadius.circular(16), // Match style
                   ),
                 ),
               )
@@ -564,46 +579,52 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildTipsSkeleton() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[900]!,
-      highlightColor: Colors.grey[800]!,
+      baseColor: const Color(0xFF333333), // Match loading screen
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3), // Match loading screen
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Row( // Header skeleton
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
                 width: 120,
                 height: 20,
-                color: Colors.white,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF333333), // Use base color
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
               Container(
                 width: 60,
                 height: 20,
-                color: Colors.white,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF333333), // Use base color
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Container(
+          Container( // Tip preview card skeleton
             height: 150,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFF333333), // Use base color
+              borderRadius: BorderRadius.circular(16), // Match style
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: List.generate(3, (index) => 
+          Row( // Category chips skeleton
+            children: List.generate(3, (index) =>
               Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: Container(
                   width: 80,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF333333), // Use base color
+                    borderRadius: BorderRadius.circular(20), // Match chip style
                   ),
                 ),
               )

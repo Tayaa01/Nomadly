@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 import '../models/transaction.dart';
 import '../viewmodels/expense_viewmodel.dart';
 import '../widgets/app_drawer.dart';
@@ -514,6 +515,28 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
     }
   }
 
+  // Add a skeleton loader widget
+  Widget _buildLoadingSkeleton() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Shimmer.fromColors(
+        baseColor: const Color(0xFF232323),
+        highlightColor: const Color(0xFF4CD964).withOpacity(0.25),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: List.generate(4, (index) => Container(
+            height: 80,
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF232323),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          )),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -552,7 +575,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
       body: Consumer<ExpenseViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildLoadingSkeleton();
           }
           
           if (viewModel.errorMessage.isNotEmpty) {

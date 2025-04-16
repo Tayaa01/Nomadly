@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 import '../widgets/app_drawer.dart';
 import '../models/transaction.dart'; // Updated to use Transaction directly
 // Use transaction service instead
@@ -155,6 +156,100 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     }
   }
 
+  Widget _buildLoadingSkeleton() {
+    return Center(
+      child: ListView.builder(
+        itemCount: 3,
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Shimmer.fromColors(
+              baseColor: const Color(0xFF232323),
+              highlightColor: const Color(0xFF4CD964).withOpacity(0.25),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Large header/chart skeleton
+                    Container(
+                      height: 120,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF232323),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title skeleton
+                          Container(
+                            height: 20,
+                            width: 120,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Subtitle skeleton
+                          Container(
+                            height: 14,
+                            width: 180,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          // Value skeleton
+                          Container(
+                            height: 28,
+                            width: 90,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          // Button skeleton
+                          Container(
+                            height: 48,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF232323),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -185,11 +280,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
       ),
       drawer: const AppDrawer(currentRoute: '/statistics'),
       body: _isLoading 
-      ? const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
-          ),
-        )
+      ? _buildLoadingSkeleton()
       : _errorMessage.isNotEmpty
         ? _buildErrorView()
         : TabBarView(

@@ -11,7 +11,7 @@ import '../models/predefined_phrases.dart';
 import '../services/translation_cache_service.dart';
 import 'package:flutter/services.dart';
 import '../widgets/app_drawer.dart';  // Change import from custom_bottom_nav to app_drawer
-// Import modern app bar
+import 'package:shimmer/shimmer.dart'; // Import shimmer package
 
 class SpeechToTextView extends StatefulWidget {
   const SpeechToTextView({super.key});
@@ -370,6 +370,59 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
     }
   }
 
+  // Add a skeleton loader for translation waiting
+  Widget _buildLoadingSkeleton() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Shimmer.fromColors(
+          baseColor: const Color(0xFF232323),
+          highlightColor: const Color(0xFF4CD964).withOpacity(0.25),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                height: 32,
+                width: 180,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF232323),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: const EdgeInsets.only(bottom: 16),
+              ),
+              Container(
+                height: 18,
+                width: 220,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF232323),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                margin: const EdgeInsets.only(bottom: 12),
+              ),
+              Container(
+                height: 18,
+                width: 140,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF232323),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                margin: const EdgeInsets.only(bottom: 24),
+              ),
+              Container(
+                height: 48,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF232323),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -401,9 +454,11 @@ class _SpeechToTextViewState extends State<SpeechToTextView> with SingleTickerPr
             colors: [Color(0xFF1E1E1E), Color(0xFF000000)],
           ),
         ),
-        child: _currentDiscussion == null
-            ? _buildDiscussionsListView()
-            : _buildDiscussionView(),
+        child: _isRequestPending
+            ? _buildLoadingSkeleton()
+            : _currentDiscussion == null
+                ? _buildDiscussionsListView()
+                : _buildDiscussionView(),
       ),
       floatingActionButton: _currentDiscussion == null
           ? FloatingActionButton(

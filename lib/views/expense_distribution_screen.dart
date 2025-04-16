@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:shimmer/shimmer.dart';
 import '../models/travel_group.dart';
 import '../models/shared_expense.dart';
 import '../viewmodels/travel_group_viewmodel.dart';
@@ -33,6 +34,49 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
     });
   }
 
+  // Add a skeleton loader widget
+  Widget _buildLoadingSkeleton() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Shimmer.fromColors(
+        baseColor: const Color(0xFF232323),
+        highlightColor: const Color(0xFF4CD964).withOpacity(0.25),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header skeleton
+            Container(
+              height: 120,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            // Pie chart skeleton
+            Container(
+              height: 300,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            // List skeleton
+            ...List.generate(3, (index) => Container(
+              height: 60,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +103,7 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
       ),
       body: Consumer<TravelGroupViewModel>(builder: (context, viewModel, child) {
         if (viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF4CD964)));
+          return _buildLoadingSkeleton();
         }
 
         if (viewModel.errorMessage.isNotEmpty) {
