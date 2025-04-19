@@ -23,6 +23,7 @@ class TravelPlanDisplayScreen extends StatefulWidget {
 class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _showAdditionalInfo = false;
+  bool _showOnlyFreeActivities = false;  // New state variable for filtering
   String _weatherError = '';
   final Map<String, String> _countryCapitals = {
     'United States': 'Washington, D.C.',
@@ -143,6 +144,19 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
           ),
         ),
         actions: [
+          // Add free filter toggle button
+          IconButton(
+            icon: Icon(
+              _showOnlyFreeActivities ? FontAwesomeIcons.filter : FontAwesomeIcons.filterCircleXmark,
+              color: _showOnlyFreeActivities ? const Color(0xFF4CD964) : Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _showOnlyFreeActivities = !_showOnlyFreeActivities;
+              });
+            },
+            tooltip: _showOnlyFreeActivities ? 'Show All Activities' : 'Show Free Activities Only',
+          ),
           IconButton(
             icon: const Icon(
               Icons.wb_sunny_outlined,
@@ -457,6 +471,11 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
     // Extract activities from the markdown content
     final List<ActivityItem> activities = _parseActivities(content);
     
+    // Filter activities if necessary
+    final List<ActivityItem> filteredActivities = _showOnlyFreeActivities 
+        ? activities.where((activity) => _isActivityFree(activity)).toList()
+        : activities;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -465,44 +484,59 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
           const SizedBox(height: 8),
           _buildSectionHeader('Day ${dayIndex + 1} Itinerary', FontAwesomeIcons.route),
           const SizedBox(height: 16),
-          ...activities.map((activity) => 
-            _buildActivityCard(activity)
-          ),
+          if (filteredActivities.isEmpty) ...[
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    const Icon(
+                      FontAwesomeIcons.faceSadTear,
+                      color: Colors.grey,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _showOnlyFreeActivities 
+                          ? 'No free activities found for this day' 
+                          : 'No activities found for this day',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            ...filteredActivities.map((activity) => 
+              _buildActivityCard(activity)
+            ),
+          ],
           const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF4CD964).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF4CD964),
-            size: 16,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
+  // Helper method to check if an activity is free
+  bool _isActivityFree(ActivityItem activity) {
+    final costLower = activity.cost.toLowerCase();
+    return costLower.contains('free') || 
+           costLower.contains('no cost') ||
+           costLower.contains('\$0') ||
+           costLower.contains('€0') ||
+           costLower.contains('£0') ||
+           costLower == '0' ||
+           costLower.isEmpty;
   }
 
   Widget _buildActivityCard(ActivityItem activity) {
+    // Check if the activity is free
+    final bool isFree = _isActivityFree(activity);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -545,7 +579,25 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
                     ],
                   ),
                 ),
-                if (activity.cost.isNotEmpty) ...[
+                if (isFree) ...[
+                  // Add FREE indicator
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CD964),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Text(
+                      'FREE',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ] else if (activity.cost.isNotEmpty) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -577,7 +629,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (activity.cost.isNotEmpty) ...[
+            if (activity.cost.isNotEmpty && !isFree) ...[
               const SizedBox(height: 6),
               Text(
                 activity.cost,
@@ -936,7 +988,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not load weather data: ${_weatherError}'),
+            content: Text('Could not load weather data: $_weatherError'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
             action: SnackBarAction(
@@ -950,6 +1002,34 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
         );
       }
     }
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF4CD964).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFF4CD964),
+            size: 18,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
   }
 }
 
