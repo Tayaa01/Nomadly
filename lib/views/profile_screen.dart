@@ -14,25 +14,25 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
-  
+
   User? _user;
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isEditing = false;
   String? _error;
-  
+
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _countryCodeController = TextEditingController();
-  
+
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
   }
-  
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -41,22 +41,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _countryCodeController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _loadUserProfile() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
-    
+
     try {
       final user = await _userService.getUserProfile();
-      
+
       // Update controllers with user data
       _firstNameController.text = user.firstName;
       _lastNameController.text = user.lastName;
       _emailController.text = user.email;
       _countryCodeController.text = user.countryCode;
-      
+
       setState(() {
         _user = user;
         _isLoading = false;
@@ -68,17 +68,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
   }
-  
+
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     setState(() {
       _isSaving = true;
       _error = null;
     });
-    
+
     try {
       // Create updated user object
       final updatedUser = _user!.copyWith(
@@ -87,16 +87,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         email: _emailController.text,
         countryCode: _countryCodeController.text,
       );
-      
+
       // Send to API
       final result = await _userService.updateUserProfile(updatedUser);
-      
+
       setState(() {
         _user = result;
         _isSaving = false;
         _isEditing = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile updated successfully'),
@@ -110,15 +110,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
   }
-  
+
   Future<void> _signOut() async {
     try {
       await _authService.logout();
       Navigator.of(context).pushReplacementNamed('/sign-in');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error signing out: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error signing out: $e')));
     }
   }
 
@@ -139,7 +139,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: const Color(0xFF4CD964)),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed:
+              () => Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/home', (route) => false),
         ),
         actions: [
           if (!_isEditing)
@@ -150,102 +153,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       drawer: const AppDrawer(currentRoute: '/profile'), // Add drawer
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4CD964)),
-            )
-          : _error != null
+      body:
+          _isLoading
+              ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF4CD964)),
+              )
+              : _error != null
               ? _buildErrorView()
               : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // Top Section with user info
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E1E),
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(32),
-                            bottomRight: Radius.circular(32),
+                child: Column(
+                  children: [
+                    // Top Section with user info
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E1E),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Color(0xFF333333),
+                            child: Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Color(0xFF4CD964),
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Color(0xFF333333),
-                              child: Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Color(0xFF4CD964),
-                              ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '${_user?.firstName} ${_user?.lastName}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '${_user?.firstName} ${_user?.lastName}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _user?.email ?? '',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
                             ),
+                          ),
+                          if (!_isEditing) ...[
                             const SizedBox(height: 8),
-                            Text(
-                              _user?.email ?? '',
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 16,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF333333),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF4CD964,
+                                  ).withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                'Country: ${_user?.countryCode}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
-                            if (!_isEditing) ...[
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF333333),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(0xFF4CD964).withOpacity(0.3),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Country: ${_user?.countryCode}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ],
-                        ),
+                        ],
                       ),
-                      
-                      // Profile form
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: _isEditing
-                            ? _buildProfileForm()
-                            : _buildProfileDetails(),
-                      ),
-                    ],
-                  ),
+                    ),
+
+                    // Profile form
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child:
+                          _isEditing
+                              ? _buildProfileForm()
+                              : _buildProfileDetails(),
+                    ),
+                  ],
                 ),
+              ),
     );
   }
-  
+
   Widget _buildErrorView() {
     return Center(
       child: Column(
@@ -264,24 +271,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4CD964),
               foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text(
-              'Try Again',
-              style: TextStyle(fontSize: 16),
-            ),
+            child: const Text('Try Again', style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildProfileDetails() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-        
+
         // Account management
         const SizedBox(height: 32),
         _buildDetailSection(
@@ -330,10 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: const Text(
                 'Sign Out',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -341,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
-  
+
   Widget _buildDetailSection({
     required String title,
     required List<Widget> children,
@@ -365,14 +363,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFF333333)),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
   }
-  
+
   Widget _buildProfileDetailItem({
     required IconData icon,
     required String label,
@@ -389,11 +385,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF4CD964),
-              size: 20,
-            ),
+            child: Icon(icon, color: const Color(0xFF4CD964), size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -402,18 +394,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
             ),
@@ -422,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   Widget _buildProfileForm() {
     return Form(
       key: _formKey,
@@ -477,7 +463,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               return null;
             },
           ),
-          
+
           if (_error != null) ...[
             const SizedBox(height: 16),
             Text(
@@ -486,7 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               textAlign: TextAlign.center,
             ),
           ],
-          
+
           const SizedBox(height: 32),
           Row(
             children: [
@@ -502,10 +488,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: const Text(
                     'Cancel',
-                    style: TextStyle(
-                      color: Color(0xFF4CD964),
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Color(0xFF4CD964), fontSize: 16),
                   ),
                 ),
               ),
@@ -521,22 +504,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  child:
+                      _isSaving
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.black,
+                              ),
+                            ),
+                          )
+                          : const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
-                      : const Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                 ),
               ),
             ],
@@ -545,7 +531,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   Widget _buildFormField({
     required TextEditingController controller,
     required String label,
@@ -576,9 +562,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             validator: validator,
             keyboardType: keyboardType,
             readOnly: readOnly,
-            style: TextStyle(
-              color: readOnly ? Colors.grey[400] : Colors.white,
-            ),
+            style: TextStyle(color: readOnly ? Colors.grey[400] : Colors.white),
             decoration: InputDecoration(
               hintText: 'Enter $label',
               hintStyle: TextStyle(color: Colors.grey[600]),
