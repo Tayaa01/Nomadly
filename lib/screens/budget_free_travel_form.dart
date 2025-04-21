@@ -4,8 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../providers/theme_provider.dart';
 import '../models/travel_request.dart';
-import '../services/travel_planner_service.dart';
-import 'travel_plan_display_screen.dart';
+import 'travel_plan_loading_screen.dart';
 
 class BudgetFreeTravelForm extends StatefulWidget {
   const BudgetFreeTravelForm({super.key});
@@ -17,10 +16,10 @@ class BudgetFreeTravelForm extends StatefulWidget {
 class _BudgetFreeTravelFormState extends State<BudgetFreeTravelForm> {
   final _formKey = GlobalKey<FormState>();
   final _countryController = TextEditingController();
+  final _cityController = TextEditingController(); // Add city controller
   final _daysController = TextEditingController();
   DateTime? _selectedDate;
-  bool _isGenerating = false;
-  final TravelPlannerService _plannerService = TravelPlannerService();
+  final bool _isGenerating = false;
 
   @override
   Widget build(BuildContext context) {
@@ -128,6 +127,18 @@ class _BudgetFreeTravelFormState extends State<BudgetFreeTravelForm> {
                       validator: (value) {
                         if (value?.isEmpty ?? true) {
                           return 'Please enter a country';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _cityController, // Add city field
+                      label: 'City',
+                      icon: FontAwesomeIcons.city,
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) {
+                          return 'Please enter a city';
                         }
                         return null;
                       },
@@ -310,38 +321,22 @@ class _BudgetFreeTravelFormState extends State<BudgetFreeTravelForm> {
       return;
     }
 
-    setState(() {
-      _isGenerating = true;
-    });
+    final request = TravelRequest(
+      country: _countryController.text.trim(),
+      city: _cityController.text.trim(), // Add city parameter
+      budget: null, // No budget for budget-free plan
+      days: int.parse(_daysController.text),
+      startDate: _selectedDate!,
+    );
 
-    try {
-      final request = TravelRequest(
-        country: _countryController.text.trim(),
-        budget: null, // No budget for budget-free plan
-        days: int.parse(_daysController.text),
-        startDate: _selectedDate!,
-      );
-
-      final plan = await _plannerService.generateBudgetPlan(request);
-      
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TravelPlanDisplayScreen(plan: plan),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TravelPlanLoadingScreen(
+          request: request,
+          isBudgetFree: true,
         ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    } finally {
-      setState(() {
-        _isGenerating = false;
-      });
-    }
+      ),
+    );
   }
 }

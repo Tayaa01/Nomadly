@@ -40,7 +40,7 @@ class TravelPlannerService {
   }
 
   /// Generate a custom travel plan with budget
-  Future<TravelPlan> generatePlan(TravelRequest request) async {
+  Future<TravelPlan> generateCustomPlan(TravelRequest request) async {
     try {
       final token = await _authService.getToken();
       
@@ -48,12 +48,18 @@ class TravelPlannerService {
         throw Exception('Not authenticated');
       }
 
-      print('Generating plan for country: ${request.country}, budget: ${request.budget}, days: ${request.days}');
+      print('Generating plan for country: ${request.country}, city: ${request.city}, budget: ${request.budget}, days: ${request.days}');
       
       final response = await http.post(
         Uri.parse('${ApiConfig.BASE_URL}${ApiConfig.TRAVEL_GENERATE_PLAN_ENDPOINT}'),
         headers: ApiConfig.getAuthHeaders(token),
-        body: json.encode(request.toJson()),
+        body: json.encode({
+          'country': request.country,
+          'city': request.city, // Add city parameter
+          'budget': request.budget,
+          'days': request.days,
+          'startDate': request.startDate.toIso8601String(),
+        }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -78,13 +84,14 @@ class TravelPlannerService {
         throw Exception('Not authenticated');
       }
 
-      print('Generating budget plan for country: ${request.country}, days: ${request.days}');
+      print('Generating budget plan for country: ${request.country}, city: ${request.city}, days: ${request.days}');
       
       final response = await http.post(
         Uri.parse('${ApiConfig.BASE_URL}${ApiConfig.TRAVEL_GENERATE_BUDGET_PLAN_ENDPOINT}'),
         headers: ApiConfig.getAuthHeaders(token),
         body: json.encode({
           'country': request.country,
+          'city': request.city, // Add city parameter
           'days': request.days,
           'startDate': request.startDate.toIso8601String(),
         }),
@@ -107,7 +114,7 @@ class TravelPlannerService {
   Future<String> generateItinerary(TravelRequest request) async {
     try {
       // Use the new method and extract content
-      final plan = await generatePlan(request);
+      final plan = await generateCustomPlan(request);
       
       // Combine all day content into one string
       final combinedContent = plan.daysContent.map((day) => day.content).join('\n\n');

@@ -38,7 +38,7 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
       if (widget.isBudgetFree) {
         plan = await _plannerService.generateBudgetPlan(widget.request);
       } else {
-        plan = await _plannerService.generatePlan(widget.request);
+        plan = await _plannerService.generateCustomPlan(widget.request); // Changed from generatePlan to generateCustomPlan
       }
       
       if (mounted) {
@@ -64,24 +64,12 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: const Color(0xFF1E1E1E),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Creating Your ${widget.request.country} Plan',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
+      // Remove the appBar completely
+      body: WillPopScope(
+        // Prevent back button navigation while loading
+        onWillPop: () async => false,
+        child: _isError ? _buildErrorState() : _buildLoadingState(),
       ),
-      body: _isError ? _buildErrorState() : _buildLoadingState(),
     );
   }
 
@@ -117,24 +105,43 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _isError = false;
-                  _errorMessage = '';
-                });
-                _loadTravelPlan();
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CD964),
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Go Back'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[800],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _isError = false;
+                      _errorMessage = '';
+                    });
+                    _loadTravelPlan();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Try Again'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CD964),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -149,10 +156,13 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Add top padding to account for status bar
+          SizedBox(height: MediaQuery.of(context).padding.top + 20),
+          
           // Animated loading header
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24), // Increased padding
             decoration: const BoxDecoration(
               color: Color(0xFF1E1E1E),
               borderRadius: BorderRadius.only(
@@ -163,9 +173,26 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Loading animation for country plan
-                _buildLoadingText("Creating your ${widget.request.country} adventure..."),
-                const SizedBox(height: 24),
+                // Enhanced loading title - make it more prominent
+                Text(
+                  "Creating Your ${widget.request.country} Adventure",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22, // Larger font
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.request.city.isNotEmpty ? widget.request.city : "",
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 30), // More vertical space
                 
                 // Progress indicators
                 Shimmer.fromColors(
@@ -179,16 +206,16 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
                           4,
                           (index) => Container(
                             margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: 10,
-                            height: 10,
+                            width: 12, // Slightly larger dots
+                            height: 12,
                             decoration: BoxDecoration(
                               color: const Color(0xFF4CD964),
-                              borderRadius: BorderRadius.circular(5),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 30), // More spacing
                       // Timeline items being generated
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -268,21 +295,6 @@ class _TravelPlanLoadingScreenState extends State<TravelPlanLoadingScreen> {
     );
   }
 
-  Widget _buildLoadingText(String text) {
-    return Shimmer.fromColors(
-      baseColor: Colors.white,
-      highlightColor: const Color(0xFF4CD964),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
 
   Widget _buildProcessingItem(IconData icon, String label) {
     return Column(

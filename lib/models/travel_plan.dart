@@ -16,6 +16,7 @@ class TravelPlan {
   final String id;
   final String userId;
   final String country;
+  final String city; // Add city field
   final int days;
   final DateTime startDate;
   final double budget;
@@ -31,6 +32,7 @@ class TravelPlan {
     required this.id,
     required this.userId,
     required this.country,
+    required this.city, // Add city parameter
     required this.days,
     required this.startDate,
     required this.budget,
@@ -58,6 +60,7 @@ class TravelPlan {
       id: json['_id'] ?? '',
       userId: json['userId'] ?? '',
       country: json['country'] ?? '',
+      city: json['city'] ?? '', // Add city from json
       days: json['days'] ?? 0,
       startDate: json['startDate'] != null 
           ? DateTime.parse(json['startDate']) 
@@ -84,6 +87,7 @@ class TravelPlan {
       'id': id,
       'userId': userId,
       'country': country,
+      'city': city, // Add city to json
       'days': days,
       'startDate': startDate.toIso8601String(),
       'budget': budget,

@@ -21,6 +21,7 @@ class TravelFormScreen extends StatefulWidget {
 class _TravelFormScreenState extends State<TravelFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _countryController = TextEditingController();
+  final _cityController = TextEditingController(); // Add city controller
   final _budgetController = TextEditingController();
   final _daysController = TextEditingController();
   DateTime? _selectedDate;
@@ -394,6 +395,18 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
             },
           ),
           const SizedBox(height: 16),
+          _buildTextField(
+            controller: _cityController,
+            label: 'City',
+            icon: FontAwesomeIcons.city,
+            validator: (value) {
+              if (value?.isEmpty ?? true) {
+                return 'Please enter a city';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
           if (!isBudgetFree)
             _buildTextField(
               controller: _budgetController,
@@ -625,6 +638,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
     // Create the request
     final request = TravelRequest(
       country: _countryController.text.trim(),
+      city: _cityController.text.trim(), // Add city to request
       budget: isBudgetFree ? null : double.parse(_budgetController.text),
       days: int.parse(_daysController.text),
       startDate: _selectedDate!,

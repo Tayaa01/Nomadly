@@ -68,10 +68,26 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
     // Add more countries and capitals as needed
   };
 
+  void debugPrintInfo() {
+    print("====== DEBUGGING TRAVEL PLAN INFO ======");
+    print("Country: ${widget.plan.country}");
+    print("City: ${widget.plan.city}");
+    print("Days: ${widget.plan.days}");
+    print("Start Date: ${widget.plan.startDate}");
+    print("Budget: ${widget.plan.budget}");
+    print("============= DAY CONTENTS =============");
+    for (int i = 0; i < widget.plan.daysContent.length; i++) {
+      print("--- DAY ${i+1} ---");
+      print(widget.plan.daysContent[i].content);
+    }
+    print("=======================================");
+  }
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: widget.plan.daysContent.length, vsync: this);
+    debugPrintInfo();
   }
   
   @override
@@ -95,14 +111,98 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          widget.plan.country,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+        title: Column(
+          children: [
+            Text(
+              widget.plan.country,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            if (widget.plan.city.isNotEmpty)
+              Text(
+                widget.plan.city,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+          ],
         ),
+        actions: [
+          // Filter button for free activities (keep this out of the menu)
+          IconButton(
+            icon: Icon(
+              _showOnlyFreeActivities ? FontAwesomeIcons.filter : FontAwesomeIcons.filterCircleXmark,
+              color: _showOnlyFreeActivities ? const Color(0xFF4CD964) : Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _showOnlyFreeActivities = !_showOnlyFreeActivities;
+              });
+            },
+            tooltip: _showOnlyFreeActivities ? 'Show All Activities' : 'Show Free Activities Only',
+          ),
+          
+          // Menu button with other options
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Color(0xFF4CD964)),
+            onSelected: (value) {
+              switch (value) {
+                case 'weather':
+                  _navigateToWeatherForecast();
+                  break;
+                case 'info':
+                  setState(() {
+                    _showAdditionalInfo = !_showAdditionalInfo;
+                  });
+                  break;
+                case 'calendar':
+                  _addToCalendar();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              // Remove filter option from popup menu since we have a dedicated button for it
+              PopupMenuItem(
+                value: 'weather',
+                child: Row(
+                  children: [
+                    const Icon(Icons.wb_sunny_outlined, size: 16),
+                    const SizedBox(width: 12),
+                    const Text('Weather Forecast'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'info',
+                child: Row(
+                  children: [
+                    Icon(
+                      _showAdditionalInfo ? Icons.info : Icons.info_outline,
+                      size: 16,
+                      color: _showAdditionalInfo ? const Color(0xFF4CD964) : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(_showAdditionalInfo ? 'Hide Info' : 'Show Additional Info'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'calendar',
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 16),
+                    SizedBox(width: 12),
+                    Text('Add to Calendar'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Container(
@@ -143,49 +243,6 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
             ),
           ),
         ),
-        actions: [
-          // Add free filter toggle button
-          IconButton(
-            icon: Icon(
-              _showOnlyFreeActivities ? FontAwesomeIcons.filter : FontAwesomeIcons.filterCircleXmark,
-              color: _showOnlyFreeActivities ? const Color(0xFF4CD964) : Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _showOnlyFreeActivities = !_showOnlyFreeActivities;
-              });
-            },
-            tooltip: _showOnlyFreeActivities ? 'Show All Activities' : 'Show Free Activities Only',
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.wb_sunny_outlined,
-              color: Color(0xFF4CD964),
-            ),
-            onPressed: _navigateToWeatherForecast,
-            tooltip: 'View Weather Forecast',
-          ),
-          IconButton(
-            icon: Icon(
-              _showAdditionalInfo ? Icons.info : Icons.info_outline,
-              color: const Color(0xFF4CD964),
-            ),
-            onPressed: () {
-              setState(() {
-                _showAdditionalInfo = !_showAdditionalInfo;
-              });
-            },
-            tooltip: 'Additional Info',
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.calendar_today,
-              color: Color(0xFF4CD964),
-            ),
-            onPressed: _addToCalendar,
-            tooltip: 'Add to Calendar',
-          ),
-        ],
       ),
       body: Container(
         color: Colors.black,
@@ -468,14 +525,122 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
   }
 
   Widget _buildDayContent(String content, int dayIndex) {
-    // Extract activities from the markdown content
-    final List<ActivityItem> activities = _parseActivities(content);
+    // 1. Attempt to extract an EXPLICIT daily total first
+    String? explicitDailyTotal;
+    final explicitPatterns = [
+      // Pattern 1: Standard "Daily Total: $XXX" format
+      RegExp(r'(?:Daily\s*Total|Day\s*Total|Total\s*for\s*Day)[^\d\$€£]*([\$€£]?\s*\d+(?:[.,]\d{1,2})?\s*(?:USD|EUR|GBP)?|\d+\s*(?:USD|EUR|GBP|\$|€|£))', caseSensitive: false),
+    ];
+
+    for (var pattern in explicitPatterns) {
+      final match = pattern.firstMatch(content);
+      if (match != null) {
+        explicitDailyTotal = match.group(1)
+            ?.replaceAll(RegExp(r'\s+'), ' ')
+            .replaceAll(',', '.')
+            .trim();
+        print('Found EXPLICIT daily total for day ${dayIndex+1}: $explicitDailyTotal');
+        break; // Found explicit total, no need to check others
+      }
+    }
+
+    // 2. ALWAYS calculate the total by summing activities as a fallback or primary method
+    String? calculatedDailyTotal;
+    print('Calculating total from activities for Day ${dayIndex+1}...');
+    final activitiesForCalc = _parseActivities(content); // Parse activities specifically for calculation
     
-    // Filter activities if necessary
-    final List<ActivityItem> filteredActivities = _showOnlyFreeActivities 
-        ? activities.where((activity) => _isActivityFree(activity)).toList()
-        : activities;
+    double total = 0;
+    bool hasValidCosts = false;
+    String detectedCurrencySymbol = '\$'; // Default currency symbol
+    bool currencySymbolDetected = false;
+
+    print('Activities count for calculation: ${activitiesForCalc.length}');
     
+    for (final activity in activitiesForCalc) {
+      if (activity.cost.isNotEmpty && !_isActivityFree(activity)) { // Exclude free activities from sum
+        print('Processing activity cost: "${activity.cost}"');
+        
+        // More robust cost extraction: Remove currency symbols/text, handle commas/periods
+        String cleanedCost = activity.cost
+            .replaceAll(RegExp(r'[^\d.,]'), '') // Keep only digits, period, comma
+            .replaceAll(',', '.'); // Standardize decimal separator to period
+
+        // Attempt to find the first valid number in the cleaned string
+        final costMatch = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(cleanedCost);
+        
+        if (costMatch != null) {
+          final numericPart = costMatch.group(1);
+          if (numericPart != null) {
+            try {
+              final amount = double.parse(numericPart);
+              print('Parsed amount: $amount');
+              total += amount;
+              hasValidCosts = true;
+
+              // Detect currency symbol from the original cost string (only once)
+              if (!currencySymbolDetected) {
+                if (activity.cost.contains('€')) {
+                  detectedCurrencySymbol = '€';
+                  currencySymbolDetected = true;
+                } else if (activity.cost.contains('£')) {
+                  detectedCurrencySymbol = '£';
+                  currencySymbolDetected = true;
+                } else if (activity.cost.contains('\$')) {
+                  detectedCurrencySymbol = '\$';
+                  currencySymbolDetected = true;
+                }
+                // Add more currency checks if needed
+              }
+
+            } catch (e) {
+              print('Failed to parse numeric part "$numericPart" from cost: "${activity.cost}". Error: $e');
+            }
+          } else {
+             print('Could not extract numeric part from cleaned cost: "$cleanedCost"');
+          }
+        } else {
+          print('No numeric match found in cleaned cost: "$cleanedCost" from original: "${activity.cost}"');
+        }
+      } else {
+         print('Skipping activity cost (empty or free): "${activity.cost}"');
+      }
+    }
+    
+    if (hasValidCosts) {
+      // Format the calculated total with the detected currency symbol
+      calculatedDailyTotal = '$detectedCurrencySymbol${total.toStringAsFixed(2)}';
+      print('CALCULATED daily total for day ${dayIndex+1}: $calculatedDailyTotal');
+    } else {
+       print('No valid costs found in activities for day ${dayIndex+1} to calculate total.');
+    }
+
+    // 3. Determine the final amount to display
+    String finalDailyTotalAmount;
+    if (explicitDailyTotal != null && explicitDailyTotal.isNotEmpty && !explicitDailyTotal.contains(RegExp(r'^\D*$'))) {
+      // Use the explicitly found total if it's valid
+      finalDailyTotalAmount = explicitDailyTotal;
+      print('Using EXPLICIT total: $finalDailyTotalAmount');
+    } else if (calculatedDailyTotal != null && calculatedDailyTotal.isNotEmpty) {
+      // Otherwise, use the calculated total if available
+      finalDailyTotalAmount = calculatedDailyTotal;
+      print('Using CALCULATED total: $finalDailyTotalAmount');
+    } else {
+      // Default if neither worked
+      finalDailyTotalAmount = "\$0.00";
+      print('Using DEFAULT total: $finalDailyTotalAmount');
+    }
+    
+    // 4. Parse activities for display (filtering out total rows)
+    List<ActivityItem> activities = _parseActivities(content)
+      .where((a) => !a.activity.toLowerCase().contains('daily total') && !a.activity.toLowerCase().contains('day total'))
+      .toList();
+
+    // 5. Filter for free activities if needed
+    if (_showOnlyFreeActivities) {
+      activities = activities.where((activity) => _isActivityFree(activity)).toList();
+    }
+
+    // 6. Build the layout
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -484,7 +649,13 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
           const SizedBox(height: 8),
           _buildSectionHeader('Day ${dayIndex + 1} Itinerary', FontAwesomeIcons.route),
           const SizedBox(height: 16),
-          if (filteredActivities.isEmpty) ...[
+          
+          // Display activities if any exist
+          if (activities.isNotEmpty)
+            ...activities.map((activity) => _buildActivityCard(activity)),
+          
+          // Display empty state messages ONLY if activities are empty
+          if (activities.isEmpty && _showOnlyFreeActivities)
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -497,9 +668,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      _showOnlyFreeActivities 
-                          ? 'No free activities found for this day' 
-                          : 'No activities found for this day',
+                      'No free activities found for this day',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.grey,
@@ -510,31 +679,271 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
                 ),
               ),
             ),
-          ] else ...[
-            ...filteredActivities.map((activity) => 
-              _buildActivityCard(activity)
+          if (activities.isEmpty && !_showOnlyFreeActivities)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    const Icon(
+                      FontAwesomeIcons.faceSadTear,
+                      color: Colors.grey,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No activities found for this day',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-          const SizedBox(height: 16),
+
+          // ALWAYS add the daily total card at the end
+          _buildDailyTotalCard(finalDailyTotalAmount), // Pass the final determined value
+          
+          const SizedBox(height: 24), // Bottom padding
         ],
       ),
     );
   }
 
-  // Helper method to check if an activity is free
-  bool _isActivityFree(ActivityItem activity) {
-    final costLower = activity.cost.toLowerCase();
-    return costLower.contains('free') || 
-           costLower.contains('no cost') ||
-           costLower.contains('\$0') ||
-           costLower.contains('€0') ||
-           costLower.contains('£0') ||
-           costLower == '0' ||
-           costLower.isEmpty;
+  Widget _buildDailyTotalCard(String? amount) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 16, bottom: 4), // Reduced margins
+      decoration: BoxDecoration(
+        color: const Color(0xFF333333), // Same background as activity cards
+        borderRadius: BorderRadius.circular(16), // Match activity cards
+        border: Border.all(
+          color: const Color(0xFF4CD964).withOpacity(0.5),
+          width: 1, // Thinner border
+        ),
+      ),
+      child: Column(
+        children: [
+          // Header - more compact
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Reduced padding
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CD964).withOpacity(0.15), // More subtle bg
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(15),
+                topRight: Radius.circular(15),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Changed layout
+              children: [
+                // Left side - title
+                Row(
+                  children: [
+                    const Icon(
+                      FontAwesomeIcons.wallet,
+                      color: Color(0xFF4CD964),
+                      size: 14, // Smaller icon
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "DAILY TOTAL",
+                      style: TextStyle(
+                        color: const Color(0xFF4CD964),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14, // Smaller text
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+                // Right side - amount
+                Text(
+                  amount ?? 'N/A',
+                  style: const TextStyle(
+                    color: Color(0xFF4CD964),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20, // Smaller but still prominent amount
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Amount details - more compact
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Reduced padding
+            child: Row(
+              children: [
+                const Icon(
+                  FontAwesomeIcons.moneyBillWave,
+                  color: Color(0xFF4CD964),
+                  size: 14,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  "Spent today",
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0); // Subtler animation
+  }
+
+  List<ActivityItem> _parseActivities(String content) {
+    final activities = <ActivityItem>[];
+    int index = 0;
+    print("--- Parsing Activities ---"); // Add start log
+
+    // Check if content uses markdown table format
+    if (content.contains('|')) {
+      print("Parsing as Markdown Table");
+      // Extract activities from markdown table
+      final lines = content.split('\n');
+      bool isInTable = false;
+      
+      for (final line in lines) {
+        final trimmedLine = line.trim();
+        if (trimmedLine.startsWith('|') && trimmedLine.contains('|') && trimmedLine.endsWith('|')) {
+          // Skip table headers and separators
+          if (trimmedLine.contains('---') || 
+              trimmedLine.toLowerCase().contains('| time |') || 
+              trimmedLine.toLowerCase().contains('| activity |')) {
+            isInTable = true;
+            print("Skipping header/separator line: $trimmedLine");
+            continue;
+          }
+          
+          if (isInTable) {
+            final parts = trimmedLine.split('|').map((p) => p.trim()).toList();
+            // Expecting format like: | Time | Activity | Location | Cost |
+            // parts[0] will be empty, parts[1] = Time, parts[2] = Activity, etc.
+            if (parts.length >= 5) { // Need at least 5 parts for Cost
+              final time = parts[1];
+              final activity = parts[2];
+              final location = parts[3];
+              final cost = parts[4]; // Cost is the 5th element (index 4)
+              
+              // Log extracted values
+              print("Table Row Parsed: Time='$time', Activity='$activity', Location='$location', Cost='$cost'");
+
+              // Skip if this row is explicitly a daily total row
+              final activityLower = activity.toLowerCase();
+              if (activityLower.contains('daily total') || activityLower.contains('day total')) {
+                print("Skipping row as it contains 'daily total' or 'day total'");
+                continue;
+              }
+              
+              activities.add(ActivityItem(
+                time: time,
+                activity: _cleanMarkdown(activity),
+                location: location,
+                cost: cost, // Use the extracted cost
+                index: index++,
+                isDailyTotal: false,
+              ));
+            } else {
+               print("Skipping table row, not enough parts (< 5): $trimmedLine");
+            }
+          }
+        } else {
+           // print("Skipping line, not a valid table row: $trimmedLine");
+        }
+      }
+    } else {
+      print("Parsing as Plain Text");
+      // Handle non-table format (plain text)
+      final timeRegex = RegExp(r'(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?|Morning|Afternoon|Evening)');
+      final lines = content.split('\n');
+      
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i].trim();
+        if (line.isEmpty || line.startsWith('#')) {
+          // print("Skipping empty or comment line: $line");
+          continue;
+        }
+        
+        // Skip if this line is explicitly a daily total line
+        final lineLower = line.toLowerCase();
+        if (lineLower.contains('daily total') || lineLower.contains('day total')) {
+          print("Skipping line as it contains 'daily total' or 'day total': $line");
+          continue;
+        }
+        
+        final timeMatch = timeRegex.firstMatch(line);
+        if (timeMatch != null) {
+          final time = timeMatch.group(0)!;
+          final activity = line.substring(timeMatch.end).trim();
+          String location = '';
+          String cost = '';
+          
+          // Look ahead for Location and Cost lines
+          int lookaheadIndex = i + 1;
+          while (lookaheadIndex < lines.length) {
+            final nextLine = lines[lookaheadIndex].trim();
+            if (nextLine.startsWith('Location:')) {
+              location = nextLine.substring('Location:'.length).trim();
+              print("Found Location on next line: '$location'");
+              i = lookaheadIndex; // Consume this line
+            } else if (nextLine.startsWith('Cost:')) {
+              cost = nextLine.substring('Cost:'.length).trim();
+              print("Found Cost on next line: '$cost'");
+              i = lookaheadIndex; // Consume this line
+            } else if (timeRegex.hasMatch(nextLine) || nextLine.isEmpty || nextLine.startsWith('#')) {
+              // Stop looking ahead if we hit the next activity, empty line, or comment
+              break;
+            }
+            lookaheadIndex++;
+          }
+
+          // Log extracted values
+          print("Plain Text Parsed: Time='$time', Activity='$activity', Location='$location', Cost='$cost'");
+          
+          // Skip if the activity itself contains total keywords (redundant check, but safe)
+          final activityLower = activity.toLowerCase();
+          if (activityLower.contains('daily total') || activityLower.contains('day total')) {
+             print("Skipping activity as it contains 'daily total' or 'day total'");
+             continue;
+          }
+          
+          activities.add(ActivityItem(
+            time: time,
+            activity: activity,
+            location: location,
+            cost: cost, // Use the extracted cost
+            index: index++,
+          ));
+        } else {
+           // print("Skipping line, no time match found: $line");
+        }
+      }
+    }
+    print("--- Finished Parsing Activities (${activities.length} found) ---"); // Add end log
+    return activities;
+  }
+
+  String _cleanMarkdown(String text) {
+    return text.replaceAll('**', '').replaceAll('*', '').trim();
   }
 
   Widget _buildActivityCard(ActivityItem activity) {
-    // Check if the activity is free
+    // Prevent rendering of any backend "daily total" activity as a card
+    if (activity.activity.toLowerCase().contains('daily total') ||
+        activity.activity.toLowerCase().contains('day total')) {
+      return const SizedBox.shrink();
+    }
+    // Regular activity card (for non-daily totals)
     final bool isFree = _isActivityFree(activity);
     
     return Container(
@@ -542,17 +951,17 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
       decoration: BoxDecoration(
         color: const Color(0xFF333333),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF4CD964).withOpacity(0.3),
-        ),
+        border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Stack(
+        children: [
+          // Main content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Time indicator
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
@@ -562,11 +971,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        _getTimeIcon(activity.time),
-                        color: Colors.white,
-                        size: 12,
-                      ),
+                      Icon(_getTimeIcon(activity.time), color: Colors.white, size: 12),
                       const SizedBox(width: 6),
                       Text(
                         activity.time,
@@ -579,230 +984,90 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
                     ],
                   ),
                 ),
-                if (isFree) ...[
-                  // Add FREE indicator
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CD964),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      'FREE',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
+                
+                const SizedBox(height: 16),
+                
+                Text(
+                  activity.activity,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
-                ] else if (activity.cost.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CD964).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF4CD964).withOpacity(0.3),
-                      ),
-                    ),
-                    child: const Text(
-                      'Cost',
-                      style: TextStyle(
-                        color: Color(0xFF4CD964),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
+                ),
+                
+                if (activity.location.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () => _openMap(activity.location),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          FontAwesomeIcons.locationDot,
+                          color: Color(0xFF4CD964),
+                          size: 14,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            activity.location,
+                            style: const TextStyle(
+                              color: Color(0xFF4CD964),
+                              decoration: TextDecoration.underline,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              activity.activity,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (activity.cost.isNotEmpty && !isFree) ...[
-              const SizedBox(height: 6),
-              Text(
-                activity.cost,
-                style: const TextStyle(
-                  color: Color(0xFF4CD964),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-            if (activity.location.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () => _openMap(activity.location),
-                child: Row(
-                  children: [
-                    const Icon(
-                      FontAwesomeIcons.locationDot,
-                      color: Color(0xFF4CD964), // Updated from blue to green
-                      size: 14,
+          ),
+          
+          // Cost badge in corner
+          Positioned(
+            top: 16,
+            right: 16,
+            child: isFree 
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CD964),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Text(
+                    'FREE',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        activity.location,
-                        style: const TextStyle(
-                          color: Color(0xFF4CD964), // Updated from blue to green
-                          decoration: TextDecoration.underline,
-                          fontSize: 14,
-                        ),
-                      ),
+                  ),
+                )
+              : Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CD964).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF4CD964).withOpacity(0.3),
                     ),
-                  ],
+                  ),
+                  child: Text(
+                    activity.cost.isEmpty ? 'COST' : activity.cost,
+                    style: const TextStyle(
+                      color: Color(0xFF4CD964),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     ).animate().fadeIn(duration: 300.ms, delay: 100.ms * activity.index);
-  }
-
-  Color _getTimeColor(String time) {
-    // Use intensity variations instead of hue changes for time indicators
-    if (time.toLowerCase().contains('morning')) {
-      return const Color(0xFF3CB371); // Medium Sea Green
-    } else if (time.toLowerCase().contains('afternoon')) {
-      return const Color(0xFF4CD964); // Main app green
-    } else if (time.toLowerCase().contains('evening')) {
-      return const Color(0xFF2E8B57); // Sea Green (darker)
-    } else {
-      // Parse time to determine period
-      final timePattern = RegExp(r'(\d+)(?::(\d+))?\s*(AM|PM)?', caseSensitive: false);
-      final match = timePattern.firstMatch(time);
-      
-      if (match != null) {
-        final hour = int.tryParse(match.group(1) ?? '');
-        final amPm = match.group(3)?.toUpperCase();
-        
-        if (hour != null) {
-          int adjustedHour = hour;
-          if (amPm == 'PM' && hour < 12) adjustedHour += 12;
-          if (amPm == 'AM' && hour == 12) adjustedHour = 0;
-          
-          if (adjustedHour >= 5 && adjustedHour < 12) {
-            return const Color(0xFF3CB371); // Morning - Medium Sea Green
-          } else if (adjustedHour >= 12 && adjustedHour < 17) {
-            return const Color(0xFF4CD964); // Afternoon - Main app green
-          } else {
-            return const Color(0xFF2E8B57); // Evening - Sea Green (darker)
-          }
-        }
-      }
-      
-      return const Color(0xFF4CD964); // Default to main app green
-    }
-  }
-
-  IconData _getTimeIcon(String time) {
-    if (time.toLowerCase().contains('morning')) {
-      return FontAwesomeIcons.sun;
-    } else if (time.toLowerCase().contains('afternoon')) {
-      return FontAwesomeIcons.cloudSun;
-    } else if (time.toLowerCase().contains('evening')) {
-      return FontAwesomeIcons.moon;
-    } else {
-      return FontAwesomeIcons.clock;
-    }
-  }
-
-  List<ActivityItem> _parseActivities(String content) {
-    final activities = <ActivityItem>[];
-    int index = 0;
-    
-    // Check if content uses markdown table format
-    if (content.contains('|')) {
-      // Extract activities from markdown table
-      final lines = content.split('\n');
-      bool isInTable = false;
-      
-      for (final line in lines) {
-        if (line.trim().startsWith('|') && line.contains('|')) {
-          // Skip table headers and separators
-          if (line.contains('---') || 
-              line.toLowerCase().contains('time') || 
-              line.toLowerCase().contains('activity')) {
-            isInTable = true;
-            continue;
-          }
-          
-          if (isInTable) {
-            final parts = line.split('|');
-            if (parts.length >= 4) {
-              final time = parts[1].trim();
-              final activity = parts[2].trim();
-              final location = parts[3].trim();
-              String cost = '';
-              
-              // Check if there's a cost column
-              if (parts.length >= 5) {
-                cost = parts[4].trim();
-              }
-              
-              activities.add(ActivityItem(
-                time: time,
-                activity: activity,
-                location: location,
-                cost: cost,
-                index: index++,
-              ));
-            }
-          }
-        }
-      }
-    } else {
-      // Handle non-table format (can be enhanced based on your actual content format)
-      final timeRegex = RegExp(r'(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?|Morning|Afternoon|Evening)');
-      final lines = content.split('\n');
-      
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i].trim();
-        if (line.isEmpty || line.startsWith('#')) continue;
-        
-        final timeMatch = timeRegex.firstMatch(line);
-        if (timeMatch != null) {
-          final time = timeMatch.group(0)!;
-          final activity = line.substring(timeMatch.end).trim();
-          // Try to find location in next line if it exists
-          String location = '';
-          String cost = '';
-          
-          if (i + 1 < lines.length && lines[i + 1].trim().startsWith('Location:')) {
-            location = lines[i + 1].trim().substring('Location:'.length).trim();
-            i++; // Skip the location line in next iteration
-          }
-          
-          if (i + 1 < lines.length && lines[i + 1].trim().startsWith('Cost:')) {
-            cost = lines[i + 1].trim().substring('Cost:'.length).trim();
-            i++; // Skip the cost line in next iteration
-          }
-          
-          activities.add(ActivityItem(
-            time: time,
-            activity: activity,
-            location: location,
-            cost: cost,
-            index: index++,
-          ));
-        }
-      }
-    }
-    
-    return activities;
   }
 
   Future<void> _openMap(String place) async {
@@ -1031,6 +1296,64 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen> with 
       ],
     );
   }
+
+  // Add this method inside _TravelPlanDisplayScreenState
+  bool _isActivityFree(ActivityItem activity) {
+    final costLower = activity.cost.toLowerCase();
+    return costLower.contains('free') ||
+        costLower.contains('no cost') ||
+        costLower.contains('\$0') ||
+        costLower.contains('€0') ||
+        costLower.contains('£0') ||
+        costLower == '0' ||
+        costLower.isEmpty;
+  }
+
+  // Add this method inside _TravelPlanDisplayScreenState
+  Color _getTimeColor(String time) {
+    if (time.toLowerCase().contains('morning')) {
+      return const Color(0xFF3CB371); // Medium Sea Green
+    } else if (time.toLowerCase().contains('afternoon')) {
+      return const Color(0xFF4CD964); // Main app green
+    } else if (time.toLowerCase().contains('evening')) {
+      return const Color(0xFF2E8B57); // Sea Green (darker)
+    } else {
+      // Try to parse time as hour
+      final timePattern = RegExp(r'(\d+)(?::(\d+))?\s*(AM|PM)?', caseSensitive: false);
+      final match = timePattern.firstMatch(time);
+      if (match != null) {
+        final hour = int.tryParse(match.group(1) ?? '');
+        final amPm = match.group(3)?.toUpperCase();
+        if (hour != null) {
+          int adjustedHour = hour;
+          if (amPm == 'PM' && hour < 12) adjustedHour += 12;
+          if (amPm == 'AM' && hour == 12) adjustedHour = 0;
+          if (adjustedHour >= 5 && adjustedHour < 12) {
+            return const Color(0xFF3CB371); // Morning
+          } else if (adjustedHour >= 12 && adjustedHour < 17) {
+            return const Color(0xFF4CD964); // Afternoon
+          } else {
+            return const Color(0xFF2E8B57); // Evening
+          }
+        }
+      }
+      return const Color(0xFF4CD964); // Default
+    }
+  }
+
+  // Add this method inside _TravelPlanDisplayScreenState
+  IconData _getTimeIcon(String time) {
+    final lower = time.toLowerCase();
+    if (lower.contains('morning')) {
+      return FontAwesomeIcons.sun;
+    } else if (lower.contains('afternoon')) {
+      return FontAwesomeIcons.cloudSun;
+    } else if (lower.contains('evening')) {
+      return FontAwesomeIcons.moon;
+    } else {
+      return FontAwesomeIcons.clock;
+    }
+  }
 }
 
 // Simple class to hold activity data
@@ -1040,6 +1363,7 @@ class ActivityItem {
   final String location;
   final String cost;
   final int index;
+  final bool isDailyTotal; // Add this flag
   
   ActivityItem({
     required this.time,
@@ -1047,5 +1371,6 @@ class ActivityItem {
     required this.location,
     required this.cost,
     required this.index,
+    this.isDailyTotal = false, // Default to false
   });
 }
