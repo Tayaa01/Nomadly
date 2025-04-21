@@ -21,8 +21,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
   String? _detectedCountry;
   String? _countryName;
   String _category = 'clothes';
-  final TextEditingController _categoryController = TextEditingController(text: 'clothes');
-  
+  final TextEditingController _categoryController = TextEditingController(
+    text: 'clothes',
+  );
+
   // Use the EXACT same preference keys as CurrencyViewModel
   static const String _kCountryCodePref = 'country_code';
   static const String _kCountryNamePref = 'country_name';
@@ -45,23 +47,23 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_kCountryCodePref);
       await prefs.remove(_kCountryNamePref);
-      
+
       // Create a new CurrencyViewModel instance (to avoid any caching issues)
       final currencyVM = CurrencyViewModel();
-      
+
       // Call getUserLocation to detect the country
       await currencyVM.getUserLocation();
-      
+
       if (mounted) {
         setState(() {
           _detectedCountry = currencyVM.currentCountryCode;
           _countryName = currencyVM.sourceCountryName;
           _isDetectingLocation = false;
         });
-        
+
         print('Force refreshed country: $_countryName ($_detectedCountry)');
       }
-      
+
       if (_detectedCountry == null) {
         _setDefaultCountry();
       }
@@ -83,10 +85,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
     try {
       // Create a new CurrencyViewModel for fresh detection
       final currencyVM = CurrencyViewModel();
-      
+
       // Remove the forceRefresh parameter that doesn't exist
       await currencyVM.getUserLocation();
-      
+
       // Get the updated country info
       if (mounted) {
         setState(() {
@@ -94,10 +96,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
           _countryName = currencyVM.sourceCountryName;
           _isDetectingLocation = false;
         });
-        
+
         print('Updated country detected: $_countryName ($_detectedCountry)');
       }
-      
+
       // If we still don't have a country, use default
       if (_detectedCountry == null) {
         _setDefaultCountry();
@@ -125,49 +127,53 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kCountryCodePref, code);
       await prefs.setString(_kCountryNamePref, name);
-      
+
       setState(() {
         _detectedCountry = code;
         _countryName = name;
       });
-      
+
       print('Country set to: $name ($code)');
     } catch (e) {
       print('Error setting country: $e');
     }
   }
-  
+
   Future<void> _fetchDeals() async {
     // Ensure we have a country code (either detected or default)
     final countryCode = _detectedCountry ?? 'US';
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final response = await DealsService.fetchDealsHunt(countryCode, _category);
-      
+      final response = await DealsService.fetchDealsHunt(
+        countryCode,
+        _category,
+      );
+
       if (mounted) {
         // Safety check for recommendations
         List<Map<String, dynamic>> recommendations = [];
-        
+
         if (response.containsKey('recommendations')) {
           // Safely convert the recommendations to the expected type
           final rawRecommendations = response['recommendations'];
           if (rawRecommendations is List) {
-            recommendations = rawRecommendations
-                .whereType<Map<String, dynamic>>()
-                .cast<Map<String, dynamic>>()
-                .toList();
+            recommendations =
+                rawRecommendations
+                    .whereType<Map<String, dynamic>>()
+                    .cast<Map<String, dynamic>>()
+                    .toList();
           }
         }
-        
+
         setState(() {
           _recommendations = recommendations;
           _isLoading = false;
-          
+
           // Show error if we couldn't get any recommendations
           if (recommendations.isEmpty) {
             _errorMessage = 'No deals found for "$_category" in $_countryName.';
@@ -193,11 +199,13 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return WillPopScope(
       onWillPop: () async {
         // Navigate to home screen when back button is pressed
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
         return false; // Prevents default back button behavior
       },
       child: Scaffold(
@@ -205,22 +213,9 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF1E1E1E),
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              // Use the same navigation logic as the back button
-              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-            },
-          ),
           title: const Text(
             'Deal Hunting',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
         drawer: const AppDrawer(currentRoute: '/deal-hunting'),
@@ -311,8 +306,8 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                               children: [
                                 Text(
                                   _isDetectingLocation
-                                    ? '...'
-                                    : (_detectedCountry ?? 'US'),
+                                      ? '...'
+                                      : (_detectedCountry ?? 'US'),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
@@ -331,7 +326,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                       ],
                     ),
                   ),
-                  
+
                   // Enhanced search field
                   Container(
                     height: 50,
@@ -346,11 +341,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                     child: Row(
                       children: [
                         const SizedBox(width: 12),
-                        Icon(
-                          Icons.category,
-                          color: Colors.grey[500],
-                          size: 20,
-                        ),
+                        Icon(Icons.category, color: Colors.grey[500], size: 20),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -383,9 +374,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: _isDetectingLocation 
-                                    ? Colors.grey
-                                    : const Color(0xFF4CD964),
+                                color:
+                                    _isDetectingLocation
+                                        ? Colors.grey
+                                        : const Color(0xFF4CD964),
                                 borderRadius: const BorderRadius.only(
                                   topRight: Radius.circular(11),
                                   bottomRight: Radius.circular(11),
@@ -402,7 +394,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                       ],
                     ),
                   ),
-                  
+
                   // Enhanced category chips with horizontal scroll
                   Container(
                     height: 40,
@@ -411,13 +403,22 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
                       children: [
-                        _buildEnhancedCategoryChip('clothes', Icons.shopping_bag),
-                        _buildEnhancedCategoryChip('electronics', Icons.phone_android),
+                        _buildEnhancedCategoryChip(
+                          'clothes',
+                          Icons.shopping_bag,
+                        ),
+                        _buildEnhancedCategoryChip(
+                          'electronics',
+                          Icons.phone_android,
+                        ),
                         _buildEnhancedCategoryChip('shoes', Icons.hiking),
                         _buildEnhancedCategoryChip('furniture', Icons.chair),
                         _buildEnhancedCategoryChip('toys', Icons.toys),
                         _buildEnhancedCategoryChip('beauty', Icons.face),
-                        _buildEnhancedCategoryChip('sports', Icons.sports_basketball),
+                        _buildEnhancedCategoryChip(
+                          'sports',
+                          Icons.sports_basketball,
+                        ),
                       ],
                     ),
                   ),
@@ -429,7 +430,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
             if (_errorMessage != null)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -437,7 +441,11 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -453,9 +461,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
-                child: _isLoading
-                    ? _buildLoadingSkeleton()
-                    : _recommendations.isEmpty && _errorMessage == null
+                child:
+                    _isLoading
+                        ? _buildLoadingSkeleton()
+                        : _recommendations.isEmpty && _errorMessage == null
                         ? _buildEnhancedEmptyState()
                         : _buildEnhancedDealsList(),
               ),
@@ -469,7 +478,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
   // Enhanced category chip with icon
   Widget _buildEnhancedCategoryChip(String category, IconData icon) {
     final isSelected = _category == category;
-    
+
     // Custom icons that better match the app's style
     IconData customIcon;
     switch (category) {
@@ -497,7 +506,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
       default:
         customIcon = icon;
     }
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -510,9 +519,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? const Color(0xFF4CD964).withOpacity(0.2) 
-              : Colors.black.withOpacity(0.3),
+          color:
+              isSelected
+                  ? const Color(0xFF4CD964).withOpacity(0.2)
+                  : Colors.black.withOpacity(0.3),
           // More rectangular shape with rounded corners to match home screen
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -716,10 +726,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
               icon: const Icon(Icons.search, size: 20),
               label: const Text(
                 'Start Hunting',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -747,22 +754,23 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
     final title = deal['title'] ?? 'No Title';
     final description = deal['description'] ?? 'No Description';
     final url = deal['url'] as String?;
-    
+
     // Handle nested maps safely
-    final retailerName = deal['retailer'] is Map 
-        ? (deal['retailer']['name'] ?? 'Unknown') 
-        : 'Unknown';
-        
+    final retailerName =
+        deal['retailer'] is Map
+            ? (deal['retailer']['name'] ?? 'Unknown')
+            : 'Unknown';
+
     // Handle price information safely
     final priceInfo = deal['price'] is Map ? deal['price'] : null;
-    final discountPercentage = priceInfo != null 
-        ? priceInfo['discountPercentage'] ?? 0 
-        : 0;
-    
-    final discountValue = discountPercentage is int || discountPercentage is double
-        ? discountPercentage.toDouble()
-        : 0.0;
-    
+    final discountPercentage =
+        priceInfo != null ? priceInfo['discountPercentage'] ?? 0 : 0;
+
+    final discountValue =
+        discountPercentage is int || discountPercentage is double
+            ? discountPercentage.toDouble()
+            : 0.0;
+
     // Create a badge showing discount level
     Widget? discountBadge;
     if (discountValue > 0) {
@@ -782,7 +790,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
         ),
       );
     }
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -818,7 +826,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.grey.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
@@ -835,9 +846,9 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                           if (discountBadge != null) discountBadge,
                         ],
                       ),
-                      
+
                       const SizedBox(height: 12),
-                      
+
                       // Deal Title
                       Text(
                         title,
@@ -847,9 +858,9 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                           color: Colors.white,
                         ),
                       ),
-                      
+
                       const SizedBox(height: 8),
-                      
+
                       // Description
                       Text(
                         description,
@@ -863,10 +874,10 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                     ],
                   ),
                 ),
-                
+
                 // Divider
                 Divider(color: Colors.grey.withOpacity(0.2), height: 1),
-                
+
                 // Action row with rectangular button
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -900,17 +911,22 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
 
     try {
       final Uri uri = Uri.parse(url);
-      if (await canLaunch(uri.toString())) { // Use canLaunch
-        await launch(uri.toString(), forceSafariVC: false, forceWebView: false); // Use launch
+      if (await canLaunch(uri.toString())) {
+        // Use canLaunch
+        await launch(
+          uri.toString(),
+          forceSafariVC: false,
+          forceWebView: false,
+        ); // Use launch
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not open the link')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error opening link: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error opening link: $e')));
     }
   }
 
@@ -934,7 +950,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
       {'code': 'MA', 'name': 'Morocco'},
       {'code': 'EG', 'name': 'Egypt'},
     ];
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -977,7 +993,7 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                       icon: const Icon(Icons.refresh, color: Color(0xFF4CD964)),
                       onPressed: () {
                         Navigator.pop(context); // First close the dialog
-                        
+
                         // Call the new method that forces a refresh
                         _forceRefreshCountry();
                       },
@@ -997,16 +1013,22 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                   itemBuilder: (context, index) {
                     final country = commonCountries[index];
                     final isSelected = _detectedCountry == country['code'];
-                    
+
                     return InkWell(
                       onTap: () {
                         _setCountry(country['code']!, country['name']!);
                         Navigator.of(context).pop();
                       },
                       child: Container(
-                        color: isSelected ? const Color(0xFF4CD964).withOpacity(0.15) : Colors.transparent,
+                        color:
+                            isSelected
+                                ? const Color(0xFF4CD964).withOpacity(0.15)
+                                : Colors.transparent,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 20,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
@@ -1016,9 +1038,15 @@ class _DealHuntingScreenState extends State<DealHuntingScreen> {
                                     Text(
                                       country['name']!,
                                       style: TextStyle(
-                                        color: isSelected ? const Color(0xFF4CD964) : Colors.white,
+                                        color:
+                                            isSelected
+                                                ? const Color(0xFF4CD964)
+                                                : Colors.white,
                                         fontSize: 16,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        fontWeight:
+                                            isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                       ),
                                     ),
                                     const SizedBox(height: 2),

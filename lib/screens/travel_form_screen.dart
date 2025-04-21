@@ -42,10 +42,10 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final existingPlan = await _plannerService.getExistingPlan();
-      
+
       setState(() {
         _existingPlan = existingPlan;
         _hasExistingPlan = existingPlan != null;
@@ -68,7 +68,9 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
       onWillPop: () async {
         // Navigate to home screen when back button is pressed
         // instead of the previous screen in the navigation stack
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
         return false; // Prevents default back button behavior
       },
       child: Scaffold(
@@ -77,16 +79,6 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           centerTitle: true,
           elevation: 0,
           backgroundColor: const Color(0xFF1E1E1E),
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              // Use the same navigation logic as the back button
-              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-            },
-          ),
           title: const Text(
             'Travel Planner',
             style: TextStyle(
@@ -108,13 +100,11 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           ],
         ),
         drawer: const AppDrawer(currentRoute: '/planner'),
-        body: _isLoading
-            ? _buildLoadingState()
-            : _buildMainContent(isDarkMode),
+        body: _isLoading ? _buildLoadingState() : _buildMainContent(isDarkMode),
       ),
     );
   }
-  
+
   Widget _buildLoadingState() {
     return Center(
       child: Column(
@@ -126,15 +116,13 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           const SizedBox(height: 20),
           Text(
             'Checking for existing travel plans...',
-            style: TextStyle(
-              color: Colors.white,
-            ),
+            style: TextStyle(color: Colors.white),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildMainContent(bool isDarkMode) {
     return Container(
       color: Colors.black,
@@ -175,10 +163,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
                       Text(
                         'Create personalized travel plans with ease',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 16),
                       ).animate().fadeIn(duration: 800.ms),
                       const SizedBox(height: 30),
                       if (_hasExistingPlan && _existingPlan != null)
@@ -224,19 +209,17 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildExistingPlanCard() {
     if (_existingPlan == null) return const SizedBox.shrink();
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF4CD964).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF4CD964).withOpacity(0.3),
-        ),
+        border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,20 +254,14 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           const SizedBox(height: 4),
           Text(
             'Starting on ${_existingPlan!.formattedStartDate}',
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[400], fontSize: 14),
           ),
           const SizedBox(height: 4),
           Text(
-            _existingPlan!.isBudgetOptimized 
-                ? 'Budget-optimized plan' 
+            _existingPlan!.isBudgetOptimized
+                ? 'Budget-optimized plan'
                 : 'Custom plan with budget \$${_existingPlan!.budget.toStringAsFixed(0)}',
-            style: const TextStyle(
-              color: Color(0xFF4CD964),
-              fontSize: 14,
-            ),
+            style: const TextStyle(color: Color(0xFF4CD964), fontSize: 14),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -321,18 +298,12 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFF4CD964).withOpacity(0.3),
-          ),
+          border: Border.all(color: const Color(0xFF4CD964).withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 28,
-              color: const Color(0xFF4CD964),
-            ),
+            Icon(icon, size: 28, color: const Color(0xFF4CD964)),
             const SizedBox(height: 12),
             Text(
               title,
@@ -345,10 +316,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.grey[400], fontSize: 12),
             ),
           ],
         ),
@@ -363,7 +331,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isBudgetFree 
+            isBudgetFree
                 ? 'Budget-Optimized Travel Plan'
                 : 'Custom Travel Plan',
             style: const TextStyle(
@@ -374,13 +342,10 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isBudgetFree 
+            isBudgetFree
                 ? 'We\'ll create an affordable plan based on your destination and dates'
                 : 'We\'ll create a plan based on your destination, budget, and dates',
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[400], fontSize: 14),
           ),
           const SizedBox(height: 24),
           _buildTextField(
@@ -449,18 +414,19 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _isGeneratingPlan ? null : () => _generatePlan(isBudgetFree),
+              onPressed:
+                  _isGeneratingPlan ? null : () => _generatePlan(isBudgetFree),
               icon: Icon(
                 _isGeneratingPlan
                     ? Icons.hourglass_empty
                     : FontAwesomeIcons.wandMagicSparkles,
               ),
               label: Text(
-                _isGeneratingPlan 
-                    ? 'Generating...' 
-                    : isBudgetFree 
-                        ? 'Generate Budget Plan' 
-                        : 'Generate Custom Plan',
+                _isGeneratingPlan
+                    ? 'Generating...'
+                    : isBudgetFree
+                    ? 'Generate Budget Plan'
+                    : 'Generate Custom Plan',
                 style: const TextStyle(fontSize: 16),
               ),
               style: ElevatedButton.styleFrom(
@@ -497,9 +463,9 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               padding: EdgeInsets.fromLTRB(
-                16, 
-                16, 
-                16, 
+                16,
+                16,
+                16,
                 16 + MediaQuery.of(context).viewInsets.bottom,
               ),
               child: SingleChildScrollView(
@@ -524,13 +490,8 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(
-          icon,
-          color: const Color(0xFF4CD964),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        prefixIcon: Icon(icon, color: const Color(0xFF4CD964)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
@@ -539,17 +500,13 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFF4CD964),
-          ),
+          borderSide: const BorderSide(color: Color(0xFF4CD964)),
         ),
         filled: true,
         fillColor: Colors.black.withOpacity(0.3),
         labelStyle: const TextStyle(color: Colors.white70),
       ),
-      style: const TextStyle(
-        color: Colors.white,
-      ),
+      style: const TextStyle(color: Colors.white),
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       validator: validator,
@@ -572,7 +529,10 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
                   onPrimary: Colors.black,
                   surface: Color(0xFF1E1E1E),
                   onSurface: Colors.white,
-                ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF1E1E1E)),
+                ),
+                dialogTheme: DialogThemeData(
+                  backgroundColor: const Color(0xFF1E1E1E),
+                ),
               ),
               child: child!,
             );
@@ -591,9 +551,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
             Icons.calendar_today,
             color: Color(0xFF4CD964),
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
@@ -602,9 +560,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-              color: Color(0xFF4CD964),
-            ),
+            borderSide: const BorderSide(color: Color(0xFF4CD964)),
           ),
           filled: true,
           fillColor: Colors.black.withOpacity(0.3),
@@ -614,9 +570,7 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
           _selectedDate == null
               ? 'Select Date'
               : _selectedDate!.toLocal().toString().split(' ')[0],
-          style: const TextStyle(
-            color: Colors.white,
-          ),
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
@@ -643,25 +597,26 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
       days: int.parse(_daysController.text),
       startDate: _selectedDate!,
     );
-    
+
     // Close the form sheet
     Navigator.pop(context);
-    
+
     // Navigate to loading screen immediately
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TravelPlanLoadingScreen(
-          request: request,
-          isBudgetFree: isBudgetFree,
-        ),
+        builder:
+            (context) => TravelPlanLoadingScreen(
+              request: request,
+              isBudgetFree: isBudgetFree,
+            ),
       ),
     ).then((_) {
       // Refresh the screen when coming back
       _checkForExistingPlan();
     });
   }
-  
+
   void _navigateToPlanDisplay(TravelPlan plan) {
     Navigator.push(
       context,

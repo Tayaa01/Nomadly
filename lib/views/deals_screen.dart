@@ -36,17 +36,25 @@ class _DealsScreenState extends State<DealsScreen> {
     });
 
     try {
-      final destination = Provider.of<DestinationProvider>(context, listen: false).selectedCountry;
+      final destination =
+          Provider.of<DestinationProvider>(
+            context,
+            listen: false,
+          ).selectedCountry;
       _selectedDestination = destination;
 
-      final deals = await DealsService.fetchDeals(destination ?? 'popular destinations');
+      final deals = await DealsService.fetchDeals(
+        destination ?? 'popular destinations',
+      );
 
       // Update images for deals that don't have an image URL
       for (var deal in deals) {
         if (deal['imageUrl'] == null || deal['imageUrl'].toString().isEmpty) {
           // Use country-specific image if available
           if (_selectedDestination != null) {
-            deal['imageUrl'] = await CountryImagesService.getRandomTourismImage(_selectedDestination!);
+            deal['imageUrl'] = await CountryImagesService.getRandomTourismImage(
+              _selectedDestination!,
+            );
           }
         }
       }
@@ -175,32 +183,25 @@ class _DealsScreenState extends State<DealsScreen> {
     return WillPopScope(
       onWillPop: () async {
         // Navigate to home screen when back button is pressed
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
         return false; // Prevents default back button behavior
       },
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Travel Deals'),
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              // Use the same navigation logic as the back button
-              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-            },
-          ),
           backgroundColor: const Color(0xFF1E1E1E),
         ),
         drawer: const AppDrawer(currentRoute: '/travel-deals'),
-        body: _isLoading
-            ? _buildLoadingSkeleton()
-            : _errorMessage != null
+        body:
+            _isLoading
+                ? _buildLoadingSkeleton()
+                : _errorMessage != null
                 ? _buildErrorView()
                 : _deals.isEmpty
-                    ? _buildEmptyView()
-                    : _buildDealsView(),
+                ? _buildEmptyView()
+                : _buildDealsView(),
       ),
     );
   }
@@ -212,19 +213,12 @@ class _DealsScreenState extends State<DealsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              color: Colors.red,
-              size: 48,
-            ),
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             Text(
               _errorMessage ?? 'An error occurred',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
@@ -252,19 +246,12 @@ class _DealsScreenState extends State<DealsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.search_off,
-              color: Colors.grey[600],
-              size: 48,
-            ),
+            Icon(Icons.search_off, color: Colors.grey[600], size: 48),
             const SizedBox(height: 16),
             Text(
               'No deals available for $_selectedDestination',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey[400], fontSize: 16),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
@@ -333,48 +320,77 @@ class _DealsScreenState extends State<DealsScreen> {
                   height: 180,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    height: 180,
-                    color: Colors.grey[800],
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+                  placeholder:
+                      (context, url) => Container(
+                        height: 180,
+                        color: Colors.grey[800],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF4CD964),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => FutureBuilder<String>(
-                    future: _selectedDestination != null 
-                        ? CountryImagesService.getRandomTourismImage(_selectedDestination!)
-                        : Future.value(''),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Container(
-                          height: 180,
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
-                            ),
-                          ),
-                        );
-                      }
-
-                      if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                        return CachedNetworkImage(
-                          imageUrl: snapshot.data!,
-                          height: 180,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            height: 180,
-                            color: Colors.grey[800],
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+                  errorWidget:
+                      (context, url, error) => FutureBuilder<String>(
+                        future:
+                            _selectedDestination != null
+                                ? CountryImagesService.getRandomTourismImage(
+                                  _selectedDestination!,
+                                )
+                                : Future.value(''),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Container(
+                              height: 180,
+                              color: Colors.grey[800],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF4CD964),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
+                            );
+                          }
+
+                          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                            return CachedNetworkImage(
+                              imageUrl: snapshot.data!,
+                              height: 180,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              placeholder:
+                                  (context, url) => Container(
+                                    height: 180,
+                                    color: Colors.grey[800],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF4CD964),
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                              errorWidget:
+                                  (context, url, error) => Container(
+                                    height: 180,
+                                    color: Colors.grey[800],
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.image,
+                                        color: Colors.white,
+                                        size: 32,
+                                      ),
+                                    ),
+                                  ),
+                            );
+                          }
+
+                          return Container(
                             height: 180,
                             color: Colors.grey[800],
                             child: const Center(
@@ -384,23 +400,9 @@ class _DealsScreenState extends State<DealsScreen> {
                                 size: 32,
                               ),
                             ),
-                          ),
-                        );
-                      }
-
-                      return Container(
-                        height: 180,
-                        color: Colors.grey[800],
-                        child: const Center(
-                          child: Icon(
-                            Icons.image,
-                            color: Colors.white,
-                            size: 32,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
                 ),
               ),
 
@@ -435,7 +437,10 @@ class _DealsScreenState extends State<DealsScreen> {
                   // Price tag
                   if (price.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF4CD964).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -495,9 +500,9 @@ class _DealsScreenState extends State<DealsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }

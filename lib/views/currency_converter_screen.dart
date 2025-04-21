@@ -33,15 +33,6 @@ class CurrencyConverterScreen extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: const Color(0xFF1E1E1E),
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                // Use the same navigation logic as the back button
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil('/home', (route) => false);
-              },
-            ),
             title: const Text(
               'Currency Converter',
               style: TextStyle(
