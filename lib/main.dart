@@ -25,8 +25,14 @@ import 'providers/theme_provider.dart';
 import 'providers/chat_provider.dart';
 import 'screens/travel_form_screen.dart';
 import 'screens/weather_forecast_screen.dart'; // Import the new screen
+import 'package:flutter/services.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(
     MultiProvider(
       providers: [
@@ -36,7 +42,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => CurrencyViewModel()),
         ChangeNotifierProvider(create: (_) => TravelGroupViewModel()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_)=> ChatProvider('haddari'))
+        ChangeNotifierProvider(create: (_) => ChatProvider('haddari')),
       ],
       child: const MyApp(),
     ),
@@ -166,28 +172,36 @@ class _MyAppState extends State<MyApp> {
         '/home': (context) => const HomePage(),
         '/sign-in': (context) => const SignInPage(),
         '/sign-up': (context) => const SignUpPage(),
-        '/currency-converter': (context) => CurrencyConverterScreen(
-          toggleTheme: toggleTheme,
-          isDarkMode: isDarkMode,
-        ),
+        '/currency-converter':
+            (context) => CurrencyConverterScreen(
+              toggleTheme: toggleTheme,
+              isDarkMode: isDarkMode,
+            ),
         '/translation': (context) => const SpeechToTextView(),
-        '/travel-deals': (context) => DealsScreen(isDarkMode: isDarkMode), // Fixed: Added isDarkMode parameter
-        '/deal-hunting': (context) => const DealHuntingScreen(), // New route for Deal Hunting
+        '/travel-deals':
+            (context) => DealsScreen(
+              isDarkMode: isDarkMode,
+            ), // Fixed: Added isDarkMode parameter
+        '/deal-hunting':
+            (context) =>
+                const DealHuntingScreen(), // New route for Deal Hunting
         '/tips': (context) => const TipsScreen(), // Add this route for tips
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/planner': (context) => const TravelFormScreen(),
-        '/travel-results':
-            (context) => TravelResultsScreen(destination: ''),
-        '/expense-tracker': (context) => ExpenseTrackerScreen(
-          toggleTheme: toggleTheme,
-          isDarkMode: isDarkMode,
-        ),
-        '/travel-groups': (context) => TravelGroupsScreen(
-          toggleTheme: toggleTheme,
-          isDarkMode: isDarkMode,
-        ),
-        '/weather-forecast': (context) => const WeatherForecastScreen(), // Add the new route
+        '/travel-results': (context) => TravelResultsScreen(destination: ''),
+        '/expense-tracker':
+            (context) => ExpenseTrackerScreen(
+              toggleTheme: toggleTheme,
+              isDarkMode: isDarkMode,
+            ),
+        '/travel-groups':
+            (context) => TravelGroupsScreen(
+              toggleTheme: toggleTheme,
+              isDarkMode: isDarkMode,
+            ),
+        '/weather-forecast':
+            (context) => const WeatherForecastScreen(), // Add the new route
       },
     );
   }
@@ -195,7 +209,9 @@ class _MyAppState extends State<MyApp> {
   Route<dynamic> _onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case '/':
-        return MaterialPageRoute(builder: (_) => _startScreen ?? const SignInPage());
+        return MaterialPageRoute(
+          builder: (_) => _startScreen ?? const SignInPage(),
+        );
       case '/login':
         return MaterialPageRoute(builder: (_) => const SignInPage());
       case '/register':
@@ -205,18 +221,25 @@ class _MyAppState extends State<MyApp> {
       case '/profile':
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case '/travel-deals':
-        return MaterialPageRoute(builder: (_) => DealsScreen(isDarkMode: isDarkMode)); // Fixed: Added isDarkMode parameter
+        return MaterialPageRoute(
+          builder: (_) => DealsScreen(isDarkMode: isDarkMode),
+        ); // Fixed: Added isDarkMode parameter
       case '/deal-hunting':
         return MaterialPageRoute(builder: (_) => const DealHuntingScreen());
       case '/planner':
         // Use PageRouteBuilder for a custom transition
         return PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const TravelFormScreen(),
+          pageBuilder:
+              (context, animation, secondaryAnimation) =>
+                  const TravelFormScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(0.0, 1.0);
             const end = Offset.zero;
             const curve = Curves.easeInOut;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
             var offsetAnimation = animation.drive(tween);
             return SlideTransition(position: offsetAnimation, child: child);
           },
@@ -224,11 +247,12 @@ class _MyAppState extends State<MyApp> {
       // ...existing code for other routes...
       default:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
-            ),
-          ),
+          builder:
+              (_) => Scaffold(
+                body: Center(
+                  child: Text('No route defined for ${settings.name}'),
+                ),
+              ),
         );
     }
   }

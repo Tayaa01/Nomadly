@@ -20,11 +20,14 @@ class CurrencyConverterScreen extends StatelessWidget {
 
     return WillPopScope(
       onWillPop: () async {
-        // Navigate to home screen when back button is pressed
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/home', (route) => false);
-        return false; // Prevents default back button behavior
+        if (Navigator.canPop(context)) {
+          return true;
+        } else {
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/home', (route) => false);
+          return false;
+        }
       },
       child: ChangeNotifierProvider(
         create: (_) => CurrencyViewModel(),

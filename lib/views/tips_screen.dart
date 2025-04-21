@@ -44,7 +44,10 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
     });
 
     try {
-      final destinationProvider = Provider.of<DestinationProvider>(context, listen: false);
+      final destinationProvider = Provider.of<DestinationProvider>(
+        context,
+        listen: false,
+      );
       final selectedCountry = destinationProvider.selectedCountry;
       final selectedCategory = destinationProvider.selectedTipCategory;
 
@@ -58,7 +61,7 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
 
       // Load categories for the selected country
       _categories = await _tipsService.getCategoriesForCountry(selectedCountry);
-      
+
       if (_categories.isEmpty) {
         setState(() {
           _isLoading = false;
@@ -66,16 +69,17 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
         });
         return;
       }
-      
+
       // Initialize tab controller after getting categories
       _tabController = TabController(
         length: _categories.length,
         vsync: this,
-        initialIndex: selectedCategory != null && _categories.contains(selectedCategory) 
-            ? _categories.indexOf(selectedCategory) 
-            : 0,
+        initialIndex:
+            selectedCategory != null && _categories.contains(selectedCategory)
+                ? _categories.indexOf(selectedCategory)
+                : 0,
       );
-      
+
       _tabController.addListener(_handleTabChange);
 
       // Set selected category
@@ -122,7 +126,10 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
     });
 
     try {
-      final destinationProvider = Provider.of<DestinationProvider>(context, listen: false);
+      final destinationProvider = Provider.of<DestinationProvider>(
+        context,
+        listen: false,
+      );
       final selectedCountry = destinationProvider.selectedCountry;
 
       if (selectedCountry != null) {
@@ -153,37 +160,59 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
     final destinationProvider = Provider.of<DestinationProvider>(context);
     final selectedCountry = destinationProvider.selectedCountry;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Travel Tips${selectedCountry != null ? ' - $selectedCountry' : ''}'),
-        bottom: _categories.isNotEmpty ? TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: _categories.map((category) => Tab(text: category)).toList(),
-          indicatorColor: const Color(0xFF4CD964),
-          labelColor: const Color(0xFF4CD964),
-          unselectedLabelColor: Colors.grey,
-        ) : null,
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Travel Tips${selectedCountry != null ? ' - $selectedCountry' : ''}',
+          ),
+          bottom:
+              _categories.isNotEmpty
+                  ? TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabs:
+                        _categories
+                            .map((category) => Tab(text: category))
+                            .toList(),
+                    indicatorColor: const Color(0xFF4CD964),
+                    labelColor: const Color(0xFF4CD964),
+                    unselectedLabelColor: Colors.grey,
+                  )
+                  : null,
+        ),
+        drawer: const AppDrawer(currentRoute: '/tips'),
+        body:
+            _isLoading
+                ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF4CD964)),
+                )
+                : _errorMessage != null
+                ? _buildErrorView()
+                : _buildContent(),
       ),
-      drawer: const AppDrawer(currentRoute: '/tips'),
-      body: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF4CD964)))
-          : _errorMessage != null 
-              ? _buildErrorView() 
-              : _buildContent(),
     );
   }
 
   Widget _buildContent() {
     if (_categories.isEmpty) {
-      return _buildEmptyView('No tip categories available for this destination');
+      return _buildEmptyView(
+        'No tip categories available for this destination',
+      );
     }
-    
+
     return TabBarView(
       controller: _tabController,
-      children: _categories.map((category) {
-        return _buildTipsView();
-      }).toList(),
+      children:
+          _categories.map((category) {
+            return _buildTipsView();
+          }).toList(),
     );
   }
 
@@ -210,9 +239,7 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       color: const Color(0xFF1E1E1E),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -238,10 +265,7 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
             const SizedBox(height: 12),
             Text(
               tip.content,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
             if (tip.country.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -256,10 +280,7 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
                   const SizedBox(width: 4),
                   Text(
                     'For trips to ${tip.country}',
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
                   ),
                 ],
               ),
@@ -306,18 +327,11 @@ class _TipsScreenState extends State<TipsScreen> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.info_outline,
-              color: Colors.grey[600],
-              size: 48,
-            ),
+            Icon(Icons.info_outline, color: Colors.grey[600], size: 48),
             const SizedBox(height: 16),
             Text(
               message,
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey[400], fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),

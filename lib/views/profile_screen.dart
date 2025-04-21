@@ -124,132 +124,136 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E1E),
-        elevation: 0,
-        title: const Text(
-          'My Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: const Color(0xFF4CD964)),
-          onPressed:
-              () => Navigator.of(
-                context,
-              ).pushNamedAndRemoveUntil('/home', (route) => false),
-        ),
-        actions: [
-          if (!_isEditing)
-            IconButton(
-              icon: Icon(Icons.edit, color: const Color(0xFF4CD964)),
-              onPressed: () => setState(() => _isEditing = true),
+    return WillPopScope(
+      // Wrap with WillPopScope
+      onWillPop: () async {
+        // Navigate to home screen when back button is pressed
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
+        return false; // Prevents default back button behavior
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1E1E1E),
+          elevation: 0,
+          title: const Text(
+            'My Profile',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-        ],
-      ),
-      drawer: const AppDrawer(currentRoute: '/profile'), // Add drawer
-      body:
-          _isLoading
-              ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF4CD964)),
-              )
-              : _error != null
-              ? _buildErrorView()
-              : SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // Top Section with user info
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(32),
-                          bottomRight: Radius.circular(32),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+          ),
+          leading: null, // Let the drawer handle the leading icon
+          actions: [
+            if (!_isEditing)
+              IconButton(
+                icon: Icon(Icons.edit, color: const Color(0xFF4CD964)),
+                onPressed: () => setState(() => _isEditing = true),
+              ),
+          ],
+        ),
+        drawer: const AppDrawer(currentRoute: '/profile'), // Add drawer
+        body:
+            _isLoading
+                ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF4CD964)),
+                )
+                : _error != null
+                ? _buildErrorView()
+                : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Top Section with user info
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E1E1E),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(32),
+                            bottomRight: Radius.circular(32),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Color(0xFF333333),
-                            child: Icon(
-                              Icons.person,
-                              size: 60,
-                              color: Color(0xFF4CD964),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '${_user?.firstName} ${_user?.lastName}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _user?.email ?? '',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 16,
-                            ),
-                          ),
-                          if (!_isEditing) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF333333),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(
-                                    0xFF4CD964,
-                                  ).withOpacity(0.3),
-                                ),
-                              ),
-                              child: Text(
-                                'Country: ${_user?.countryCode}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
-                        ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Color(0xFF333333),
+                              child: Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Color(0xFF4CD964),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              '${_user?.firstName} ${_user?.lastName}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _user?.email ?? '',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (!_isEditing) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF333333),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF4CD964,
+                                    ).withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Country: ${_user?.countryCode}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Profile form
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child:
-                          _isEditing
-                              ? _buildProfileForm()
-                              : _buildProfileDetails(),
-                    ),
-                  ],
+                      // Profile form
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child:
+                            _isEditing
+                                ? _buildProfileForm()
+                                : _buildProfileDetails(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+      ),
     );
   }
 

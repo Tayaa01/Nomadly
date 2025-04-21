@@ -24,10 +24,7 @@ class AppDrawer extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  primaryColor,
-                  primaryColor.withOpacity(0.7),
-                ],
+                colors: [primaryColor, primaryColor.withOpacity(0.7)],
               ),
             ),
             child: Center(
@@ -40,12 +37,15 @@ class AppDrawer extends StatelessWidget {
                       color: Colors.white.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: ClipOval( // Ensure the logo is clipped into a circular shape
+                    child: ClipOval(
+                      // Ensure the logo is clipped into a circular shape
                       child: Image.asset(
                         'assets/logodark.png',
                         height: 70,
-                        width: 70, // Ensure the logo is square to fit the circle
-                        fit: BoxFit.cover, // Scale the image to cover the circle
+                        width:
+                            70, // Ensure the logo is square to fit the circle
+                        fit:
+                            BoxFit.cover, // Scale the image to cover the circle
                       ),
                     ),
                   ),
@@ -60,10 +60,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   const Text(
                     'Your Smart Travel Companion',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
@@ -219,18 +216,21 @@ class AppDrawer extends StatelessWidget {
           // Logout button at the bottom
           Container(
             decoration: BoxDecoration(
-              color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+              color:
+                  isDarkMode
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.grey.withOpacity(0.1),
               border: Border(
                 top: BorderSide(
-                  color: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                  color:
+                      isDarkMode
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.black.withOpacity(0.05),
                 ),
               ),
             ),
             child: ListTile(
-              leading: Icon(
-                Icons.logout_rounded,
-                color: Colors.red[400],
-              ),
+              leading: Icon(Icons.logout_rounded, color: Colors.red[400]),
               title: Text(
                 'Logout',
                 style: TextStyle(
@@ -247,7 +247,11 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryLabel(BuildContext context, String label, bool isDarkMode) {
+  Widget _buildCategoryLabel(
+    BuildContext context,
+    String label,
+    bool isDarkMode,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Align(
@@ -277,26 +281,26 @@ class AppDrawer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isSelected 
-            ? primaryColor.withOpacity(0.15) 
-            : Colors.transparent,
+        color: isSelected ? primaryColor.withOpacity(0.15) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
         leading: Icon(
           icon,
-          color: isSelected 
-              ? primaryColor
-              : (isDarkMode ? Colors.white70 : Colors.black54),
+          color:
+              isSelected
+                  ? primaryColor
+                  : (isDarkMode ? Colors.white70 : Colors.black54),
           size: 22,
         ),
         title: Text(
           title,
           style: TextStyle(
             fontSize: 16,
-            color: isSelected 
-                ? primaryColor
-                : (isDarkMode ? Colors.white : Colors.black87),
+            color:
+                isSelected
+                    ? primaryColor
+                    : (isDarkMode ? Colors.white : Colors.black87),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -305,8 +309,16 @@ class AppDrawer extends StatelessWidget {
         onTap: () {
           Navigator.pop(context); // Close the drawer
           if (route != currentRoute) {
-            // Navigate to selected route if it's not the current one
-            Navigator.pushReplacementNamed(context, route);
+            // Improved navigation logic to keep /home as root
+            if (route == '/home') {
+              Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
+            } else {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                route,
+                ModalRoute.withName('/home'),
+              );
+            }
           }
         },
       ),
@@ -316,7 +328,7 @@ class AppDrawer extends StatelessWidget {
   void _confirmLogout(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -341,13 +353,13 @@ class AppDrawer extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(context); // Close dialog
                 Navigator.pop(context); // Close drawer
-                
+
                 // Perform logout
                 AuthService().logout().then((_) {
                   // Navigate to login screen
                   Navigator.pushNamedAndRemoveUntil(
-                    context, 
-                    '/sign-in', 
+                    context,
+                    '/sign-in',
                     (route) => false,
                   );
                 });

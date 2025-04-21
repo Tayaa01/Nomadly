@@ -15,15 +15,21 @@ class StatisticsScreen extends StatefulWidget {
   State<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerProviderStateMixin {
+class _StatisticsScreenState extends State<StatisticsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
   String _errorMessage = '';
-  
+
   // Filter periods
-  final List<String> _filterPeriods = ['Last 7 Days', 'Last 30 Days', 'This Month', 'This Year'];
+  final List<String> _filterPeriods = [
+    'Last 7 Days',
+    'Last 30 Days',
+    'This Month',
+    'This Year',
+  ];
   String _selectedPeriod = 'Last 7 Days';
-  
+
   // Currency display options
   String _displayCurrency = 'Original';
 
@@ -31,20 +37,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Fetch data
     Future.microtask(() {
       final viewModel = Provider.of<ExpenseViewModel>(context, listen: false);
-      viewModel.init().then((_) {
-        setState(() {
-          _isLoading = false;
-        });
-      }).catchError((error) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = error.toString();
-        });
-      });
+      viewModel
+          .init()
+          .then((_) {
+            setState(() {
+              _isLoading = false;
+            });
+          })
+          .catchError((error) {
+            setState(() {
+              _isLoading = false;
+              _errorMessage = error.toString();
+            });
+          });
     });
   }
 
@@ -55,39 +64,49 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   }
 
   // Filter transactions based on selected period
-  List<Transaction> _getFilteredTransactions(List<Transaction> allTransactions) {
+  List<Transaction> _getFilteredTransactions(
+    List<Transaction> allTransactions,
+  ) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     switch (_selectedPeriod) {
       case 'Last 7 Days':
         final startDate = today.subtract(const Duration(days: 6));
-        return allTransactions.where((t) => 
-          !t.createdAt.isBefore(startDate) && 
-          !t.createdAt.isAfter(now)
-        ).toList();
-        
+        return allTransactions
+            .where(
+              (t) =>
+                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
+            )
+            .toList();
+
       case 'Last 30 Days':
         final startDate = today.subtract(const Duration(days: 29));
-        return allTransactions.where((t) => 
-          !t.createdAt.isBefore(startDate) && 
-          !t.createdAt.isAfter(now)
-        ).toList();
-        
+        return allTransactions
+            .where(
+              (t) =>
+                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
+            )
+            .toList();
+
       case 'This Month':
         final startDate = DateTime(now.year, now.month, 1);
-        return allTransactions.where((t) => 
-          !t.createdAt.isBefore(startDate) && 
-          !t.createdAt.isAfter(now)
-        ).toList();
-        
+        return allTransactions
+            .where(
+              (t) =>
+                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
+            )
+            .toList();
+
       case 'This Year':
         final startDate = DateTime(now.year, 1, 1);
-        return allTransactions.where((t) => 
-          !t.createdAt.isBefore(startDate) && 
-          !t.createdAt.isAfter(now)
-        ).toList();
-        
+        return allTransactions
+            .where(
+              (t) =>
+                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
+            )
+            .toList();
+
       default:
         return allTransactions;
     }
@@ -103,56 +122,68 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   }
 
   // Group transactions by date
-  Map<DateTime, List<Transaction>> _groupTransactionsByDate(List<Transaction> transactions) {
+  Map<DateTime, List<Transaction>> _groupTransactionsByDate(
+    List<Transaction> transactions,
+  ) {
     final groupedData = <DateTime, List<Transaction>>{};
-    
+
     for (final transaction in transactions) {
       final date = DateTime(
-        transaction.createdAt.year, 
-        transaction.createdAt.month, 
-        transaction.createdAt.day
+        transaction.createdAt.year,
+        transaction.createdAt.month,
+        transaction.createdAt.day,
       );
-      
+
       if (!groupedData.containsKey(date)) {
         groupedData[date] = [];
       }
-      
+
       groupedData[date]!.add(transaction);
     }
-    
+
     return groupedData;
   }
-  
+
   // Group transactions by currency
-  Map<String, double> _groupTransactionsByCurrency(List<Transaction> transactions) {
+  Map<String, double> _groupTransactionsByCurrency(
+    List<Transaction> transactions,
+  ) {
     final groupedData = <String, double>{};
-    
+
     for (final transaction in transactions) {
-      final currency = _displayCurrency == 'Original' || transaction.convertedCurrency == null
-          ? transaction.originalCurrency
-          : transaction.convertedCurrency!;
-      
+      final currency =
+          _displayCurrency == 'Original' ||
+                  transaction.convertedCurrency == null
+              ? transaction.originalCurrency
+              : transaction.convertedCurrency!;
+
       final amount = _getAmount(transaction);
-      
+
       if (!groupedData.containsKey(currency)) {
         groupedData[currency] = 0;
       }
-      
+
       groupedData[currency] = (groupedData[currency] ?? 0) + amount;
     }
-    
+
     return groupedData;
   }
 
   // Get currency symbol for display
   String _getCurrencySymbol(String currencyCode) {
     switch (currencyCode) {
-      case 'USD': return '\$';
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'JPY': return '¥';
-      case 'TND': return 'DT';
-      default: return currencyCode;
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      case 'TND':
+        return 'DT';
+      default:
+        return currencyCode;
     }
   }
 
@@ -253,44 +284,58 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    return Scaffold(
-      backgroundColor: isDarkMode ? Colors.black : Colors.white,
-      appBar: AppBar(
+
+    return WillPopScope(
+      onWillPop: () async {
+        if (Navigator.canPop(context)) {
+          return true;
+        } else {
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/home', (route) => false);
+          return false;
+        }
+      },
+      child: Scaffold(
         backgroundColor: isDarkMode ? Colors.black : Colors.white,
-        elevation: 0,
-        title: Text(
-          'Financial Statistics',
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          backgroundColor: isDarkMode ? Colors.black : Colors.white,
+          elevation: 0,
+          title: Text(
+            'Financial Statistics',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFF4CD964),
-          unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-          indicatorColor: const Color(0xFF4CD964),
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Timeline'),
-            Tab(text: 'Categories'),
-          ],
-        ),
-      ),
-      drawer: const AppDrawer(currentRoute: '/statistics'),
-      body: _isLoading 
-      ? _buildLoadingSkeleton()
-      : _errorMessage.isNotEmpty
-        ? _buildErrorView()
-        : TabBarView(
+          bottom: TabBar(
             controller: _tabController,
-            children: [
-              _buildOverviewTab(),
-              _buildTimelineTab(),
-              _buildCategoriesTab(),
+            labelColor: const Color(0xFF4CD964),
+            unselectedLabelColor:
+                isDarkMode ? Colors.grey[400] : Colors.grey[700],
+            indicatorColor: const Color(0xFF4CD964),
+            tabs: const [
+              Tab(text: 'Overview'),
+              Tab(text: 'Timeline'),
+              Tab(text: 'Categories'),
             ],
           ),
+        ),
+        drawer: const AppDrawer(currentRoute: '/statistics'),
+        body:
+            _isLoading
+                ? _buildLoadingSkeleton()
+                : _errorMessage.isNotEmpty
+                ? _buildErrorView()
+                : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(),
+                    _buildTimelineTab(),
+                    _buildCategoriesTab(),
+                  ],
+                ),
+      ),
     );
   }
 
@@ -300,11 +345,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.redAccent,
-            size: 60,
-          ),
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
           const SizedBox(height: 16),
           const Text(
             'Error loading data',
@@ -326,17 +367,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                 _isLoading = true;
                 _errorMessage = '';
               });
-              
-              Provider.of<ExpenseViewModel>(context, listen: false).init().then((_) {
-                setState(() {
-                  _isLoading = false;
-                });
-              }).catchError((error) {
-                setState(() {
-                  _isLoading = false;
-                  _errorMessage = error.toString();
-                });
-              });
+
+              Provider.of<ExpenseViewModel>(context, listen: false)
+                  .init()
+                  .then((_) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  })
+                  .catchError((error) {
+                    setState(() {
+                      _isLoading = false;
+                      _errorMessage = error.toString();
+                    });
+                  });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4CD964),
@@ -353,28 +397,32 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   Widget _buildOverviewTab() {
     final viewModel = Provider.of<ExpenseViewModel>(context);
     final transactions = _getFilteredTransactions(viewModel.transactions);
-    
+
     if (transactions.isEmpty) {
       return _buildEmptyState('No transactions found for this period');
     }
-    
+
     // Calculate summary data
-    final totalSpent = transactions.fold(0.0, 
-      (sum, t) => sum + (_displayCurrency == 'Original' || t.convertedAmount == null 
-        ? t.originalAmount 
-        : t.convertedAmount!));
-    
+    final totalSpent = transactions.fold(
+      0.0,
+      (sum, t) =>
+          sum +
+          (_displayCurrency == 'Original' || t.convertedAmount == null
+              ? t.originalAmount
+              : t.convertedAmount!),
+    );
+
     final transactionsByCurrency = _groupTransactionsByCurrency(transactions);
     final transactionsByDate = _groupTransactionsByDate(transactions);
-    
-    final lastTransactionDate = transactions.isNotEmpty 
-        ? transactions.first.createdAt 
-        : DateTime.now();
-    
-    final avgPerDay = transactionsByDate.isNotEmpty 
-        ? totalSpent / transactionsByDate.length 
-        : 0.0;
-    
+
+    final lastTransactionDate =
+        transactions.isNotEmpty ? transactions.first.createdAt : DateTime.now();
+
+    final avgPerDay =
+        transactionsByDate.isNotEmpty
+            ? totalSpent / transactionsByDate.length
+            : 0.0;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -383,20 +431,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
           // Period selection and currency toggle
           Row(
             children: [
-              Expanded(
-                flex: 2,
-                child: _buildPeriodDropdown(),
-              ),
+              Expanded(flex: 2, child: _buildPeriodDropdown()),
               const SizedBox(width: 8),
-              Expanded(
-                flex: 1,
-                child: _buildCurrencyToggle(),
-              ),
+              Expanded(flex: 1, child: _buildCurrencyToggle()),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Summary cards
           Row(
             children: [
@@ -419,9 +461,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -443,21 +485,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
               ),
             ],
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Currency distribution
           Text(
             'Currency Distribution',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+              color:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black,
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Currency pie chart
           AspectRatio(
             aspectRatio: 1.3,
@@ -500,7 +545,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
 
     // Generate all dates in the range
     final List<DateTime> allDates = [];
-    for (DateTime date = startDate; !date.isAfter(today); date = date.add(const Duration(days: 1))) {
+    for (
+      DateTime date = startDate;
+      !date.isAfter(today);
+      date = date.add(const Duration(days: 1))
+    ) {
       allDates.add(DateTime(date.year, date.month, date.day));
     }
 
@@ -510,12 +559,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     // Use LayoutBuilder to dynamically adjust chart height
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+        final isLandscape =
+            MediaQuery.of(context).orientation == Orientation.landscape;
 
         // Dynamically calculate chart height
-        final chartHeight = isLandscape
-            ? constraints.maxHeight * 0.6 // Use 60% of height in landscape
-            : constraints.maxHeight * 0.4; // Use 40% of height in portrait
+        final chartHeight =
+            isLandscape
+                ? constraints.maxHeight *
+                    0.6 // Use 60% of height in landscape
+                : constraints.maxHeight * 0.4; // Use 40% of height in portrait
 
         return SingleChildScrollView(
           child: Column(
@@ -525,15 +577,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildPeriodDropdown(),
-                    ),
+                    Expanded(flex: 2, child: _buildPeriodDropdown()),
                     const SizedBox(width: 8),
-                    Expanded(
-                      flex: 1,
-                      child: _buildCurrencyToggle(),
-                    ),
+                    Expanded(flex: 1, child: _buildCurrencyToggle()),
                   ],
                 ),
               ),
@@ -542,11 +588,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Card(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF1E1E1E)
-                      : Colors.white,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF1E1E1E)
+                          : Colors.white,
                   elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -557,9 +606,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
                           ),
                         ),
                       ),
@@ -567,7 +617,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                         height: chartHeight,
                         padding: const EdgeInsets.only(top: 4, bottom: 20),
                         width: double.infinity,
-                        child: _buildExpenseTrendChart(transactionsByDate, allDates),
+                        child: _buildExpenseTrendChart(
+                          transactionsByDate,
+                          allDates,
+                        ),
                       ),
                       // Add buffer space at the bottom of the card
                       const SizedBox(height: 12),
@@ -581,8 +634,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
 
               // Detailed daily expenses with flexible height
               ListView.builder(
-                shrinkWrap: true, // Allow ListView to take only the required space
-                physics: const NeverScrollableScrollPhysics(), // Disable internal scrolling
+                shrinkWrap:
+                    true, // Allow ListView to take only the required space
+                physics:
+                    const NeverScrollableScrollPhysics(), // Disable internal scrolling
                 padding: EdgeInsets.fromLTRB(
                   isLandscape ? 8.0 : 16.0,
                   12.0, // Increased top padding
@@ -595,14 +650,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                   final dayTransactions = transactionsByDate[date] ?? [];
 
                   // Calculate total for the day
-                  final totalForDay = dayTransactions.isEmpty
-                      ? 0.0
-                      : dayTransactions.fold(0.0, (sum, t) => sum + _getAmount(t));
+                  final totalForDay =
+                      dayTransactions.isEmpty
+                          ? 0.0
+                          : dayTransactions.fold(
+                            0.0,
+                            (sum, t) => sum + _getAmount(t),
+                          );
 
                   // Use more compact tiles in landscape mode
                   return isLandscape
                       ? _buildCompactDayTile(date, totalForDay, dayTransactions)
-                      : _buildExpandableDayTile(date, totalForDay, dayTransactions);
+                      : _buildExpandableDayTile(
+                        date,
+                        totalForDay,
+                        dayTransactions,
+                      );
                 },
               ),
             ],
@@ -613,7 +676,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   }
 
   // Add these helper methods for different tile styles
-  Widget _buildExpandableDayTile(DateTime date, double totalForDay, List<Transaction> dayTransactions) {
+  Widget _buildExpandableDayTile(
+    DateTime date,
+    double totalForDay,
+    List<Transaction> dayTransactions,
+  ) {
     return ExpansionTile(
       initiallyExpanded: false,
       title: Row(
@@ -623,9 +690,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
             DateFormat('EEE, MMM d').format(date),
             style: TextStyle(
               fontWeight: totalForDay > 0 ? FontWeight.bold : FontWeight.normal,
-              color: totalForDay > 0 
-                  ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
-                  : Colors.grey,
+              color:
+                  totalForDay > 0
+                      ? (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black)
+                      : Colors.grey,
             ),
           ),
           Text(
@@ -638,29 +708,43 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
         ],
       ),
       // Only show expansion if there are transactions
-      children: dayTransactions.isEmpty 
-          ? [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('No transactions on this day', 
-                  style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)
+      children:
+          dayTransactions.isEmpty
+              ? [
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    'No transactions on this day',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ),
-              )
-            ]
-          : dayTransactions.map((transaction) => _buildTransactionListItem(transaction)).toList(),
+              ]
+              : dayTransactions
+                  .map((transaction) => _buildTransactionListItem(transaction))
+                  .toList(),
     );
   }
 
-  Widget _buildCompactDayTile(DateTime date, double totalForDay, List<Transaction> dayTransactions) {
+  Widget _buildCompactDayTile(
+    DateTime date,
+    double totalForDay,
+    List<Transaction> dayTransactions,
+  ) {
     return ListTile(
       title: Text(
         DateFormat('EEE, MMM d').format(date),
         style: TextStyle(
           fontSize: 14,
           fontWeight: totalForDay > 0 ? FontWeight.bold : FontWeight.normal,
-          color: totalForDay > 0 
-              ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
-              : Colors.grey,
+          color:
+              totalForDay > 0
+                  ? (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black)
+                  : Colors.grey,
         ),
       ),
       trailing: Text(
@@ -671,9 +755,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
           fontWeight: totalForDay > 0 ? FontWeight.bold : FontWeight.normal,
         ),
       ),
-      onTap: dayTransactions.isEmpty 
-          ? null
-          : () => _showTransactionsDialog(date, dayTransactions),
+      onTap:
+          dayTransactions.isEmpty
+              ? null
+              : () => _showTransactionsDialog(date, dayTransactions),
     );
   }
 
@@ -681,36 +766,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   void _showTransactionsDialog(DateTime date, List<Transaction> transactions) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Transactions on ${DateFormat('EEE, MMM d').format(date)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Transactions on ${DateFormat('EEE, MMM d').format(date)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
-              ),
+                const Divider(),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: transactions.length,
+                    itemBuilder:
+                        (context, index) =>
+                            _buildTransactionListItem(transactions[index]),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('CLOSE'),
+                ),
+              ],
             ),
-            const Divider(),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: transactions.length,
-                itemBuilder: (context, index) => _buildTransactionListItem(transactions[index]),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('CLOSE'),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -719,11 +809,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     return ListTile(
       leading: const CircleAvatar(
         backgroundColor: Color(0xFF4CD964),
-        child: Icon(
-          Icons.receipt,
-          color: Colors.white,
-          size: 16,
-        ),
+        child: Icon(Icons.receipt, color: Colors.white, size: 16),
       ),
       title: Text(transaction.description),
       subtitle: Text(DateFormat('h:mm a').format(transaction.createdAt)),
@@ -735,13 +821,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
             '${transaction.originalAmount.toStringAsFixed(2)} ${transaction.originalCurrency}',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          if (transaction.convertedAmount != null && transaction.convertedCurrency != null)
+          if (transaction.convertedAmount != null &&
+              transaction.convertedCurrency != null)
             Text(
               '${transaction.convertedAmount!.toStringAsFixed(2)} ${transaction.convertedCurrency}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
         ],
       ),
@@ -752,16 +836,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
   Widget _buildCategoriesTab() {
     // Since we don't have actual categories in the transaction model yet,
     // we'll just categorize by currency for now
-    
+
     final viewModel = Provider.of<ExpenseViewModel>(context);
     final transactions = _getFilteredTransactions(viewModel.transactions);
-    
+
     if (transactions.isEmpty) {
       return _buildEmptyState('No transactions found for this period');
     }
-    
+
     final transactionsByCurrency = _groupTransactionsByCurrency(transactions);
-    
+
     return Column(
       children: [
         // Period selection
@@ -769,7 +853,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
           padding: const EdgeInsets.all(16),
           child: _buildPeriodDropdown(),
         ),
-        
+
         // Currency distribution cards
         Expanded(
           child: ListView.builder(
@@ -778,18 +862,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
             itemBuilder: (context, index) {
               final currency = transactionsByCurrency.keys.elementAt(index);
               final amount = transactionsByCurrency[currency]!;
-              
+
               // Calculate percentage
-              final totalAmount = transactionsByCurrency.values.fold(0.0, (sum, value) => sum + value);
+              final totalAmount = transactionsByCurrency.values.fold(
+                0.0,
+                (sum, value) => sum + value,
+              );
               final percentage = (amount / totalAmount) * 100;
-              
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? const Color(0xFF1E1E1E) 
-                    : Colors.white,
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1E1E1E)
+                        : Colors.white,
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -800,7 +890,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              color: _getCurrencyColor(currency).withOpacity(0.2),
+                              color: _getCurrencyColor(
+                                currency,
+                              ).withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
@@ -849,7 +941,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       LinearProgressIndicator(
                         value: amount / totalAmount,
                         backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation<Color>(_getCurrencyColor(currency)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _getCurrencyColor(currency),
+                        ),
                         minHeight: 8,
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -869,14 +963,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? const Color(0xFF1E1E1E) 
-            : Colors.grey[100],
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1E1E1E)
+                : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark 
-              ? Colors.grey[800]! 
-              : Colors.grey[300]!,
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[800]!
+                  : Colors.grey[300]!,
         ),
       ),
       child: DropdownButtonHideUnderline(
@@ -885,24 +981,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4CD964)),
           isExpanded: true,
           style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark 
-                ? Colors.white 
-                : Colors.black,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
             fontSize: 14,
           ),
-          dropdownColor: Theme.of(context).brightness == Brightness.dark 
-              ? const Color(0xFF1E1E1E) 
-              : Colors.white,
-          items: _filterPeriods.map((period) {
-            return DropdownMenuItem<String>(
-              value: period,
-              child: Text(period),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
+          dropdownColor:
+              Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF1E1E1E)
+                  : Colors.white,
+          items:
+              _filterPeriods.map((period) {
+                return DropdownMenuItem<String>(
+                  value: period,
+                  child: Text(period),
+                );
+              }).toList(),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
               setState(() {
-                _selectedPeriod = value;
+                _selectedPeriod = newValue;
               });
             }
           },
@@ -915,14 +1014,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? const Color(0xFF1E1E1E) 
-            : Colors.grey[100],
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1E1E1E)
+                : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark 
-              ? Colors.grey[800]! 
-              : Colors.grey[300]!,
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[800]!
+                  : Colors.grey[300]!,
         ),
       ),
       child: DropdownButtonHideUnderline(
@@ -931,14 +1032,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
           icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4CD964)),
           isExpanded: true,
           style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark 
-                ? Colors.white 
-                : Colors.black,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
             fontSize: 14,
           ),
-          dropdownColor: Theme.of(context).brightness == Brightness.dark 
-              ? const Color(0xFF1E1E1E) 
-              : Colors.white,
+          dropdownColor:
+              Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF1E1E1E)
+                  : Colors.white,
           items: const [
             DropdownMenuItem(value: 'Original', child: Text('Original')),
             DropdownMenuItem(value: 'Converted', child: Text('Converted')),
@@ -955,11 +1058,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, Color color, IconData icon) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
     return Card(
-      color: Theme.of(context).brightness == Brightness.dark 
-          ? const Color(0xFF1E1E1E) 
-          : Colors.white,
+      color:
+          Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E1E1E)
+              : Colors.white,
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -982,10 +1091,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                 Expanded(
                   child: Text(
                     title,
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
                     overflow: TextOverflow.ellipsis, // Handle overflow
                   ),
                 ),
@@ -1000,9 +1106,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                 style: TextStyle(
                   fontSize: 18, // Reduced from 20 to fit better
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white 
-                      : Colors.black,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black,
                 ),
                 overflow: TextOverflow.ellipsis, // Handle overflow
                 maxLines: 1,
@@ -1019,18 +1126,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.bar_chart,
-            size: 80,
-            color: Colors.grey[500],
-          ),
+          Icon(Icons.bar_chart, size: 80, color: Colors.grey[500]),
           const SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1048,16 +1148,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
       const Color(0xFF5856D6),
       const Color(0xFFFFCC00),
     ];
-    
-    final totalAmount = transactionsByCurrency.values.fold(0.0, (sum, value) => sum + value);
-    
+
+    final totalAmount = transactionsByCurrency.values.fold(
+      0.0,
+      (sum, value) => sum + value,
+    );
+
     final sections = <PieChartSectionData>[];
     int colorIndex = 0;
-    
+
     for (final currency in transactionsByCurrency.keys) {
       final amount = transactionsByCurrency[currency]!;
       final percentage = (amount / totalAmount) * 100;
-      
+
       sections.add(
         PieChartSectionData(
           color: colors[colorIndex % colors.length],
@@ -1071,10 +1174,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
           ),
         ),
       );
-      
+
       colorIndex++;
     }
-    
+
     return PieChart(
       PieChartData(
         sections: sections,
@@ -1087,7 +1190,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
 
   Widget _buildExpenseTrendChart(
     Map<DateTime, List<Transaction>> transactionsByDate,
-    List<DateTime> sortedDates
+    List<DateTime> sortedDates,
   ) {
     if (sortedDates.isEmpty) {
       return const Center(child: Text('No data available'));
@@ -1113,12 +1216,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
         startDate = DateTime(now.year, 1, 1);
         break;
       default:
-        startDate = today.subtract(const Duration(days: 6)); // Default to last 7 days
+        startDate = today.subtract(
+          const Duration(days: 6),
+        ); // Default to last 7 days
     }
 
     // Generate all dates in the range
     final List<DateTime> allDates = [];
-    for (DateTime date = startDate; !date.isAfter(endDate); date = date.add(const Duration(days: 1))) {
+    for (
+      DateTime date = startDate;
+      !date.isAfter(endDate);
+      date = date.add(const Duration(days: 1))
+    ) {
       allDates.add(DateTime(date.year, date.month, date.day));
     }
 
@@ -1129,9 +1238,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
       final date = allDates[i];
       final transactions = transactionsByDate[date] ?? [];
 
-      final totalForDay = transactions.isEmpty 
-          ? 0.0 
-          : transactions.fold(0.0, (sum, t) => sum + _getAmount(t));
+      final totalForDay =
+          transactions.isEmpty
+              ? 0.0
+              : transactions.fold(0.0, (sum, t) => sum + _getAmount(t));
 
       spots.add(FlSpot(i.toDouble(), totalForDay));
     }
@@ -1144,7 +1254,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
         final chartHeight = constraints.maxHeight;
 
         // Calculate some padding to ensure values don't overflow
-        final maxY = spots.fold(0.0, (max, spot) => spot.y > max ? spot.y : max);
+        final maxY = spots.fold(
+          0.0,
+          (max, spot) => spot.y > max ? spot.y : max,
+        );
         // Ensure we always have some visible range even if all values are 0
         final effectiveMaxY = maxY <= 0 ? 100.0 : maxY;
         final yPadding = effectiveMaxY * 0.2; // 20% padding
@@ -1154,25 +1267,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
             // Add background grid container to prevent overflow
             Container(
               width: chartWidth,
-              height: chartHeight - 40, // Reduce height to make room for x-axis labels
+              height:
+                  chartHeight -
+                  40, // Reduce height to make room for x-axis labels
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? Colors.black.withOpacity(0.1)
-                    : Colors.white.withOpacity(0.1),
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.black.withOpacity(0.1)
+                        : Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            
+
             // The chart itself with better constraints
             Padding(
-              padding: const EdgeInsets.only(right: 16.0, bottom: 40.0), // More bottom padding for labels
+              padding: const EdgeInsets.only(
+                right: 16.0,
+                bottom: 40.0,
+              ), // More bottom padding for labels
               child: LineChart(
                 LineChartData(
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
-                    horizontalInterval: effectiveMaxY / 4, // Divide the chart into 4 horizontal sections
-                    verticalInterval: allDates.length > 10 ? 2.0 : 1.0, // Adjust vertical lines based on data points
+                    horizontalInterval:
+                        effectiveMaxY /
+                        4, // Divide the chart into 4 horizontal sections
+                    verticalInterval:
+                        allDates.length > 10
+                            ? 2.0
+                            : 1.0, // Adjust vertical lines based on data points
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
                         color: Colors.grey[300]!,
@@ -1188,7 +1312,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       );
                     },
                   ),
-                  
+
                   // Better titles configuration
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
@@ -1224,16 +1348,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 30, // Fixed reserved size
-                        interval: allDates.length > 14 ? 2.0 : 1.0, // Show fewer labels if many dates
+                        interval:
+                            allDates.length > 14
+                                ? 2.0
+                                : 1.0, // Show fewer labels if many dates
                         getTitlesWidget: (value, meta) {
                           final int index = value.toInt();
                           if (index >= 0 && index < allDates.length) {
                             final date = allDates[index];
-                            
+
                             // Skip some labels if we have too many dates
-                            final interval = allDates.length <= 7 ? 1 : (allDates.length ~/ 5);
-                            bool showLabel = index % interval == 0 || index == allDates.length - 1;
-                            
+                            final interval =
+                                allDates.length <= 7
+                                    ? 1
+                                    : (allDates.length ~/ 5);
+                            bool showLabel =
+                                index % interval == 0 ||
+                                index == allDates.length - 1;
+
                             if (showLabel) {
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
@@ -1256,13 +1388,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       ),
                     ),
                   ),
-                  
+
                   // Better touch handling
                   lineTouchData: LineTouchData(
                     touchTooltipData: LineTouchTooltipData(
-                      tooltipBgColor: Theme.of(context).brightness == Brightness.dark 
-                          ? const Color(0xFF333333) 
-                          : Colors.white,
+                      tooltipBgColor:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF333333)
+                              : Colors.white,
                       tooltipRoundedRadius: 8,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((LineBarSpot touchedSpot) {
@@ -1271,9 +1404,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                           return LineTooltipItem(
                             '${DateFormat('MMM d').format(date)}\n$amount',
                             TextStyle(
-                              color: Theme.of(context).brightness == Brightness.dark 
-                                  ? Colors.white 
-                                  : Colors.black,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
                               fontWeight: FontWeight.bold,
                               fontSize: 12, // Smaller font
                             ),
@@ -1282,7 +1417,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       },
                     ),
                     handleBuiltInTouches: true,
-                    getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
+                    getTouchedSpotIndicator: (
+                      LineChartBarData barData,
+                      List<int> spotIndexes,
+                    ) {
                       return spotIndexes.map((spotIndex) {
                         return TouchedSpotIndicatorData(
                           FlLine(
@@ -1304,7 +1442,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       }).toList();
                     },
                   ),
-                  
+
                   // Better border configuration
                   borderData: FlBorderData(
                     show: true,
@@ -1313,20 +1451,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       left: BorderSide(color: Colors.grey[300]!, width: 1),
                     ),
                   ),
-                  
+
                   // Explicit boundaries to prevent overflow
                   minX: 0,
                   maxX: (allDates.length - 1).toDouble(),
                   minY: 0,
                   maxY: effectiveMaxY + yPadding,
-                  
+
                   // Line styling
                   lineBarsData: [
                     LineChartBarData(
                       spots: spots,
                       isCurved: true,
                       curveSmoothness: 0.2, // Less curved
-                      preventCurveOverShooting: true, // Prevent curve overshooting
+                      preventCurveOverShooting:
+                          true, // Prevent curve overshooting
                       color: const Color(0xFF4CD964),
                       barWidth: 2.5, // Slightly thinner
                       isStrokeCapRound: true,
@@ -1339,7 +1478,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                         getDotPainter: (spot, percent, barData, index) {
                           // Customize dot size based on amount (zero = smaller)
                           double size = spots[index].y > 0 ? 5 : 2;
-                          
+
                           return FlDotCirclePainter(
                             radius: size,
                             color: const Color(0xFF4CD964),
@@ -1350,7 +1489,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                       ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: const Color(0xFF4CD964).withOpacity(0.15), // More subtle gradient
+                        color: const Color(
+                          0xFF4CD964,
+                        ).withOpacity(0.15), // More subtle gradient
                         gradient: LinearGradient(
                           colors: [
                             const Color(0xFF4CD964).withOpacity(0.2),
@@ -1367,34 +1508,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
             ),
           ],
         );
-      }
+      },
     );
   }
 
   // Helper methods
   String _formatAmount(double amount, {String? currency}) {
     // Use compact format for large numbers to prevent overflow
-    final formatter = amount > 10000 
-        ? NumberFormat.compactCurrency(
-            symbol: currency != null ? _getCurrencySymbol(currency) : '',
-            decimalDigits: 2,
-          )
-        : NumberFormat.currency(
-            symbol: currency != null ? _getCurrencySymbol(currency) : '',
-            decimalDigits: 2,
-          );
-    
+    final formatter =
+        amount > 10000
+            ? NumberFormat.compactCurrency(
+              symbol: currency != null ? _getCurrencySymbol(currency) : '',
+              decimalDigits: 2,
+            )
+            : NumberFormat.currency(
+              symbol: currency != null ? _getCurrencySymbol(currency) : '',
+              decimalDigits: 2,
+            );
+
     return formatter.format(amount);
   }
 
   Color _getCurrencyColor(String currency) {
     switch (currency) {
-      case 'USD': return const Color(0xFF4CD964);
-      case 'EUR': return const Color(0xFF5AC8FA);
-      case 'GBP': return const Color(0xFFFF9500);
-      case 'JPY': return const Color(0xFFFF2D55);
-      case 'TND': return const Color(0xFF5856D6);
-      default: return const Color(0xFFFFCC00);
+      case 'USD':
+        return const Color(0xFF4CD964);
+      case 'EUR':
+        return const Color(0xFF5AC8FA);
+      case 'GBP':
+        return const Color(0xFFFF9500);
+      case 'JPY':
+        return const Color(0xFFFF2D55);
+      case 'TND':
+        return const Color(0xFF5856D6);
+      default:
+        return const Color(0xFFFFCC00);
     }
   }
 }
