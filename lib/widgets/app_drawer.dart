@@ -12,14 +12,20 @@ class AppDrawer extends StatelessWidget {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final primaryColor = const Color(0xFF4CD964);
+    final statusBarPadding = MediaQuery.of(context).padding.top;
 
     return Drawer(
       backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       child: Column(
         children: [
-          // Modern drawer header with gradient and logo
+          // Modern drawer header with gradient and logo - adjust height to account for status bar
           Container(
-            height: 170,
+            height:
+                170 +
+                statusBarPadding, // Add status bar height to maintain visual height
+            padding: EdgeInsets.only(
+              top: statusBarPadding,
+            ), // Add padding for status bar
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
