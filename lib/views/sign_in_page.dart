@@ -120,10 +120,7 @@ class _SignInPageState extends State<SignInPage> {
                 const SizedBox(height: 8),
                 Text(
                   'Sign in to access your account',
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 16),
                 ),
                 const SizedBox(height: 40),
                 _buildInputField(
@@ -148,7 +145,8 @@ class _SignInPageState extends State<SignInPage> {
                       children: [
                         Switch(
                           value: _rememberMe,
-                          onChanged: (value) => setState(() => _rememberMe = value),
+                          onChanged:
+                              (value) => setState(() => _rememberMe = value),
                           activeColor: const Color(0xFF4CD964),
                         ),
                         Text(
@@ -161,7 +159,9 @@ class _SignInPageState extends State<SignInPage> {
                       ],
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/request-reset');
+                      },
                       child: const Text(
                         'Forgot Password?',
                         style: TextStyle(
@@ -198,28 +198,33 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                            strokeWidth: 2,
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.black,
+                              ),
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
-                        )
-                      : const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
                 ),
                 const SizedBox(height: 24),
                 Row(
                   children: [
-                    Expanded(child: Divider(color: Colors.grey[800], thickness: 1)),
+                    Expanded(
+                      child: Divider(color: Colors.grey[800], thickness: 1),
+                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
@@ -227,7 +232,9 @@ class _SignInPageState extends State<SignInPage> {
                         style: TextStyle(color: Colors.grey[400], fontSize: 14),
                       ),
                     ),
-                    Expanded(child: Divider(color: Colors.grey[800], thickness: 1)),
+                    Expanded(
+                      child: Divider(color: Colors.grey[800], thickness: 1),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -314,21 +321,25 @@ class _SignInPageState extends State<SignInPage> {
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey[600]),
               prefixIcon: Icon(icon, color: Colors.grey[400]),
-              suffixIcon: isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: Colors.grey[400],
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    )
-                  : null,
+              suffixIcon:
+                  isPassword
+                      ? IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: Colors.grey[400],
+                        ),
+                        onPressed: () {
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
+                      )
+                      : null,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
           ),
         ),
@@ -346,9 +357,7 @@ class _SignInPageState extends State<SignInPage> {
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF1E1E1E),
         minimumSize: const Size(double.infinity, 56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
       ),
       child: Row(

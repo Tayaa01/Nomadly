@@ -1,10 +1,13 @@
 class ApiConfig {
   // Main base URL for all services
-  static const String BASE_URL = "http://espritmobile.com/api";
+  //static const String BASE_URL = "http://espritmobile.com/api";
+  static const String BASE_URL = "http://192.168.1.15:3000/api";
 
   // Endpoints for Auth Service
   static const String REGISTER_ENDPOINT = "/auth/register";
   static const String LOGIN_ENDPOINT = "/auth/login";
+  static const String VERIFY_JWT_ENDPOINT =
+      "/auth/verify-jwt"; // New endpoint for JWT verification
 
   // Endpoints for User Service
   static const String USER_PROFILE_ENDPOINT = "/users/me";

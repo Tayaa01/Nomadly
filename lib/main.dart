@@ -25,7 +25,10 @@ import 'providers/theme_provider.dart';
 import 'providers/chat_provider.dart';
 import 'screens/travel_form_screen.dart';
 import 'screens/weather_forecast_screen.dart'; // Import the new screen
+import 'views/request_reset_screen.dart'; // Fixed import path
+import 'views/reset_password_screen.dart'; // Fixed import path
 import 'package:flutter/services.dart';
+import 'utils/country_currency_util.dart'; // Import CountryCurrencyUtil
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +36,10 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // Initialize the country-currency mapping
+  await CountryCurrencyUtil.initialize();
+
   runApp(
     MultiProvider(
       providers: [
@@ -71,16 +78,28 @@ class _MyAppState extends State<MyApp> {
   Future<void> _checkStartupLogic() async {
     Widget startScreen;
 
-    // Check if user is logged in
+    // Check if user is logged in with valid token
     try {
       bool isLoggedIn = await _authService.isLoggedIn();
 
       if (isLoggedIn) {
-        print('User is logged in, showing home page');
-        startScreen = const HomePage();
+        print('Token found, verifying validity...');
+
+        // Verify if the token is still valid
+        final tokenVerification = await _authService.verifyToken();
+        final bool isTokenValid = tokenVerification['valid'] ?? false;
+
+        if (isTokenValid) {
+          print('Token is valid, showing home page');
+          startScreen = const HomePage();
+        } else {
+          print('Token is invalid or expired, showing sign-in page');
+          await _authService.logout(); // Clear the invalid token
+          startScreen = const SignInPage();
+        }
       } else {
         // User is not logged in, show sign-in page
-        print('User is not logged in, showing sign-in page');
+        print('No token found, showing sign-in page');
         startScreen = const SignInPage();
 
         // Check if this is a new installation (no preferences exist at all)
@@ -172,6 +191,8 @@ class _MyAppState extends State<MyApp> {
         '/home': (context) => const HomePage(),
         '/sign-in': (context) => const SignInPage(),
         '/sign-up': (context) => const SignUpPage(),
+        '/request-reset': (context) => const RequestResetScreen(),
+        '/reset-password': (context) => const ResetPasswordScreen(),
         '/currency-converter':
             (context) => CurrencyConverterScreen(
               toggleTheme: toggleTheme,
