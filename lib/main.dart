@@ -10,7 +10,6 @@ import 'views/speech_to_text_view.dart';
 import 'views/deals_screen.dart';
 import 'views/tips_screen.dart'; // Add this import for TipsScreen
 import 'views/sign_up_page.dart';
-import 'services/auth_service.dart';
 import 'views/statistics_screen.dart';
 import 'views/profile_screen.dart';
 import 'views/travelResultsScreen.dart';
@@ -29,6 +28,9 @@ import 'views/request_reset_screen.dart'; // Fixed import path
 import 'views/reset_password_screen.dart'; // Fixed import path
 import 'package:flutter/services.dart';
 import 'utils/country_currency_util.dart'; // Import CountryCurrencyUtil
+import 'providers/auth_provider.dart'; // Import AuthProvider
+import 'views/finish_setup_page.dart'; // Import FinishSetupPage
+import 'models/user.dart'; // Import the User model
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +52,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TravelGroupViewModel()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider('haddari')),
+        ChangeNotifierProvider(create: (_) => AuthProvider()), // <-- added
       ],
       child: const MyApp(),
     ),
@@ -65,71 +68,12 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool isDarkMode = true;
-  final AuthService _authService = AuthService();
-  bool _isLoading = true;
-  Widget? _startScreen;
 
   @override
   void initState() {
     super.initState();
-    _checkStartupLogic();
   }
 
-  Future<void> _checkStartupLogic() async {
-    Widget startScreen;
-
-    // Check if user is logged in with valid token
-    try {
-      bool isLoggedIn = await _authService.isLoggedIn();
-
-      if (isLoggedIn) {
-        print('Token found, verifying validity...');
-
-        // Verify if the token is still valid
-        final tokenVerification = await _authService.verifyToken();
-        final bool isTokenValid = tokenVerification['valid'] ?? false;
-
-        if (isTokenValid) {
-          print('Token is valid, showing home page');
-          startScreen = const HomePage();
-        } else {
-          print('Token is invalid or expired, showing sign-in page');
-          await _authService.logout(); // Clear the invalid token
-          startScreen = const SignInPage();
-        }
-      } else {
-        // User is not logged in, show sign-in page
-        print('No token found, showing sign-in page');
-        startScreen = const SignInPage();
-
-        // Check if this is a new installation (no preferences exist at all)
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        bool hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
-
-        if (!hasSeenWelcome) {
-          // First time ever opening the app
-          print('First installation, showing welcome page');
-          startScreen = const WelcomePage();
-
-          // Mark that user has seen welcome page
-          await prefs.setBool('has_seen_welcome', true);
-        }
-      }
-    } catch (e) {
-      print('Error during startup check: $e');
-      startScreen = const SignInPage(); // Default to sign-in on error
-    }
-
-    // Only update state if widget is still mounted
-    if (mounted) {
-      setState(() {
-        _startScreen = startScreen;
-        _isLoading = false;
-      });
-    }
-  }
-
-  // Theme definitions
   ThemeData get _lightTheme => ThemeData(
     scaffoldBackgroundColor: Colors.white,
     colorScheme: ColorScheme.light(
@@ -166,31 +110,71 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: Colors.black,
-          body: Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
-            ),
-          ),
-        ),
-      );
-    }
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        if (authProvider.isLoading) {
+          return _buildLoadingScreen();
+        }
 
+        if (authProvider.isLoggedIn) {
+          return FutureBuilder<bool>(
+            future: _checkProfileCompleteness(authProvider.user),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _buildLoadingScreen();
+              }
+              if (snapshot.hasError) {
+                print("Error checking profile completeness: ${snapshot.error}");
+                return _buildMaterialApp(const SignInPage());
+              }
+
+              final isProfileComplete = snapshot.data ?? false;
+              if (isProfileComplete) {
+                return _buildMaterialApp(const HomePage());
+              } else {
+                return _buildMaterialApp(const FinishSetupPage());
+              }
+            },
+          );
+        } else {
+          return FutureBuilder<bool>(
+            future: _hasSeenWelcomePage(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _buildLoadingScreen();
+              }
+              if (snapshot.hasError) {
+                print("Error checking welcome status: ${snapshot.error}");
+                return _buildMaterialApp(const SignInPage());
+              }
+
+              final hasSeenWelcome = snapshot.data ?? false;
+              if (!hasSeenWelcome) {
+                _markWelcomePageSeen();
+                return _buildMaterialApp(const WelcomePage());
+              } else {
+                return _buildMaterialApp(const SignInPage());
+              }
+            },
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildMaterialApp(Widget home) {
     return MaterialApp(
       title: 'Nomadly',
       theme: isDarkMode ? _darkTheme : _lightTheme,
       debugShowCheckedModeBanner: false,
-      home: _startScreen,
+      home: home,
       onGenerateRoute: _onGenerateRoute,
       routes: {
         '/welcome': (context) => const WelcomePage(),
         '/home': (context) => const HomePage(),
         '/sign-in': (context) => const SignInPage(),
         '/sign-up': (context) => const SignUpPage(),
+        '/finish-setup': (context) => const FinishSetupPage(),
         '/request-reset': (context) => const RequestResetScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
         '/currency-converter':
@@ -199,14 +183,9 @@ class _MyAppState extends State<MyApp> {
               isDarkMode: isDarkMode,
             ),
         '/translation': (context) => const SpeechToTextView(),
-        '/travel-deals':
-            (context) => DealsScreen(
-              isDarkMode: isDarkMode,
-            ), // Fixed: Added isDarkMode parameter
-        '/deal-hunting':
-            (context) =>
-                const DealHuntingScreen(), // New route for Deal Hunting
-        '/tips': (context) => const TipsScreen(), // Add this route for tips
+        '/travel-deals': (context) => DealsScreen(isDarkMode: isDarkMode),
+        '/deal-hunting': (context) => const DealHuntingScreen(),
+        '/tips': (context) => const TipsScreen(),
         '/statistics': (context) => const StatisticsScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/planner': (context) => const TravelFormScreen(),
@@ -221,18 +200,62 @@ class _MyAppState extends State<MyApp> {
               toggleTheme: toggleTheme,
               isDarkMode: isDarkMode,
             ),
-        '/weather-forecast':
-            (context) => const WeatherForecastScreen(), // Add the new route
+        '/weather-forecast': (context) => const WeatherForecastScreen(),
       },
     );
   }
 
+  Widget _buildLoadingScreen() {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _checkProfileCompleteness(User? user) async {
+    if (user == null) {
+      return false;
+    }
+    return user.firstName.isNotEmpty &&
+        user.lastName.isNotEmpty &&
+        user.countryCode.isNotEmpty;
+  }
+
+  Future<bool> _hasSeenWelcomePage() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('has_seen_welcome') ?? false;
+    } catch (e) {
+      print("Error reading welcome status: $e");
+      return false;
+    }
+  }
+
+  Future<void> _markWelcomePageSeen() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_seen_welcome', true);
+    } catch (e) {
+      print("Error saving welcome status: $e");
+    }
+  }
+
   Route<dynamic> _onGenerateRoute(RouteSettings settings) {
+    if (settings.name != null &&
+        (settings.name == '/' || settings.name!.startsWith('/?'))) {
+      return MaterialPageRoute(builder: (_) => const SignInPage());
+    }
+
     switch (settings.name) {
       case '/':
-        return MaterialPageRoute(
-          builder: (_) => _startScreen ?? const SignInPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const SignInPage());
       case '/login':
         return MaterialPageRoute(builder: (_) => const SignInPage());
       case '/register':
@@ -244,11 +267,10 @@ class _MyAppState extends State<MyApp> {
       case '/travel-deals':
         return MaterialPageRoute(
           builder: (_) => DealsScreen(isDarkMode: isDarkMode),
-        ); // Fixed: Added isDarkMode parameter
+        );
       case '/deal-hunting':
         return MaterialPageRoute(builder: (_) => const DealHuntingScreen());
       case '/planner':
-        // Use PageRouteBuilder for a custom transition
         return PageRouteBuilder(
           pageBuilder:
               (context, animation, secondaryAnimation) =>
@@ -265,7 +287,8 @@ class _MyAppState extends State<MyApp> {
             return SlideTransition(position: offsetAnimation, child: child);
           },
         );
-      // ...existing code for other routes...
+      case '/finish-setup':
+        return MaterialPageRoute(builder: (_) => const FinishSetupPage());
       default:
         return MaterialPageRoute(
           builder:

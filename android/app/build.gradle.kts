@@ -28,6 +28,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Explicitly cast applicationId to String
+        manifestPlaceholders.put("appAuthRedirectScheme", applicationId.toString())
     }
 
     buildTypes {

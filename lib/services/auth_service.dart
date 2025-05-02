@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../network/api_config.dart'; // Import the API config
 import '../utils/country_currency_util.dart'; // Import the country currency utility
+import '../models/user.dart'; // Import the User model
 
 class AuthService {
   final Dio _dio = Dio();
@@ -140,7 +141,7 @@ class AuthService {
     }
   }
 
-  // Save authentication data
+  // Save authentication data (used internally by login)
   Future<void> _saveAuthData(
     String token,
     Map<String, dynamic> userData,
@@ -152,6 +153,58 @@ class AuthService {
       print('Auth data saved successfully');
     } catch (e) {
       print('Error saving auth data: $e');
+    }
+  }
+
+  // Save token securely
+  Future<void> saveToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(TOKEN_KEY, token);
+      print('Token saved successfully');
+    } catch (e) {
+      print('Error saving token: $e');
+    }
+  }
+
+  // Load token securely
+  Future<String?> loadToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(TOKEN_KEY);
+    } catch (e) {
+      print('Error loading token: $e');
+      return null;
+    }
+  }
+
+  // Method for AuthProvider to explicitly save token and user
+  Future<void> saveTokenAndUser(String token, User user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(TOKEN_KEY, token);
+      // Use user.toJsonForStorage() to save all fields
+      await prefs.setString(USER_KEY, jsonEncode(user.toJsonForStorage()));
+      print('Auth data saved successfully via saveTokenAndUser');
+    } catch (e) {
+      print('Error saving auth data via saveTokenAndUser: $e');
+      rethrow; // Rethrow to allow AuthProvider to handle if needed
+    }
+  }
+
+  // Method for AuthProvider to explicitly update stored user data
+  Future<void> updateStoredUserData(User user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Only update if user data is actually stored
+      if (prefs.containsKey(USER_KEY)) {
+        // Use user.toJsonForStorage() to save all fields
+        await prefs.setString(USER_KEY, jsonEncode(user.toJsonForStorage()));
+        print('Stored user data updated successfully');
+      }
+    } catch (e) {
+      print('Error updating stored user data: $e');
+      rethrow;
     }
   }
 
@@ -619,6 +672,19 @@ class AuthService {
 
       return {'success': false, 'message': errorMessage};
     }
+  }
+
+  // Get user profile
+  Future<User?> getUserProfile() async {
+    try {
+      final userData = await getUserData();
+      if (userData != null) {
+        return User.fromJson(userData);
+      }
+    } catch (e) {
+      print('Error fetching user profile: $e');
+    }
+    return null;
   }
 }
 

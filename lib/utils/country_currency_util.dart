@@ -30,8 +30,10 @@ class CountryCurrencyUtil {
       return null;
     }
 
-    final currency = _countryToCurrency![countryCode.toUpperCase()];
-    print('Currency for $countryCode: $currency');
+    // Trim whitespace and convert to uppercase for robust lookup
+    final cleanCountryCode = countryCode.trim().toUpperCase();
+    final currency = _countryToCurrency![cleanCountryCode];
+    print('Currency for $cleanCountryCode: $currency'); // Log the cleaned code
     return currency;
   }
 }

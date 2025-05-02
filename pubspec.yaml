@@ -26,7 +26,7 @@ dependencies:
   url_launcher: ^6.2.5
   geolocator: ^11.0.0
   geocoding: ^2.1.1
-  google_sign_in: ^6.1.6
+  google_sign_in: ^6.2.1
   googleapis: ^12.0.0
   extension_google_sign_in_as_googleapis_auth: ^2.0.12
   cached_network_image: ^3.3.0
@@ -42,9 +42,8 @@ dependencies:
   flutter_markdown: ^0.6.18
   font_awesome_flutter: ^10.6.0
   add_2_calendar: ^2.0.2 
-
-  # Add this line
-  
+  flutter_appauth: ^6.0.4
+  crypto: ^3.0.3  # Add crypto package for PKCE
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -88,3 +87,4 @@ flutter:
     - tips.json
     - assets/images/
     - assets/country_images.json
+    - lib/utils/country-currency.json

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
-import '../widgets/app_drawer.dart'; // Add this import
+import '../widgets/app_drawer.dart';
+import '../utils/country_currency_util.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,6 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isSaving = false;
   bool _isEditing = false;
   String? _error;
+  String? _derivedCurrency;
 
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
@@ -30,7 +32,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    _initializeAndLoadProfile();
+    _countryCodeController.addListener(_onCountryCodeChanged);
+  }
+
+  Future<void> _initializeAndLoadProfile() async {
+    await CountryCurrencyUtil.initialize();
+    await _loadUserProfile();
   }
 
   @override
@@ -38,8 +46,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
+    _countryCodeController.removeListener(_onCountryCodeChanged);
     _countryCodeController.dispose();
     super.dispose();
+  }
+
+  void _onCountryCodeChanged() {
+    final countryCode = _countryCodeController.text.toUpperCase();
+    final currency = CountryCurrencyUtil.getCurrencyForCountry(countryCode);
+    if (currency != _derivedCurrency) {
+      setState(() {
+        _derivedCurrency = currency;
+      });
+    }
   }
 
   Future<void> _loadUserProfile() async {
@@ -51,11 +70,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = await _userService.getUserProfile();
 
-      // Update controllers with user data
       _firstNameController.text = user.firstName;
       _lastNameController.text = user.lastName;
       _emailController.text = user.email;
       _countryCodeController.text = user.countryCode;
+
+      _derivedCurrency = CountryCurrencyUtil.getCurrencyForCountry(
+        user.countryCode,
+      );
 
       setState(() {
         _user = user;
@@ -80,19 +102,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Create updated user object
       final updatedUser = _user!.copyWith(
         firstName: _firstNameController.text,
         lastName: _lastNameController.text,
         email: _emailController.text,
-        countryCode: _countryCodeController.text,
+        countryCode: _countryCodeController.text.toUpperCase(),
+        currency: _derivedCurrency ?? _user!.currency,
       );
 
-      // Send to API
       final result = await _userService.updateUserProfile(updatedUser);
 
       setState(() {
         _user = result;
+        _derivedCurrency = result.currency;
         _isSaving = false;
         _isEditing = false;
       });
@@ -265,7 +287,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     );
 
                                 if (result['success'] == true) {
-                                  // Password changed successfully
                                   Navigator.pop(context);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -320,13 +341,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      // Wrap with WillPopScope
       onWillPop: () async {
-        // Navigate to home screen when back button is pressed
         Navigator.of(
           context,
         ).pushNamedAndRemoveUntil('/home', (route) => false);
-        return false; // Prevents default back button behavior
+        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -341,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          leading: null, // Let the drawer handle the leading icon
+          leading: null,
           actions: [
             if (!_isEditing)
               IconButton(
@@ -350,7 +369,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
           ],
         ),
-        drawer: const AppDrawer(currentRoute: '/profile'), // Add drawer
+        drawer: const AppDrawer(currentRoute: '/profile'),
         body:
             _isLoading
                 ? const Center(
@@ -361,7 +380,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 : SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Top Section with user info
                       Container(
                         padding: const EdgeInsets.all(24),
                         width: double.infinity,
@@ -436,8 +454,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-
-                      // Profile form
                       Padding(
                         padding: const EdgeInsets.all(24),
                         child:
@@ -511,13 +527,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-
-        // Account management
         const SizedBox(height: 32),
         _buildDetailSection(
           title: 'Account Management',
           children: [
-            // Add Change Password button
             ElevatedButton(
               onPressed: () => _showChangePasswordDialog(),
               style: ElevatedButton.styleFrom(
@@ -670,7 +683,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               return null;
             },
             keyboardType: TextInputType.emailAddress,
-            readOnly: true, // Email should not be editable
+            readOnly: true,
           ),
           const SizedBox(height: 16),
           _buildFormField(
@@ -680,10 +693,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (value == null || value.isEmpty) {
                 return 'Please enter your country code';
               }
+              if (value.length != 2) {
+                return 'Country code must be 2 letters';
+              }
+              if (CountryCurrencyUtil.getCurrencyForCountry(
+                    value.toUpperCase(),
+                  ) ==
+                  null) {
+                return 'Invalid country code';
+              }
               return null;
             },
+            onChanged: (value) {
+              final upperCaseValue = value.toUpperCase();
+              if (_countryCodeController.text != upperCaseValue) {
+                _countryCodeController.value = _countryCodeController.value
+                    .copyWith(
+                      text: upperCaseValue,
+                      selection: TextSelection.collapsed(
+                        offset: upperCaseValue.length,
+                      ),
+                    );
+              }
+            },
           ),
-
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0),
+            child: Text(
+              _derivedCurrency != null
+                  ? 'Detected Currency: $_derivedCurrency'
+                  : 'Enter valid Country Code to see currency',
+              style: TextStyle(
+                color:
+                    _derivedCurrency != null
+                        ? Colors.grey[400]
+                        : Colors.orange[300],
+                fontSize: 13,
+              ),
+            ),
+          ),
           if (_error != null) ...[
             const SizedBox(height: 16),
             Text(
@@ -692,13 +741,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               textAlign: TextAlign.center,
             ),
           ],
-
           const SizedBox(height: 32),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => setState(() => _isEditing = false),
+                  onPressed: () {
+                    _loadUserProfile();
+                    setState(() => _isEditing = false);
+                  },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: BorderSide(color: const Color(0xFF4CD964)),
@@ -758,6 +809,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String? Function(String?) validator,
     TextInputType keyboardType = TextInputType.text,
     bool readOnly = false,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -782,6 +834,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             validator: validator,
             keyboardType: keyboardType,
             readOnly: readOnly,
+            onChanged: onChanged,
             style: TextStyle(color: readOnly ? Colors.grey[400] : Colors.white),
             decoration: InputDecoration(
               hintText: 'Enter $label',
