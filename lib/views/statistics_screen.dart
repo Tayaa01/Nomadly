@@ -308,6 +308,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
+          actions: [], // Remove actions containing the theme toggle
           bottom: TabBar(
             controller: _tabController,
             labelColor: const Color(0xFF4CD964),

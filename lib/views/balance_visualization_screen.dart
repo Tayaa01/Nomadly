@@ -18,21 +18,26 @@ class BalanceVisualizationScreen extends StatefulWidget {
   });
 
   @override
-  State<BalanceVisualizationScreen> createState() => _BalanceVisualizationScreenState();
+  State<BalanceVisualizationScreen> createState() =>
+      _BalanceVisualizationScreenState();
 }
 
-class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen> {
+class _BalanceVisualizationScreenState
+    extends State<BalanceVisualizationScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Load updated data
     Future.microtask(() async {
-      final viewModel = Provider.of<TravelGroupViewModel>(context, listen: false);
-      
+      final viewModel = Provider.of<TravelGroupViewModel>(
+        context,
+        listen: false,
+      );
+
       // First, clean up any potential duplicate settlements using the public method
       await viewModel.cleanupDuplicateSettlements(widget.groupId);
-      
+
       // Then load the group data and recalculate settlements
       await viewModel.setCurrentGroup(widget.groupId);
       viewModel.calculateSettlements();
@@ -51,63 +56,60 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-              color: widget.isDarkMode ? Colors.white : Colors.black,
-            ),
-            onPressed: () => widget.toggleTheme(),
-          ),
-        ],
+        actions: [], // Remove theme toggle button
       ),
-      body: Consumer<TravelGroupViewModel>(builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF4CD964)));
-        }
+      body: Consumer<TravelGroupViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF4CD964)),
+            );
+          }
 
-        if (viewModel.errorMessage.isNotEmpty) {
-          return Center(child: Text('Error: ${viewModel.errorMessage}'));
-        }
+          if (viewModel.errorMessage.isNotEmpty) {
+            return Center(child: Text('Error: ${viewModel.errorMessage}'));
+          }
 
-        final group = viewModel.currentGroup;
-        if (group == null) {
-          return const Center(child: Text('Group not found'));
-        }
+          final group = viewModel.currentGroup;
+          if (group == null) {
+            return const Center(child: Text('Group not found'));
+          }
 
-        return RefreshIndicator(
-          color: const Color(0xFF4CD964),
-          onRefresh: () async {
-            await viewModel.setCurrentGroup(widget.groupId);
-            viewModel.calculateSettlements();
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildBalanceHeader(group),
-                const SizedBox(height: 24),
-                _buildBalanceChart(viewModel, group),
-                const SizedBox(height: 32),
-                _buildDetailedBalanceSection(viewModel, group),
-                const SizedBox(height: 32),
-                if (viewModel.settlements.isNotEmpty) ...[
-                  _buildOptimalSettlementsSection(viewModel, group),
+          return RefreshIndicator(
+            color: const Color(0xFF4CD964),
+            onRefresh: () async {
+              await viewModel.setCurrentGroup(widget.groupId);
+              viewModel.calculateSettlements();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildBalanceHeader(group),
+                  const SizedBox(height: 24),
+                  _buildBalanceChart(viewModel, group),
                   const SizedBox(height: 32),
-                  _buildInteractiveFlowSection(viewModel, group),
+                  _buildDetailedBalanceSection(viewModel, group),
+                  const SizedBox(height: 32),
+                  if (viewModel.settlements.isNotEmpty) ...[
+                    _buildOptimalSettlementsSection(viewModel, group),
+                    const SizedBox(height: 32),
+                    _buildInteractiveFlowSection(viewModel, group),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          final viewModel = Provider.of<TravelGroupViewModel>(context, listen: false);
+          final viewModel = Provider.of<TravelGroupViewModel>(
+            context,
+            listen: false,
+          );
           viewModel.calculateSettlements();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -160,12 +162,14 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                 ),
                 _buildInfoTile(
                   icon: Icons.receipt_long,
-                  title: '${Provider.of<TravelGroupViewModel>(context, listen: false).sharedExpenses.length}',
+                  title:
+                      '${Provider.of<TravelGroupViewModel>(context, listen: false).sharedExpenses.length}',
                   subtitle: 'Expenses',
                 ),
                 _buildInfoTile(
                   icon: Icons.account_balance_wallet,
-                  title: '${Provider.of<TravelGroupViewModel>(context, listen: false).settlements.length}',
+                  title:
+                      '${Provider.of<TravelGroupViewModel>(context, listen: false).settlements.length}',
                   subtitle: 'Settlements',
                 ),
               ],
@@ -176,15 +180,15 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
     );
   }
 
-  Widget _buildInfoTile({required IconData icon, required String title, required String subtitle}) {
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
     return Expanded(
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: const Color(0xFF4CD964),
-            size: 28,
-          ),
+          Icon(icon, color: const Color(0xFF4CD964), size: 28),
           const SizedBox(height: 8),
           Text(
             title,
@@ -207,35 +211,40 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
   }
 
   Widget _buildBalanceChart(TravelGroupViewModel viewModel, TravelGroup group) {
-    final balances = group.members.map((member) {
-      return MapEntry(member, viewModel.getMemberBalance(member.id));
-    }).toList();
+    final balances =
+        group.members.map((member) {
+          return MapEntry(member, viewModel.getMemberBalance(member.id));
+        }).toList();
 
     balances.sort((a, b) => a.value.compareTo(b.value));
 
-    final maxAbsValue = balances.map((e) => e.value.abs()).reduce((a, b) => a > b ? a : b);
+    final maxAbsValue = balances
+        .map((e) => e.value.abs())
+        .reduce((a, b) => a > b ? a : b);
     final yAxisMax = (maxAbsValue * 1.2).ceilToDouble();
 
-    final barGroups = balances.asMap().entries.map((entry) {
-      final index = entry.key;
-      final memberBalance = entry.value;
-      final balance = memberBalance.value;
+    final barGroups =
+        balances.asMap().entries.map((entry) {
+          final index = entry.key;
+          final memberBalance = entry.value;
+          final balance = memberBalance.value;
 
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: balance,
-            color: balance >= 0 ? const Color(0xFF4CD964) : Colors.redAccent,
-            width: 20,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(6),
-              bottom: Radius.circular(6),
-            ),
-          ),
-        ],
-      );
-    }).toList();
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: balance,
+                color:
+                    balance >= 0 ? const Color(0xFF4CD964) : Colors.redAccent,
+                width: 20,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(6),
+                  bottom: Radius.circular(6),
+                ),
+              ),
+            ],
+          );
+        }).toList();
 
     return Card(
       elevation: 4,
@@ -258,11 +267,13 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                   ),
                 ),
                 Tooltip(
-                  message: 'Green bars show how much a member should receive, red bars show how much they owe',
+                  message:
+                      'Green bars show how much a member should receive, red bars show how much they owe',
                   triggerMode: TooltipTriggerMode.tap,
                   child: Icon(
                     Icons.info_outline,
-                    color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                    color:
+                        widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                     size: 20,
                   ),
                 ),
@@ -294,7 +305,10 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                                     : balances[index].key.name,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+                                  color:
+                                      widget.isDarkMode
+                                          ? Colors.grey[300]
+                                          : Colors.grey[800],
                                 ),
                               ),
                             );
@@ -312,14 +326,21 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                             value.toInt().toString(),
                             style: TextStyle(
                               fontSize: 10,
-                              color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[800],
+                              color:
+                                  widget.isDarkMode
+                                      ? Colors.grey[300]
+                                      : Colors.grey[800],
                             ),
                           );
                         },
                       ),
                     ),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   barGroups: barGroups,
                 ),
@@ -365,10 +386,14 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
     );
   }
 
-  Widget _buildDetailedBalanceSection(TravelGroupViewModel viewModel, TravelGroup group) {
-    final balances = group.members.map((member) {
-      return MapEntry(member, viewModel.getMemberBalance(member.id));
-    }).toList();
+  Widget _buildDetailedBalanceSection(
+    TravelGroupViewModel viewModel,
+    TravelGroup group,
+  ) {
+    final balances =
+        group.members.map((member) {
+          return MapEntry(member, viewModel.getMemberBalance(member.id));
+        }).toList();
 
     balances.sort((a, b) => b.value.abs().compareTo(a.value.abs()));
 
@@ -405,7 +430,10 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                 child: Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: isPositive ? const Color(0xFF4CD964) : Colors.redAccent,
+                      backgroundColor:
+                          isPositive
+                              ? const Color(0xFF4CD964)
+                              : Colors.redAccent,
                       radius: 20,
                       child: Text(
                         member.name[0].toUpperCase(),
@@ -425,7 +453,10 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                             member.name,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: widget.isDarkMode ? Colors.white : Colors.black,
+                              color:
+                                  widget.isDarkMode
+                                      ? Colors.white
+                                      : Colors.black,
                             ),
                           ),
                           Text(
@@ -433,7 +464,10 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                                 ? 'To receive: ${balance.toStringAsFixed(2)} €'
                                 : 'To pay: ${(-balance).toStringAsFixed(2)} €',
                             style: TextStyle(
-                              color: isPositive ? const Color(0xFF4CD964) : Colors.redAccent,
+                              color:
+                                  isPositive
+                                      ? const Color(0xFF4CD964)
+                                      : Colors.redAccent,
                               fontSize: 14,
                             ),
                           ),
@@ -442,7 +476,10 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                     ),
                     Icon(
                       isPositive ? Icons.arrow_downward : Icons.arrow_upward,
-                      color: isPositive ? const Color(0xFF4CD964) : Colors.redAccent,
+                      color:
+                          isPositive
+                              ? const Color(0xFF4CD964)
+                              : Colors.redAccent,
                       size: 20,
                     ),
                   ],
@@ -455,7 +492,10 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
     );
   }
 
-  Widget _buildOptimalSettlementsSection(TravelGroupViewModel viewModel, TravelGroup group) {
+  Widget _buildOptimalSettlementsSection(
+    TravelGroupViewModel viewModel,
+    TravelGroup group,
+  ) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -483,30 +523,39 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                 (m) => m.id == settlement.toMemberId,
                 orElse: () => GroupMember(name: 'Unknown'),
               );
-              
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: settlement.isSettled 
-                        ? const Color(0xFF4CD964).withOpacity(0.1) 
-                        : widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
+                    color:
+                        settlement.isSettled
+                            ? const Color(0xFF4CD964).withOpacity(0.1)
+                            : widget.isDarkMode
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: settlement.isSettled 
-                          ? const Color(0xFF4CD964) 
-                          : Colors.grey.withOpacity(0.3),
+                      color:
+                          settlement.isSettled
+                              ? const Color(0xFF4CD964)
+                              : Colors.grey.withOpacity(0.3),
                       width: 1,
                     ),
                   ),
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: settlement.isSettled ? const Color(0xFF4CD964) : Colors.orange,
+                        backgroundColor:
+                            settlement.isSettled
+                                ? const Color(0xFF4CD964)
+                                : Colors.orange,
                         radius: 20,
                         child: Icon(
-                          settlement.isSettled ? Icons.check : Icons.arrow_forward,
+                          settlement.isSettled
+                              ? Icons.check
+                              : Icons.arrow_forward,
                           color: Colors.white,
                           size: 16,
                         ),
@@ -519,18 +568,25 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                             RichText(
                               text: TextSpan(
                                 style: TextStyle(
-                                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                                  color:
+                                      widget.isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
                                   fontSize: 14,
                                 ),
                                 children: [
                                   TextSpan(
                                     text: fromMember.name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const TextSpan(text: ' pays '),
                                   TextSpan(
                                     text: toMember.name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -540,7 +596,10 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                               '${settlement.amount.toStringAsFixed(2)} ${settlement.currency}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: settlement.isSettled ? const Color(0xFF4CD964) : Colors.orange,
+                                color:
+                                    settlement.isSettled
+                                        ? const Color(0xFF4CD964)
+                                        : Colors.orange,
                               ),
                             ),
                             if (settlement.isSettled) ...[
@@ -566,12 +625,18 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFF4CD964),
-                            backgroundColor: widget.isDarkMode ? Colors.black26 : Colors.white,
+                            backgroundColor:
+                                widget.isDarkMode
+                                    ? Colors.black26
+                                    : Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: const BorderSide(color: Color(0xFF4CD964)),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           child: const Text(
                             'Mark as paid',
@@ -589,10 +654,14 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
     );
   }
 
-  Widget _buildInteractiveFlowSection(TravelGroupViewModel viewModel, TravelGroup group) {
+  Widget _buildInteractiveFlowSection(
+    TravelGroupViewModel viewModel,
+    TravelGroup group,
+  ) {
     // Only show non-settled settlements for the visualization
-    final activeSettlements = viewModel.settlements.where((s) => !s.isSettled).toList();
-    
+    final activeSettlements =
+        viewModel.settlements.where((s) => !s.isSettled).toList();
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -611,7 +680,7 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
               ),
             ),
             const SizedBox(height: 16),
-            
+
             Container(
               height: 300,
               decoration: BoxDecoration(
@@ -619,22 +688,26 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.withOpacity(0.2)),
               ),
-              child: activeSettlements.isEmpty
-                  ? Center(
-                      child: Text(
-                        'All settlements are completed!',
-                        style: TextStyle(
-                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+              child:
+                  activeSettlements.isEmpty
+                      ? Center(
+                        child: Text(
+                          'All settlements are completed!',
+                          style: TextStyle(
+                            color:
+                                widget.isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.grey[700],
+                          ),
                         ),
+                      )
+                      : DebtFlowChart(
+                        settlements: viewModel.settlements,
+                        members: group.members,
+                        isDarkMode: widget.isDarkMode,
                       ),
-                    )
-                  : DebtFlowChart(
-                      settlements: viewModel.settlements,
-                      members: group.members,
-                      isDarkMode: widget.isDarkMode,
-                    ),
             ),
-            
+
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -655,7 +728,9 @@ class _BalanceVisualizationScreenState extends State<BalanceVisualizationScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _buildInstructionItem('Tap a member to see their money flows'),
+                  _buildInstructionItem(
+                    'Tap a member to see their money flows',
+                  ),
                   _buildInstructionItem('Arrows show payment direction'),
                   _buildInstructionItem('Orange lines are pending payments'),
                   _buildInstructionItem('Green lines are completed payments'),

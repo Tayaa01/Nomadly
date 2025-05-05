@@ -87,17 +87,8 @@ class _TravelFormScreenState extends State<TravelFormScreen> {
               fontSize: 20,
             ),
           ),
-          actions: [
-            IconButton(
-              icon: Icon(
-                isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                color: const Color(0xFF4CD964),
-              ),
-              onPressed: () {
-                context.read<ThemeProvider>().toggleTheme();
-              },
-            ),
-          ],
+          // Removed theme toggle button from actions
+          actions: [],
         ),
         drawer: const AppDrawer(currentRoute: '/planner'),
         body: _isLoading ? _buildLoadingState() : _buildMainContent(isDarkMode),

@@ -31,22 +31,12 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Default actions if none are provided and if onToggleTheme exists
-    final List<Widget> defaultActions = onToggleTheme != null
-        ? [
-            IconButton(
-              icon: Icon(
-                isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                color: isDarkMode ? Colors.white : Colors.black,
-              ),
-              onPressed: onToggleTheme,
-            ),
-          ]
-        : [];
+    // Remove default theme toggle actions
+    final List<Widget> defaultActions = [];
 
     // Choose background color based on isDarkMode if none provided
-    final bgColor = backgroundColor ?? 
-        (isDarkMode ? Colors.black : Colors.white);
+    final bgColor =
+        backgroundColor ?? (isDarkMode ? Colors.black : Colors.white);
 
     return AppBar(
       backgroundColor: bgColor,
@@ -60,21 +50,21 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
           fontSize: 20,
         ),
       ),
-      leading: leading ?? (showBackButton
-          ? IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_rounded,
-                color: isDarkMode ? Colors.white : Colors.black,
-                size: 20,
-              ),
-              onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
-            )
-          : null),
+      leading:
+          leading ??
+          (showBackButton
+              ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_rounded,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  size: 20,
+                ),
+                onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
+              )
+              : null),
       actions: actions ?? defaultActions,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(16),
-        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
       ),
     );
   }

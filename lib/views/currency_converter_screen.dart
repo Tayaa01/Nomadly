@@ -44,15 +44,7 @@ class CurrencyConverterScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                  color: const Color(0xFF4CD964),
-                ),
-                onPressed: toggleTheme,
-              ),
-            ],
+            actions: [], // Remove theme toggle button
           ),
           drawer: const AppDrawer(currentRoute: '/currency-converter'),
           body: Consumer<CurrencyViewModel>(

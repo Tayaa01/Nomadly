@@ -664,15 +664,8 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          actions: [
-            IconButton(
-              icon: Icon(
-                widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                color: widget.isDarkMode ? Colors.white : Colors.black,
-              ),
-              onPressed: () => widget.toggleTheme(),
-            ),
-          ],
+          // Removed theme toggle button from actions
+          actions: [],
         ),
         drawer: const AppDrawer(currentRoute: '/expense-tracker'),
         floatingActionButton: FloatingActionButton.extended(

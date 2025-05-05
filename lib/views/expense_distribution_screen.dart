@@ -22,7 +22,8 @@ class ExpenseDistributionScreen extends StatefulWidget {
   });
 
   @override
-  State<ExpenseDistributionScreen> createState() => _ExpenseDistributionScreenState();
+  State<ExpenseDistributionScreen> createState() =>
+      _ExpenseDistributionScreenState();
 }
 
 class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
@@ -30,7 +31,10 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      Provider.of<TravelGroupViewModel>(context, listen: false).setCurrentGroup(widget.groupId);
+      Provider.of<TravelGroupViewModel>(
+        context,
+        listen: false,
+      ).setCurrentGroup(widget.groupId);
     });
   }
 
@@ -63,14 +67,17 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
               ),
             ),
             // List skeleton
-            ...List.generate(3, (index) => Container(
-              height: 60,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF232323),
-                borderRadius: BorderRadius.circular(12),
+            ...List.generate(
+              3,
+              (index) => Container(
+                height: 60,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF232323),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -91,68 +98,71 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-              color: widget.isDarkMode ? Colors.white : Colors.black,
-            ),
-            onPressed: () => widget.toggleTheme(),
-          ),
-        ],
+        actions: [],
       ),
-      body: Consumer<TravelGroupViewModel>(builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return _buildLoadingSkeleton();
-        }
+      body: Consumer<TravelGroupViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.isLoading) {
+            return _buildLoadingSkeleton();
+          }
 
-        if (viewModel.errorMessage.isNotEmpty) {
-          return Center(child: Text('Error: ${viewModel.errorMessage}')); // Changed from "Erreur"
-        }
+          if (viewModel.errorMessage.isNotEmpty) {
+            return Center(
+              child: Text('Error: ${viewModel.errorMessage}'),
+            ); // Changed from "Erreur"
+          }
 
-        final group = viewModel.currentGroup;
-        if (group == null) {
-          return Center(child: Text('Group not found')); // Changed from "Groupe non trouvé"
-        }
+          final group = viewModel.currentGroup;
+          if (group == null) {
+            return Center(
+              child: Text('Group not found'),
+            ); // Changed from "Groupe non trouvé"
+          }
 
-        final expense = viewModel.sharedExpenses.firstWhere(
-          (e) => e.id == widget.expenseId,
-          orElse: () => SharedExpense(
-            amount: 0,
-            category: '',
-            date: DateTime.now(),
-            description: 'Expense not found', // Changed from "Dépense non trouvée"
-            currency: 'EUR',
-            groupId: widget.groupId,
-            payerId: '',
-            splitAmounts: {},
-            splitType: SplitType.equal,
-          ),
-        );
+          final expense = viewModel.sharedExpenses.firstWhere(
+            (e) => e.id == widget.expenseId,
+            orElse:
+                () => SharedExpense(
+                  amount: 0,
+                  category: '',
+                  date: DateTime.now(),
+                  description:
+                      'Expense not found', // Changed from "Dépense non trouvée"
+                  currency: 'EUR',
+                  groupId: widget.groupId,
+                  payerId: '',
+                  splitAmounts: {},
+                  splitType: SplitType.equal,
+                ),
+          );
 
-        if (expense.id != widget.expenseId) {
-          return Center(child: Text('Expense not found')); // Changed from "Dépense non trouvée"
-        }
+          if (expense.id != widget.expenseId) {
+            return Center(
+              child: Text('Expense not found'),
+            ); // Changed from "Dépense non trouvée"
+          }
 
-        final payer = group.members.firstWhere(
-          (m) => m.id == expense.payerId,
-          orElse: () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
-        );
+          final payer = group.members.firstWhere(
+            (m) => m.id == expense.payerId,
+            orElse:
+                () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
+          );
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildExpenseHeader(expense, payer),
-              const SizedBox(height: 24),
-              _buildDistributionChart(expense, group),
-              const SizedBox(height: 24),
-              _buildDistributionList(expense, group),
-            ],
-          ),
-        );
-      }),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildExpenseHeader(expense, payer),
+                const SizedBox(height: 24),
+                _buildDistributionChart(expense, group),
+                const SizedBox(height: 24),
+                _buildDistributionList(expense, group),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -169,7 +179,7 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
             Text(
               expense.description,
               style: TextStyle(
-                fontSize: 20, 
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: widget.isDarkMode ? Colors.white : Colors.black,
               ),
@@ -254,7 +264,11 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
               value: amount,
               title: '${percentage.toStringAsFixed(1)}%',
               radius: 100,
-              titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+              titleStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
               badgeWidget: _Badge(member.name[0].toUpperCase()),
               badgePositionPercentageOffset: 1.1,
             ),
@@ -278,29 +292,32 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
           ),
         ],
       ),
-      child: sections.isEmpty 
-        ? Center(
-            child: Text(
-              'No split data available for visualization',
-              style: TextStyle(
-                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+      child:
+          sections.isEmpty
+              ? Center(
+                child: Text(
+                  'No split data available for visualization',
+                  style: TextStyle(
+                    color:
+                        widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                  ),
+                ),
+              )
+              : PieChart(
+                PieChartData(
+                  sections: sections,
+                  centerSpaceRadius: 40,
+                  sectionsSpace: 2,
+                  pieTouchData: PieTouchData(enabled: true),
+                ),
               ),
-            ),
-          )
-        : PieChart(
-            PieChartData(
-              sections: sections,
-              centerSpaceRadius: 40,
-              sectionsSpace: 2,
-              pieTouchData: PieTouchData(enabled: true),
-            ),
-          ),
     );
   }
 
   Widget _buildDistributionList(SharedExpense expense, TravelGroup group) {
-    final List<MapEntry<String, double>> sortedEntries = expense.splitAmounts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final List<MapEntry<String, double>> sortedEntries =
+        expense.splitAmounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
     return Card(
       elevation: 4,
@@ -315,7 +332,8 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
           final entry = sortedEntries[index];
           final member = group.members.firstWhere(
             (m) => m.id == entry.key,
-            orElse: () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
+            orElse:
+                () => GroupMember(name: 'Unknown'), // Changed from "Inconnu"
           );
           final percentage = (entry.value / expense.amount) * 100;
 
@@ -324,7 +342,10 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
               backgroundColor: const Color(0xFF4CD964),
               child: Text(
                 member.name[0].toUpperCase(),
-                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             title: Text(
@@ -336,7 +357,9 @@ class _ExpenseDistributionScreenState extends State<ExpenseDistributionScreen> {
             ),
             subtitle: Text(
               '${percentage.toStringAsFixed(1)}% of total', // Changed from "du total"
-              style: TextStyle(color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700]),
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+              ),
             ),
             trailing: Text(
               '${entry.value.toStringAsFixed(2)} ${expense.currency}',
@@ -390,7 +413,11 @@ class _Badge extends StatelessWidget {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
         ),
       ),
     );

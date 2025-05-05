@@ -21,7 +21,8 @@ class SharedExpenseFormScreen extends StatefulWidget {
   });
 
   @override
-  State<SharedExpenseFormScreen> createState() => _SharedExpenseFormScreenState();
+  State<SharedExpenseFormScreen> createState() =>
+      _SharedExpenseFormScreenState();
 }
 
 class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
@@ -30,48 +31,51 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   final _descriptionController = TextEditingController();
   final Map<String, TextEditingController> _customAmountControllers = {};
   final Map<String, TextEditingController> _percentageControllers = {};
-  
+
   String _selectedCategory = 'Food';
   String _selectedCurrency = 'EUR';
   DateTime _selectedDate = DateTime.now();
   String? _selectedPayerId;
   SplitType _splitType = SplitType.equal;
-  
+
   @override
   void initState() {
     super.initState();
     _loadGroupData();
-    
+
     if (widget.expense != null) {
       _initializeControllers();
     }
   }
-  
+
   @override
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
-    
+
     for (var controller in _customAmountControllers.values) {
       controller.dispose();
     }
-    
+
     for (var controller in _percentageControllers.values) {
       controller.dispose();
     }
-    
+
     super.dispose();
   }
-  
+
   void _loadGroupData() {
     Future.microtask(() {
-      Provider.of<TravelGroupViewModel>(context, listen: false).setCurrentGroup(widget.groupId);
+      Provider.of<TravelGroupViewModel>(
+        context,
+        listen: false,
+      ).setCurrentGroup(widget.groupId);
     });
   }
-  
+
   void _initializeControllers() {
     final expense = widget.expense!;
-    
+
     _amountController.text = expense.amount.toString();
     _descriptionController.text = expense.description;
     _selectedCategory = expense.category;
@@ -80,7 +84,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
     _selectedPayerId = expense.payerId;
     _splitType = expense.splitType;
   }
-  
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -93,7 +97,8 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
             colorScheme: ColorScheme.dark(
               primary: const Color(0xFF4CD964),
               onPrimary: Colors.white,
-              surface: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+              surface:
+                  widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
               onSurface: widget.isDarkMode ? Colors.white : Colors.black,
             ),
           ),
@@ -101,19 +106,19 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
       });
     }
   }
-  
+
   void _initializeAmountControllers(List<GroupMember> members) {
     // Initialize controllers only once
     if (_customAmountControllers.isEmpty && widget.expense != null) {
       final expense = widget.expense!;
-      
+
       for (var member in members) {
         // For custom amounts
         final amountController = TextEditingController();
@@ -121,11 +126,13 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           amountController.text = expense.splitAmounts[member.id]!.toString();
         }
         _customAmountControllers[member.id] = amountController;
-        
+
         // For percentages
         final percentageController = TextEditingController();
-        if (expense.splitType == SplitType.percentage && expense.splitAmounts.containsKey(member.id)) {
-          final percentage = (expense.splitAmounts[member.id]! / expense.amount) * 100;
+        if (expense.splitType == SplitType.percentage &&
+            expense.splitAmounts.containsKey(member.id)) {
+          final percentage =
+              (expense.splitAmounts[member.id]! / expense.amount) * 100;
           percentageController.text = percentage.toStringAsFixed(1);
         } else {
           // Default to equal percentages
@@ -143,24 +150,27 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
       }
     }
   }
-  
+
   void _saveExpense(BuildContext context, TravelGroup group) {
     if (_formKey.currentState!.validate()) {
-      final viewModel = Provider.of<TravelGroupViewModel>(context, listen: false);
-      
+      final viewModel = Provider.of<TravelGroupViewModel>(
+        context,
+        listen: false,
+      );
+
       // Calculate split amounts
       Map<String, double> splitAmounts = {};
-      
+
       switch (_splitType) {
         case SplitType.equal:
           final totalAmount = double.parse(_amountController.text);
           final perPersonAmount = totalAmount / group.members.length;
-          
+
           for (var member in group.members) {
             splitAmounts[member.id] = perPersonAmount;
           }
           break;
-          
+
         case SplitType.custom:
           for (var member in group.members) {
             final controller = _customAmountControllers[member.id];
@@ -171,7 +181,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
             }
           }
           break;
-          
+
         case SplitType.percentage:
           final totalAmount = double.parse(_amountController.text);
           for (var member in group.members) {
@@ -184,14 +194,14 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
             }
           }
           break;
-          
+
         case SplitType.weighted:
           // Handle weighted split similarly to percentage
           final totalAmount = double.parse(_amountController.text);
           final totalWeight = _percentageControllers.values
               .map((c) => double.tryParse(c.text) ?? 0.0)
               .fold<double>(0, (sum, weight) => sum + weight);
-              
+
           if (totalWeight > 0) {
             for (var member in group.members) {
               final controller = _percentageControllers[member.id];
@@ -211,7 +221,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           }
           break;
       }
-      
+
       final expense = SharedExpense(
         id: widget.expense?.id,
         groupId: widget.groupId,
@@ -224,39 +234,39 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         splitType: _splitType,
         splitAmounts: splitAmounts,
       );
-      
+
       if (widget.expense == null) {
         viewModel.addSharedExpense(expense);
       } else {
         viewModel.updateSharedExpense(expense);
       }
-      
+
       Navigator.pop(context);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.expense == null 
-              ? 'Expense added successfully' // Changed from "Dépense ajoutée avec succès"
-              : 'Expense updated successfully' // Changed from "Dépense mise à jour avec succès"
+          content: Text(
+            widget.expense == null
+                ? 'Expense added successfully' // Changed from "Dépense ajoutée avec succès"
+                : 'Expense updated successfully', // Changed from "Dépense mise à jour avec succès"
           ),
           backgroundColor: const Color(0xFF4CD964),
         ),
       );
     }
   }
-  
-  
+
   void _distributeEqualPercentages(int memberCount) {
     double equalPercentage = 100 / memberCount;
-    
+
     for (var controller in _percentageControllers.values) {
       controller.text = equalPercentage.toStringAsFixed(1);
     }
   }
-  
+
   void _distributeEqualAmounts(double totalAmount, int memberCount) {
     double equalAmount = totalAmount / memberCount;
-    
+
     for (var controller in _customAmountControllers.values) {
       controller.text = equalAmount.toStringAsFixed(2);
     }
@@ -271,8 +281,12 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
             backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
             appBar: AppBar(
               title: Text(
-                widget.expense == null ? 'Add Expense' : 'Edit Expense', // Changed from French
-                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+                widget.expense == null
+                    ? 'Add Expense'
+                    : 'Edit Expense', // Changed from French
+                style: TextStyle(
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                ),
               ),
               backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
               elevation: 0,
@@ -280,10 +294,12 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                 color: widget.isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            body: const Center(child: CircularProgressIndicator(color: Color(0xFF4CD964))),
+            body: const Center(
+              child: CircularProgressIndicator(color: Color(0xFF4CD964)),
+            ),
           );
         }
-        
+
         final group = viewModel.currentGroup;
         if (group == null) {
           return Scaffold(
@@ -291,7 +307,9 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
             appBar: AppBar(
               title: Text(
                 'Error', // Changed from French
-                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+                style: TextStyle(
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                ),
               ),
               backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
               elevation: 0,
@@ -299,39 +317,35 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                 color: widget.isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            body: Center(child: Text('Group not found')), // Changed from "Groupe non trouvé"
+            body: Center(
+              child: Text('Group not found'),
+            ), // Changed from "Groupe non trouvé"
           );
         }
-        
+
         // Initialize controllers for members
         _initializeAmountControllers(group.members);
-        
+
         // If no payer selected, default to first member
         if (_selectedPayerId == null && group.members.isNotEmpty) {
           _selectedPayerId = group.members[0].id;
         }
-        
+
         return Scaffold(
           backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
           appBar: AppBar(
-            title: Text(
-              widget.expense == null ? 'Add Expense' : 'Edit Expense', // Changed from French
-              style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
-            ),
-            backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
+            backgroundColor:
+                widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             elevation: 0,
-            iconTheme: IconThemeData(
-              color: widget.isDarkMode ? Colors.white : Colors.black,
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
-                ),
-                onPressed: () => widget.toggleTheme(),
+            title: Text(
+              widget.expense == null
+                  ? 'Add Expense'
+                  : 'Edit Expense', // Changed from French
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.white : Colors.black,
               ),
-            ],
+            ),
+            actions: [], // Remove theme toggle button
           ),
           body: Form(
             key: _formKey,
@@ -344,13 +358,13 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                     children: [
                       // Main expense details card - Pass group parameter here
                       _buildExpenseDetailsCard(context, group),
-                      
+
                       // Split method section
                       _buildSplitMethodSection(group),
-                      
+
                       // Spacer to push the save button to the bottom
                       const Spacer(),
-                      
+
                       // Save button
                       Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -366,8 +380,8 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                             elevation: 0,
                           ),
                           child: Text(
-                            widget.expense == null 
-                                ? 'Add Expense' 
+                            widget.expense == null
+                                ? 'Add Expense'
                                 : 'Update Expense',
                             style: const TextStyle(
                               fontSize: 16,
@@ -410,24 +424,36 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Description field
             TextFormField(
               controller: _descriptionController,
               decoration: InputDecoration(
                 labelText: 'Description',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: const Color(0xFF4CD964).withOpacity(0.5)),
+                  borderSide: BorderSide(
+                    color: const Color(0xFF4CD964).withOpacity(0.5),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF4CD964), width: 2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF4CD964),
+                    width: 2,
+                  ),
                 ),
-                prefixIcon: const Icon(Icons.description_outlined, color: Color(0xFF4CD964)),
+                prefixIcon: const Icon(
+                  Icons.description_outlined,
+                  color: Color(0xFF4CD964),
+                ),
               ),
-              style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.white : Colors.black,
+              ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter a description';
@@ -436,7 +462,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Amount and currency row
             Row(
               children: [
@@ -444,26 +470,41 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                   flex: 3,
                   child: TextFormField(
                     controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Amount',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: const Color(0xFF4CD964).withOpacity(0.5)),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF4CD964).withOpacity(0.5),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF4CD964), width: 2),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF4CD964),
+                          width: 2,
+                        ),
                       ),
-                      prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF4CD964)),
+                      prefixIcon: const Icon(
+                        Icons.attach_money,
+                        color: Color(0xFF4CD964),
+                      ),
                     ),
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+                    style: TextStyle(
+                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter an amount';
                       }
-                      if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                      if (double.tryParse(value) == null ||
+                          double.parse(value) <= 0) {
                         return 'Please enter a valid amount';
                       }
                       return null;
@@ -477,21 +518,36 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                     value: _selectedCurrency,
                     decoration: InputDecoration(
                       labelText: 'Currency',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: const Color(0xFF4CD964).withOpacity(0.5)),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF4CD964).withOpacity(0.5),
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
                     ),
-                    items: ['EUR', 'USD', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF']
-                        .map((currency) => DropdownMenuItem(
-                              value: currency,
-                              child: Text(currency),
-                            ))
-                        .toList(),
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
-                    dropdownColor: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                    items:
+                        ['EUR', 'USD', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF']
+                            .map(
+                              (currency) => DropdownMenuItem(
+                                value: currency,
+                                child: Text(currency),
+                              ),
+                            )
+                            .toList(),
+                    style: TextStyle(
+                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                    ),
+                    dropdownColor:
+                        widget.isDarkMode
+                            ? const Color(0xFF1E1E1E)
+                            : Colors.white,
                     onChanged: (value) {
                       if (value != null) {
                         setState(() {
@@ -504,7 +560,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Category and Date row
             Row(
               children: [
@@ -515,33 +571,46 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                     value: _selectedCategory,
                     decoration: InputDecoration(
                       labelText: 'Category',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: const Color(0xFF4CD964).withOpacity(0.5)),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF4CD964).withOpacity(0.5),
+                        ),
                       ),
                       // Adjust padding to give more space on the left for better text alignment
                       contentPadding: const EdgeInsets.fromLTRB(12, 14, 6, 14),
                       // Still no prefix icon to save space
                     ),
                     isDense: true,
-                    alignment: AlignmentDirectional.center, // Center the dropdown text
+                    alignment:
+                        AlignmentDirectional.center, // Center the dropdown text
                     // Rest of the properties remain the same
-                    items: [
-                      'Food',
-                      'Accommodation',
-                      'Transportation',
-                      'Activities',
-                      'Shopping',
-                      'Other',
-                    ]
-                        .map((category) => DropdownMenuItem(
-                              value: category,
-                              child: Text(category),
-                            ))
-                        .toList(),
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
-                    dropdownColor: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                    items:
+                        [
+                              'Food',
+                              'Accommodation',
+                              'Transportation',
+                              'Activities',
+                              'Shopping',
+                              'Other',
+                            ]
+                            .map(
+                              (category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category),
+                              ),
+                            )
+                            .toList(),
+                    style: TextStyle(
+                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                    ),
+                    dropdownColor:
+                        widget.isDarkMode
+                            ? const Color(0xFF1E1E1E)
+                            : Colors.white,
                     onChanged: (value) {
                       if (value != null) {
                         setState(() {
@@ -552,7 +621,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                
+
                 // Date picker with button
                 Expanded(
                   child: InkWell(
@@ -560,17 +629,30 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                     child: InputDecorator(
                       decoration: InputDecoration(
                         labelText: 'Date',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: const Color(0xFF4CD964).withOpacity(0.5)),
+                          borderSide: BorderSide(
+                            color: const Color(0xFF4CD964).withOpacity(0.5),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                        prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF4CD964)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.calendar_today,
+                          color: Color(0xFF4CD964),
+                        ),
                       ),
                       child: Text(
                         DateFormat('MM/dd/yyyy').format(_selectedDate),
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+                        style: TextStyle(
+                          color:
+                              widget.isDarkMode ? Colors.white : Colors.black,
+                        ),
                       ),
                     ),
                   ),
@@ -578,7 +660,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Payer selector with improved UI
             Text(
               'PAID BY',
@@ -602,32 +684,45 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                 child: DropdownButton<String>(
                   value: _selectedPayerId,
                   isExpanded: true,
-                  icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4CD964)),
+                  icon: const Icon(
+                    Icons.arrow_drop_down,
+                    color: Color(0xFF4CD964),
+                  ),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   borderRadius: BorderRadius.circular(12),
-                  dropdownColor: widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+                  dropdownColor:
+                      widget.isDarkMode
+                          ? const Color(0xFF1E1E1E)
+                          : Colors.white,
+                  style: TextStyle(
+                    color: widget.isDarkMode ? Colors.white : Colors.black,
+                  ),
                   // Now we have access to the group parameter
-                  items: group.members.map((member) => DropdownMenuItem<String>(
-                    value: member.id,
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: const Color(0xFF4CD964),
-                          radius: 16,
-                          child: Text(
-                            member.name[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
+                  items:
+                      group.members
+                          .map(
+                            (member) => DropdownMenuItem<String>(
+                              value: member.id,
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: const Color(0xFF4CD964),
+                                    radius: 16,
+                                    child: Text(
+                                      member.name[0].toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(member.name),
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(member.name),
-                      ],
-                    ),
-                  )).toList(),
+                          )
+                          .toList(),
                   onChanged: (String? newValue) {
                     if (newValue != null) {
                       setState(() {
@@ -661,7 +756,8 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               children: [
                 Icon(
                   Icons.people_alt_outlined,
-                  color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                  color:
+                      widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                   size: 16,
                 ),
                 const SizedBox(width: 8),
@@ -670,20 +766,22 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                    color:
+                        widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                     letterSpacing: 1.2,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Improved split type selector with icons - Fix here
             SizedBox(
               width: double.infinity,
               child: CupertinoSlidingSegmentedControl<SplitType>(
                 thumbColor: const Color(0xFF4CD964),
-                backgroundColor: widget.isDarkMode ? Colors.black26 : Colors.grey.shade200,
+                backgroundColor:
+                    widget.isDarkMode ? Colors.black26 : Colors.grey.shade200,
                 padding: const EdgeInsets.all(4),
                 groupValue: _splitType,
                 children: {
@@ -718,7 +816,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Split details based on selected method
             _buildSplitDetails(group),
           ],
@@ -735,16 +833,22 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   }) {
     // Make "Weighted" text smaller or use "Weight" instead
     final displayLabel = label == 'Weighted' ? 'Weight' : label;
-    
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8), // Reduce horizontal padding
+      padding: const EdgeInsets.symmetric(
+        horizontal: 2,
+        vertical: 8,
+      ), // Reduce horizontal padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             icon,
             size: 14, // Make icon slightly smaller
-            color: isSelected ? Colors.black : (widget.isDarkMode ? Colors.white : Colors.black),
+            color:
+                isSelected
+                    ? Colors.black
+                    : (widget.isDarkMode ? Colors.white : Colors.black),
           ),
           const SizedBox(width: 2), // Reduce spacing
           Text(
@@ -752,7 +856,10 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
             style: TextStyle(
               fontSize: 11, // Make font smaller
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? Colors.black : (widget.isDarkMode ? Colors.white : Colors.black),
+              color:
+                  isSelected
+                      ? Colors.black
+                      : (widget.isDarkMode ? Colors.white : Colors.black),
             ),
           ),
         ],
@@ -778,10 +885,9 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   // Improved equal split section with visualization
   Widget _buildEqualSplit(TravelGroup group) {
     final amount = double.tryParse(_amountController.text) ?? 0.0;
-    final perPersonAmount = group.members.isNotEmpty 
-        ? amount / group.members.length 
-        : 0.0;
-    
+    final perPersonAmount =
+        group.members.isNotEmpty ? amount / group.members.length : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -817,7 +923,10 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                     Text(
                       'Each person pays ${perPersonAmount.toStringAsFixed(2)} $_selectedCurrency',
                       style: TextStyle(
-                        color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        color:
+                            widget.isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[700],
                       ),
                     ),
                   ],
@@ -827,23 +936,24 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Members visualization with avatar chips
         Wrap(
           spacing: 8,
           runSpacing: 12,
-          children: group.members.map((member) {
-            final isSelected = true; // In equal split, everyone is included
-            final isPayer = member.id == _selectedPayerId;
-            
-            return _buildMemberChip(
-              member: member,
-              isSelected: isSelected,
-              isPayer: isPayer,
-              amount: perPersonAmount,
-              onToggle: null, // Cannot toggle in equal split
-            );
-          }).toList(),
+          children:
+              group.members.map((member) {
+                final isSelected = true; // In equal split, everyone is included
+                final isPayer = member.id == _selectedPayerId;
+
+                return _buildMemberChip(
+                  member: member,
+                  isSelected: isSelected,
+                  isPayer: isPayer,
+                  amount: perPersonAmount,
+                  onToggle: null, // Cannot toggle in equal split
+                );
+              }).toList(),
         ),
       ],
     );
@@ -853,7 +963,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   Widget _buildCustomSplit(TravelGroup group) {
     final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
     double currentTotal = 0.0;
-    
+
     // Calculate current total
     for (var member in group.members) {
       final controllerText = _customAmountControllers[member.id]?.text ?? '';
@@ -861,9 +971,9 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         currentTotal += double.tryParse(controllerText) ?? 0.0;
       }
     }
-    
+
     final remaining = totalAmount - currentTotal;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -871,9 +981,10 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: remaining.abs() < 0.01 
-                ? const Color(0xFF4CD964).withOpacity(0.1)
-                : Colors.orange.withOpacity(0.1),
+            color:
+                remaining.abs() < 0.01
+                    ? const Color(0xFF4CD964).withOpacity(0.1)
+                    : Colors.orange.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -881,14 +992,18 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: remaining.abs() < 0.01 
-                      ? const Color(0xFF4CD964).withOpacity(0.2)
-                      : Colors.orange.withOpacity(0.2),
+                  color:
+                      remaining.abs() < 0.01
+                          ? const Color(0xFF4CD964).withOpacity(0.2)
+                          : Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   remaining.abs() < 0.01 ? Icons.check_circle : Icons.warning,
-                  color: remaining.abs() < 0.01 ? const Color(0xFF4CD964) : Colors.orange,
+                  color:
+                      remaining.abs() < 0.01
+                          ? const Color(0xFF4CD964)
+                          : Colors.orange,
                 ),
               ),
               const SizedBox(width: 12),
@@ -908,7 +1023,10 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                           ? 'Custom amounts add up correctly'
                           : 'Remaining: ${remaining.toStringAsFixed(2)} $_selectedCurrency',
                       style: TextStyle(
-                        color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        color:
+                            widget.isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[700],
                       ),
                     ),
                   ],
@@ -918,7 +1036,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Quick actions
         Wrap(
           spacing: 8,
@@ -937,7 +1055,9 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               icon: Icons.person_off,
               label: 'Payer exempt',
               onTap: () {
-                if (totalAmount > 0 && group.members.length > 1 && _selectedPayerId != null) {
+                if (totalAmount > 0 &&
+                    group.members.length > 1 &&
+                    _selectedPayerId != null) {
                   _excludePayerFromSplit(group);
                 }
               },
@@ -952,83 +1072,100 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Member amount inputs with better layout
         Column(
-          children: group.members.map((member) {
-            final controller = _customAmountControllers[member.id];
-            final isPayer = member.id == _selectedPayerId;
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  // Member avatar
-                  CircleAvatar(
-                    backgroundColor: isPayer ? const Color(0xFF4CD964) : Colors.grey.shade300,
-                    radius: 20,
-                    child: Text(
-                      member.name[0].toUpperCase(),
-                      style: TextStyle(
-                        color: isPayer ? Colors.black : Colors.grey.shade700,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Member info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          member.name,
+          children:
+              group.members.map((member) {
+                final controller = _customAmountControllers[member.id];
+                final isPayer = member.id == _selectedPayerId;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      // Member avatar
+                      CircleAvatar(
+                        backgroundColor:
+                            isPayer
+                                ? const Color(0xFF4CD964)
+                                : Colors.grey.shade300,
+                        radius: 20,
+                        child: Text(
+                          member.name[0].toUpperCase(),
                           style: TextStyle(
-                            fontWeight: isPayer ? FontWeight.bold : FontWeight.normal,
-                            color: widget.isDarkMode ? Colors.white : Colors.black,
+                            color:
+                                isPayer ? Colors.black : Colors.grey.shade700,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (isPayer)
-                          const Text(
-                            'Payer',
-                            style: TextStyle(
-                              color: Color(0xFF4CD964),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(width: 12),
+                      // Member info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              member.name,
+                              style: TextStyle(
+                                fontWeight:
+                                    isPayer
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                color:
+                                    widget.isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
+                              ),
+                            ),
+                            if (isPayer)
+                              const Text(
+                                'Payer',
+                                style: TextStyle(
+                                  color: Color(0xFF4CD964),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Amount input with currency
+                      SizedBox(
+                        width: 120,
+                        child: TextFormField(
+                          controller: controller,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: TextStyle(
+                            color:
+                                widget.isDarkMode ? Colors.white : Colors.black,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'Amount',
+                            suffixText: _selectedCurrency,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Amount input with currency
-                  SizedBox(
-                    width: 120,
-                    child: TextFormField(
-                      controller: controller,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Amount',
-                        suffixText: _selectedCurrency,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          onChanged: (value) {
+                            setState(() {}); // Refresh UI to update total
+                          },
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                       ),
-                      onChanged: (value) {
-                        setState(() {}); // Refresh UI to update total
-                      },
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
         ),
-        
+
         // Auto-balance button
         if (remaining.abs() > 0.01)
           SizedBox(
@@ -1061,17 +1198,13 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
       avatar: Icon(icon, size: 16, color: const Color(0xFF4CD964)),
       label: Text(
         label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
       ),
-      backgroundColor: widget.isDarkMode ? const Color(0xFF252525) : Colors.grey.shade100,
+      backgroundColor:
+          widget.isDarkMode ? const Color(0xFF252525) : Colors.grey.shade100,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: const Color(0xFF4CD964).withOpacity(0.3),
-        ),
+        side: BorderSide(color: const Color(0xFF4CD964).withOpacity(0.3)),
       ),
       onPressed: onTap,
     );
@@ -1090,14 +1223,18 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? (isPayer ? const Color(0xFF4CD964).withOpacity(0.2) : Colors.grey.shade200)
-              : Colors.transparent,
+          color:
+              isSelected
+                  ? (isPayer
+                      ? const Color(0xFF4CD964).withOpacity(0.2)
+                      : Colors.grey.shade200)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected 
-                ? (isPayer ? const Color(0xFF4CD964) : Colors.grey)
-                : Colors.grey.withOpacity(0.5),
+            color:
+                isSelected
+                    ? (isPayer ? const Color(0xFF4CD964) : Colors.grey)
+                    : Colors.grey.withOpacity(0.5),
             width: 1,
           ),
         ),
@@ -1105,7 +1242,8 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             CircleAvatar(
-              backgroundColor: isPayer ? const Color(0xFF4CD964) : Colors.grey.shade400,
+              backgroundColor:
+                  isPayer ? const Color(0xFF4CD964) : Colors.grey.shade400,
               radius: 16,
               child: Text(
                 member.name[0].toUpperCase(),
@@ -1130,10 +1268,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                 ),
                 Text(
                   '${amount.toStringAsFixed(2)} $_selectedCurrency',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
@@ -1155,25 +1290,25 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   // New helper method to exclude payer from split
   void _excludePayerFromSplit(TravelGroup group) {
     if (_selectedPayerId == null) return;
-    
+
     final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
     if (totalAmount <= 0) return;
-    
-    final nonPayerMembers = group.members
-        .where((member) => member.id != _selectedPayerId)
-        .toList();
-    
+
+    final nonPayerMembers =
+        group.members.where((member) => member.id != _selectedPayerId).toList();
+
     if (nonPayerMembers.isEmpty) return;
-    
+
     final perPersonAmount = totalAmount / nonPayerMembers.length;
-    
+
     setState(() {
       for (var member in group.members) {
         final controller = _customAmountControllers[member.id];
         if (controller != null) {
-          controller.text = member.id == _selectedPayerId 
-              ? '0.00' 
-              : perPersonAmount.toStringAsFixed(2);
+          controller.text =
+              member.id == _selectedPayerId
+                  ? '0.00'
+                  : perPersonAmount.toStringAsFixed(2);
         }
       }
     });
@@ -1183,7 +1318,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   void _autoBalanceRemainingAmount(TravelGroup group) {
     final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
     if (totalAmount <= 0) return;
-    
+
     double currentTotal = 0.0;
     for (var member in group.members) {
       final controllerText = _customAmountControllers[member.id]?.text ?? '';
@@ -1191,10 +1326,10 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         currentTotal += double.tryParse(controllerText) ?? 0.0;
       }
     }
-    
+
     final remaining = totalAmount - currentTotal;
     if (remaining.abs() < 0.01) return;
-    
+
     // Strategy: first distribute to members with zero amount, if none, distribute equally
     List<GroupMember> zeroAmountMembers = [];
     for (var member in group.members) {
@@ -1206,7 +1341,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         }
       }
     }
-    
+
     setState(() {
       if (zeroAmountMembers.isNotEmpty) {
         // Distribute to zero amount members
@@ -1224,7 +1359,9 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           final controller = _customAmountControllers[member.id];
           if (controller != null) {
             final currentAmount = double.tryParse(controller.text) ?? 0.0;
-            controller.text = (currentAmount + perPersonAmount).toStringAsFixed(2);
+            controller.text = (currentAmount + perPersonAmount).toStringAsFixed(
+              2,
+            );
           }
         }
       }
@@ -1243,7 +1380,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   // Percentage split section
   Widget _buildPercentageSplit(TravelGroup group) {
     double totalPercentage = 0.0;
-    
+
     // Calculate current total percentage
     for (var member in group.members) {
       final controllerText = _percentageControllers[member.id]?.text ?? '';
@@ -1251,9 +1388,9 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         totalPercentage += double.tryParse(controllerText) ?? 0.0;
       }
     }
-    
+
     final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1262,15 +1399,17 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
             side: BorderSide(
-              color: (totalPercentage - 100.0).abs() < 0.1 
-                  ? const Color(0xFF4CD964).withOpacity(0.3) 
-                  : Colors.orange.withOpacity(0.3),
+              color:
+                  (totalPercentage - 100.0).abs() < 0.1
+                      ? const Color(0xFF4CD964).withOpacity(0.3)
+                      : Colors.orange.withOpacity(0.3),
               width: 1,
             ),
           ),
-          color: widget.isDarkMode 
-              ? const Color(0xFF2E2E2E) 
-              : (totalPercentage - 100.0).abs() < 0.1
+          color:
+              widget.isDarkMode
+                  ? const Color(0xFF2E2E2E)
+                  : (totalPercentage - 100.0).abs() < 0.1
                   ? const Color(0xFF4CD964).withOpacity(0.05)
                   : Colors.orange.withOpacity(0.05),
           margin: const EdgeInsets.symmetric(vertical: 8),
@@ -1279,12 +1418,13 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
             child: Row(
               children: [
                 Icon(
-                  (totalPercentage - 100.0).abs() < 0.1 
-                      ? Icons.check_circle_outline 
+                  (totalPercentage - 100.0).abs() < 0.1
+                      ? Icons.check_circle_outline
                       : Icons.warning_amber_outlined,
-                  color: (totalPercentage - 100.0).abs() < 0.1 
-                      ? const Color(0xFF4CD964) 
-                      : Colors.orange,
+                  color:
+                      (totalPercentage - 100.0).abs() < 0.1
+                          ? const Color(0xFF4CD964)
+                          : Colors.orange,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1295,17 +1435,16 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                         'Total percentage: ${totalPercentage.toStringAsFixed(1)}%', // Changed from French
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: (totalPercentage - 100.0).abs() < 0.1 
-                              ? const Color(0xFF4CD964) 
-                              : Colors.orange,
+                          color:
+                              (totalPercentage - 100.0).abs() < 0.1
+                                  ? const Color(0xFF4CD964)
+                                  : Colors.orange,
                         ),
                       ),
                       if ((totalPercentage - 100.0).abs() >= 0.1)
                         const Text(
                           'The total should be 100%', // Changed from French
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                          ),
+                          style: TextStyle(fontStyle: FontStyle.italic),
                         ),
                     ],
                   ),
@@ -1315,7 +1454,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Quick actions
         Wrap(
           spacing: 8,
@@ -1366,86 +1505,100 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Percentage input for each member
         Column(
-          children: group.members.map((member) {
-            final percentageController = _percentageControllers[member.id];
-            final percentage = double.tryParse(percentageController?.text ?? '0.0') ?? 0.0;
-            final memberAmount = totalAmount * (percentage / 100.0);
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: member.id == _selectedPayerId 
-                        ? const Color(0xFF4CD964) 
-                        : Colors.grey,
-                    child: Text(
-                      member.name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          member.name,
-                          style: TextStyle(
-                            fontWeight: member.id == _selectedPayerId 
-                                ? FontWeight.bold 
-                                : FontWeight.normal,
+          children:
+              group.members.map((member) {
+                final percentageController = _percentageControllers[member.id];
+                final percentage =
+                    double.tryParse(percentageController?.text ?? '0.0') ?? 0.0;
+                final memberAmount = totalAmount * (percentage / 100.0);
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor:
+                            member.id == _selectedPayerId
+                                ? const Color(0xFF4CD964)
+                                : Colors.grey,
+                        child: Text(
+                          member.name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Text(
-                          '${memberAmount.toStringAsFixed(2)} $_selectedCurrency',
-                          style: TextStyle(
-                            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                            fontSize: 12,
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              member.name,
+                              style: TextStyle(
+                                fontWeight:
+                                    member.id == _selectedPayerId
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                              ),
+                            ),
+                            Text(
+                              '${memberAmount.toStringAsFixed(2)} $_selectedCurrency',
+                              style: TextStyle(
+                                color:
+                                    widget.isDarkMode
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700],
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (member.id == _selectedPayerId)
+                              const Text(
+                                'Payer', // Changed from "Payeur"
+                                style: TextStyle(
+                                  color: Color(0xFF4CD964),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
                         ),
-                        if (member.id == _selectedPayerId)
-                          const Text(
-                            'Payer', // Changed from "Payeur"
-                            style: TextStyle(
-                              color: Color(0xFF4CD964),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 120,
+                        child: TextFormField(
+                          controller: percentageController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: TextStyle(
+                            color:
+                                widget.isDarkMode ? Colors.white : Colors.black,
+                          ),
+                          decoration: InputDecoration(
+                            labelText:
+                                'Percentage', // Changed from "Pourcentage"
+                            suffixText: '%',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 120,
-                    child: TextFormField(
-                      controller: percentageController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Percentage', // Changed from "Pourcentage"
-                        suffixText: '%',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          onChanged: (value) {
+                            setState(() {}); // Refresh UI to update total
+                          },
                         ),
                       ),
-                      onChanged: (value) {
-                        setState(() {}); // Refresh UI to update total
-                      },
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
         ),
-        
+
         // Balance percentages button
         if ((totalPercentage - 100.0).abs() >= 0.1)
           ElevatedButton.icon(
@@ -1456,13 +1609,15 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               } else {
                 // Scale all percentages to sum to 100%
                 final scaleFactor = 100.0 / totalPercentage;
-                
+
                 setState(() {
                   for (var member in group.members) {
                     final controller = _percentageControllers[member.id];
                     if (controller != null) {
-                      final currentPercentage = double.tryParse(controller.text) ?? 0.0;
-                      controller.text = (currentPercentage * scaleFactor).toStringAsFixed(1);
+                      final currentPercentage =
+                          double.tryParse(controller.text) ?? 0.0;
+                      controller.text = (currentPercentage * scaleFactor)
+                          .toStringAsFixed(1);
                     }
                   }
                 });
@@ -1485,11 +1640,11 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
   // Add new method for weighted split UI
   Widget _buildWeightedSplit(TravelGroup group) {
     // We can reuse most of the percentage split UI but change labels
-    // This is similar to _buildPercentageSplit but with "weight" terminology 
+    // This is similar to _buildPercentageSplit but with "weight" terminology
     // instead of "percentage"
-    
+
     double totalWeight = 0.0;
-    
+
     // Calculate current total weight
     for (var member in group.members) {
       final controllerText = _percentageControllers[member.id]?.text ?? '';
@@ -1497,8 +1652,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
         totalWeight += double.tryParse(controllerText) ?? 0.0;
       }
     }
-    
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1507,15 +1661,17 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
             side: BorderSide(
-              color: totalWeight > 0
-                  ? const Color(0xFF4CD964).withOpacity(0.3) 
-                  : Colors.orange.withOpacity(0.3),
+              color:
+                  totalWeight > 0
+                      ? const Color(0xFF4CD964).withOpacity(0.3)
+                      : Colors.orange.withOpacity(0.3),
               width: 1,
             ),
           ),
-          color: widget.isDarkMode 
-              ? const Color(0xFF2E2E2E) 
-              : totalWeight > 0
+          color:
+              widget.isDarkMode
+                  ? const Color(0xFF2E2E2E)
+                  : totalWeight > 0
                   ? const Color(0xFF4CD964).withOpacity(0.05)
                   : Colors.orange.withOpacity(0.05),
           margin: const EdgeInsets.symmetric(vertical: 8),
@@ -1525,11 +1681,10 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
               children: [
                 Icon(
                   totalWeight > 0
-                      ? Icons.check_circle_outline 
+                      ? Icons.check_circle_outline
                       : Icons.warning_amber_outlined,
-                  color: totalWeight > 0
-                      ? const Color(0xFF4CD964) 
-                      : Colors.orange,
+                  color:
+                      totalWeight > 0 ? const Color(0xFF4CD964) : Colors.orange,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1540,17 +1695,16 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
                         'Total weight: ${totalWeight.toStringAsFixed(1)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: totalWeight > 0
-                              ? const Color(0xFF4CD964) 
-                              : Colors.orange,
+                          color:
+                              totalWeight > 0
+                                  ? const Color(0xFF4CD964)
+                                  : Colors.orange,
                         ),
                       ),
                       if (totalWeight <= 0)
                         const Text(
                           'Add weights to split the expense',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                          ),
+                          style: TextStyle(fontStyle: FontStyle.italic),
                         ),
                     ],
                   ),
@@ -1560,7 +1714,7 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Quick actions
         Wrap(
           spacing: 8,
@@ -1600,94 +1754,109 @@ class _SharedExpenseFormScreenState extends State<SharedExpenseFormScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Rest is similar to percentage UI with different labels
         // ...existing percentage layout with "Weight" instead of "Percentage" labels...
         Column(
-          children: group.members.map((member) {
-            final weightController = _percentageControllers[member.id];
-            final weight = double.tryParse(weightController?.text ?? '0.0') ?? 0.0;
-            final totalWeight = _percentageControllers.values
-                .map((c) => double.tryParse(c.text) ?? 0.0)
-                .fold<double>(0, (sum, w) => sum + w);
-                
-            // Fix the null check issue here by safely handling the null case
-            final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
-            final memberAmount = totalWeight > 0 
-                ? totalAmount * (weight / totalWeight) 
-                : 0.0;
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(
-                // Similar to percentage row but with "Weight" instead of "Percentage"
-                // ...copy the same row structure but adapt labels...
-                children: [
-                  CircleAvatar(
-                    backgroundColor: member.id == _selectedPayerId 
-                        ? const Color(0xFF4CD964) 
-                        : Colors.grey,
-                    child: Text(
-                      member.name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          member.name,
-                          style: TextStyle(
-                            fontWeight: member.id == _selectedPayerId 
-                                ? FontWeight.bold 
-                                : FontWeight.normal,
+          children:
+              group.members.map((member) {
+                final weightController = _percentageControllers[member.id];
+                final weight =
+                    double.tryParse(weightController?.text ?? '0.0') ?? 0.0;
+                final totalWeight = _percentageControllers.values
+                    .map((c) => double.tryParse(c.text) ?? 0.0)
+                    .fold<double>(0, (sum, w) => sum + w);
+
+                // Fix the null check issue here by safely handling the null case
+                final totalAmount =
+                    double.tryParse(_amountController.text) ?? 0.0;
+                final memberAmount =
+                    totalWeight > 0
+                        ? totalAmount * (weight / totalWeight)
+                        : 0.0;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    // Similar to percentage row but with "Weight" instead of "Percentage"
+                    // ...copy the same row structure but adapt labels...
+                    children: [
+                      CircleAvatar(
+                        backgroundColor:
+                            member.id == _selectedPayerId
+                                ? const Color(0xFF4CD964)
+                                : Colors.grey,
+                        child: Text(
+                          member.name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Text(
-                          '${memberAmount.toStringAsFixed(2)} $_selectedCurrency',
-                          style: TextStyle(
-                            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                            fontSize: 12,
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              member.name,
+                              style: TextStyle(
+                                fontWeight:
+                                    member.id == _selectedPayerId
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                              ),
+                            ),
+                            Text(
+                              '${memberAmount.toStringAsFixed(2)} $_selectedCurrency',
+                              style: TextStyle(
+                                color:
+                                    widget.isDarkMode
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700],
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (member.id == _selectedPayerId)
+                              const Text(
+                                'Payer',
+                                style: TextStyle(
+                                  color: Color(0xFF4CD964),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
                         ),
-                        if (member.id == _selectedPayerId)
-                          const Text(
-                            'Payer',
-                            style: TextStyle(
-                              color: Color(0xFF4CD964),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 120,
+                        child: TextFormField(
+                          controller: weightController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: TextStyle(
+                            color:
+                                widget.isDarkMode ? Colors.white : Colors.black,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'Weight',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 120,
-                    child: TextFormField(
-                      controller: weightController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Weight',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          onChanged: (value) {
+                            setState(() {}); // Refresh UI to update total
+                          },
                         ),
                       ),
-                      onChanged: (value) {
-                        setState(() {}); // Refresh UI to update total
-                      },
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
         ),
       ],
     );
