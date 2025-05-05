@@ -50,6 +50,7 @@ class _FinishSetupPageState extends State<FinishSetupPage> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _savePlaceholders(String firstName, String lastName) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('google_first_name', firstName);
