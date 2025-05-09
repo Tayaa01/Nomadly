@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart'; // Assuming AuthService handles SharedPreferences
@@ -24,15 +23,43 @@ class AuthProvider with ChangeNotifier {
     notifyListeners(); // Notify listeners that loading has started
 
     try {
-      _token = await _authService.getToken();
-      final userDataMap = await _authService.getUserData();
-      if (userDataMap != null) {
-        _user = User.fromJson(userDataMap);
+      // Check if the stored token is still valid
+      final bool stillLoggedIn = await _authService.isLoggedInWithValidToken();
+
+      if (stillLoggedIn) {
+        _token = await _authService.getToken(); // Token is confirmed valid
+        final userDataMap = await _authService.getUserData();
+        if (userDataMap != null) {
+          _user = User.fromJson(userDataMap);
+        } else {
+          // This case implies an inconsistency: token valid but no user data.
+          // Log out to be safe.
+          print(
+            "AuthProvider: Token valid but no user data found. Logging out.",
+          );
+          await _authService.logout();
+          _token = null;
+          _user = null;
+        }
       } else {
-        _user = null; // Ensure user is null if no data found
+        // Token is invalid, expired, or not present. Ensure logout.
+        print(
+          "AuthProvider: Token invalid, expired, or not found. Logging out.",
+        );
+        await _authService.logout(); // Clear any stored credentials
+        _token = null;
+        _user = null;
       }
     } catch (e) {
       print("Error initializing AuthProvider: $e");
+      // Ensure logout state on any error during initialization
+      try {
+        await _authService.logout();
+      } catch (logoutError) {
+        print(
+          "Error during logout in AuthProvider initialize catch: $logoutError",
+        );
+      }
       _token = null;
       _user = null;
     } finally {
