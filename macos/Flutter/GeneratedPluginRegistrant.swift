@@ -7,6 +7,7 @@ import Foundation
 
 import file_selector_macos
 import flutter_appauth
+import flutter_image_compress_macos
 import flutter_tts
 import geolocator_apple
 import google_sign_in_ios
@@ -19,6 +20,7 @@ import url_launcher_macos
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
   FlutterAppauthPlugin.register(with: registry.registrar(forPlugin: "FlutterAppauthPlugin"))
+  FlutterImageCompressMacosPlugin.register(with: registry.registrar(forPlugin: "FlutterImageCompressMacosPlugin"))
   FlutterTtsPlugin.register(with: registry.registrar(forPlugin: "FlutterTtsPlugin"))
   GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
   FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))

@@ -5,10 +5,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'; // Uncomment this import
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart'; // Update these imports to include the auth service for getting user preferences
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class CurrencyViewModel extends ChangeNotifier {
   final CurrencyService _currencyService = CurrencyService();
-  final AuthService _authService = AuthService(); // Add this service to access user information
+  final AuthService _authService =
+      AuthService(); // Add this service to access user information
   String? scannedAmount;
   double? convertedAmount;
   String? convertedCurrencySymbol;
@@ -60,17 +64,17 @@ class CurrencyViewModel extends ChangeNotifier {
     // Load saved country or get user's location
     _loadSavedCountry();
   }
-  
+
   // Load the saved country from SharedPreferences
   Future<void> _loadSavedCountry() async {
     try {
       isLoadingLocation = true;
       notifyListeners();
-      
+
       final prefs = await SharedPreferences.getInstance();
       final savedCountryCode = prefs.getString(COUNTRY_CODE_KEY);
       final savedCountryName = prefs.getString(COUNTRY_NAME_KEY);
-      
+
       if (savedCountryCode != null && savedCountryName != null) {
         // Use saved values
         currentCountryCode = savedCountryCode;
@@ -97,14 +101,14 @@ class CurrencyViewModel extends ChangeNotifier {
       // Set isLoadingLocation to true
       isLoadingLocation = true;
       notifyListeners();
-      
+
       // Skip loading from preferences if forceRefresh is true
       if (!forceRefresh) {
         // Check if we have a saved country from preferences
         final prefs = await SharedPreferences.getInstance();
         final savedCountryCode = prefs.getString('country_code');
         final savedCountryName = prefs.getString('country_name');
-        
+
         if (savedCountryCode != null && savedCountryName != null) {
           print('Loaded saved country: $savedCountryName ($savedCountryCode)');
           currentCountryCode = savedCountryCode;
@@ -114,50 +118,53 @@ class CurrencyViewModel extends ChangeNotifier {
           return;
         }
       }
-      
+
       // Check permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          errorMessage = "Location permission denied. Cannot determine your country.";
+          errorMessage =
+              "Location permission denied. Cannot determine your country.";
           _setDefaultCountry();
           return;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
-        errorMessage = "Location permission permanently denied. Please enable it in settings.";
+        errorMessage =
+            "Location permission permanently denied. Please enable it in settings.";
         _setDefaultCountry();
         return;
       }
-      
+
       // Get current position
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium
+        desiredAccuracy: LocationAccuracy.medium,
       );
-      
+
       print('Got location: ${position.latitude}, ${position.longitude}');
-      
+
       try {
         // Use reverse geocoding to get country
         final placemarks = await placemarkFromCoordinates(
-          position.latitude, 
+          position.latitude,
           position.longitude,
-          localeIdentifier: 'en_US'  // Ensure English locale for consistent results
+          localeIdentifier:
+              'en_US', // Ensure English locale for consistent results
         );
-        
+
         print('Received ${placemarks.length} placemarks');
-        
+
         if (placemarks.isNotEmpty) {
           final placemark = placemarks.first;
           print('Placemark data: ${placemark.toJson()}');
-          
+
           if (placemark.isoCountryCode != null && placemark.country != null) {
             currentCountryCode = placemark.isoCountryCode;
             sourceCountryName = placemark.country;
             print('Detected country: $sourceCountryName ($currentCountryCode)');
-            
+
             // Save the detected country
             await setCountry(currentCountryCode!, sourceCountryName!);
           } else {
@@ -174,14 +181,15 @@ class CurrencyViewModel extends ChangeNotifier {
       }
     } catch (e) {
       print('Error getting location: $e');
-      errorMessage = "Could not determine your location. Please check your settings.";
+      errorMessage =
+          "Could not determine your location. Please check your settings.";
       _setDefaultCountry();
     } finally {
       isLoadingLocation = false;
       notifyListeners();
     }
   }
-  
+
   // Helper to set a default country when detection fails
   void _setDefaultCountry() {
     currentCountryCode = 'US';
@@ -194,7 +202,7 @@ class CurrencyViewModel extends ChangeNotifier {
     currentCountryCode = countryCode;
     sourceCountryName = countryName;
     print('Setting country: $sourceCountryName ($currentCountryCode)');
-    
+
     // Save the selection for future app launches
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -204,14 +212,14 @@ class CurrencyViewModel extends ChangeNotifier {
     } catch (e) {
       print('Error saving country preferences: $e');
     }
-    
+
     notifyListeners();
   }
 
   // Method to scan and show results without adding transaction
   Future<void> scanForPreview() async {
     if (_isScanning) return;
-    
+
     _isScanning = true;
     errorMessage = null;
     notifyListeners();
@@ -220,41 +228,45 @@ class CurrencyViewModel extends ChangeNotifier {
       // Take a photo using image picker
       final ImagePicker picker = ImagePicker();
       final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-      
+
       if (photo == null) {
         _isScanning = false;
         notifyListeners();
         return;
       }
-      
+
       _scannedImage = photo;
-      
+
       // Get user country for target currency
       final user = await _authService.getCurrentUser();
-      final userCountryCode = user?.countryCode ?? 'TN'; // Default to TN if user country not available
-      
+      final userCountryCode =
+          user?.countryCode ??
+          'TN'; // Default to TN if user country not available
+
       // Source currency is from the location/bill country (detected or selected)
       final sourceCurrency = currentCountryCode == 'TN' ? 'TND' : 'EUR';
-      
+
       // Target currency is the user's preferred currency
       final targetCurrency = userCountryCode == 'TN' ? 'TND' : 'EUR';
-      
-      print('Scanning with sourceCurrency: $sourceCurrency, targetCurrency: $targetCurrency');
-      
+
+      print(
+        'Scanning with sourceCurrency: $sourceCurrency, targetCurrency: $targetCurrency',
+      );
+
       // Call new endpoint to analyze and convert
       final result = await _currencyService.analyzeAndConvertImage(
         photo,
         sourceCurrency: sourceCurrency,
         targetCurrency: targetCurrency,
       );
-      
+
       _scanResults = result;
-      
+
       // Display the results
       if (result['analysis'] != null && result['conversion'] != null) {
         final analysis = result['analysis'];
         final conversion = result['conversion'];
-        
+
         amountController.text = analysis['amount'].toString();
         scannedAmount = '${analysis['amount']} ${conversion['from']}';
         convertedAmount = conversion['result'];
@@ -276,20 +288,27 @@ class CurrencyViewModel extends ChangeNotifier {
   // Method to add transaction using previously scanned image
   Future<void> addTransaction() async {
     if (_scannedImage == null || isConverting) return;
-    
+
     isConverting = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      // Add transaction using the existing image - was missing actual API call
+      // Compress the image before upload (if not already compressed)
+      final XFile? compressed = await compressImage(_scannedImage!);
+      if (compressed == null) {
+        errorMessage = 'Failed to compress image.';
+        isConverting = false;
+        notifyListeners();
+        return;
+      }
+      // Add transaction using the compressed image
       final result = await _currencyService.addTransactionFromImage(
-        _scannedImage!,
+        compressed,
         countryCode: currentCountryCode,
       );
-      
       print('Transaction added response: $result');
-      
+
       // Show success message
       _showSuccessMessage = true;
       isConverting = false;
@@ -297,7 +316,7 @@ class CurrencyViewModel extends ChangeNotifier {
       _scanResults = null;
       _scannedImage = null;
       notifyListeners();
-      
+
       // Hide success message after a few seconds
       Future.delayed(const Duration(seconds: 3), () {
         if (_showSuccessMessage) {
@@ -318,7 +337,7 @@ class CurrencyViewModel extends ChangeNotifier {
     _scannedImage = null;
     _scanResults = null;
     _hasScannedResults = false;
-    _showSuccessMessage = false;  // Clear success message
+    _showSuccessMessage = false; // Clear success message
     amountController.text = '';
     scannedAmount = null;
     convertedAmount = null;
@@ -333,7 +352,7 @@ class CurrencyViewModel extends ChangeNotifier {
 
   Future<void> convertCurrency() async {
     isConverting = true;
-    clearState();  
+    clearState();
     notifyListeners();
 
     try {
@@ -341,8 +360,11 @@ class CurrencyViewModel extends ChangeNotifier {
         print('Converting currency with image: ${selectedImage!.path}');
         final data = await _currencyService.analyzeAndConvertImage(
           selectedImage!,
-          sourceCurrency: currentCountryCode == 'TN' ? 'TND' : 'EUR', // Fixed parameter name
-          targetCurrency: 'TND' // Set a default target currency
+          sourceCurrency:
+              currentCountryCode == 'TN'
+                  ? 'TND'
+                  : 'EUR', // Fixed parameter name
+          targetCurrency: 'TND', // Set a default target currency
         );
 
         print('API response: $data');
@@ -352,40 +374,46 @@ class CurrencyViewModel extends ChangeNotifier {
           final bill = data['bill'];
           final amount = bill['amount'];
           final converted = bill['convertedAmount'];
-          
+
           scannedAmount = '${amount['value']} ${amount['currency']}';
           sourceCountryName = bill['country'];
           convertedAmount = double.tryParse(converted['value'].toString());
           convertedCurrencySymbol = converted['currency'];
           targetCountryName = converted['country'];
-          
-          print('Processed bill data: $scannedAmount, $convertedAmount $convertedCurrencySymbol');
+
+          print(
+            'Processed bill data: $scannedAmount, $convertedAmount $convertedCurrencySymbol',
+          );
         }
 
         // Handle tax refund data
         if (data['taxRefund'] != null) {
           final taxRefund = data['taxRefund'];
           isTaxRefundAvailable = taxRefund['available'] ?? false;
-          showTips = true;  // Always show tips section
-          
+          showTips = true; // Always show tips section
+
           print('Tax refund available: $isTaxRefundAvailable');
-          
+
           if (isTaxRefundAvailable) {
             // Handle refund amount
             if (taxRefund['amount'] != null) {
               final refundAmount = taxRefund['amount'];
-              taxRefundAmount = double.tryParse(refundAmount['value'].toString());
+              taxRefundAmount = double.tryParse(
+                refundAmount['value'].toString(),
+              );
               taxRefundCurrency = refundAmount['currency'];
               print('Set refund amount: $taxRefundAmount $taxRefundCurrency');
             }
-            
+
             // Handle instructions
             taxRefundInstructions = taxRefund['instructions']?.toString();
             print('Set instructions: $taxRefundInstructions');
-            
+
             // Handle requirements
             if (taxRefund['requirements'] != null) {
-              taxRefundRequirements = List<String>.from(taxRefund['requirements']);
+              taxRefundRequirements = List<String>.from(
+                taxRefund['requirements'],
+              );
               print('Set requirements: $taxRefundRequirements');
             }
 
@@ -397,19 +425,23 @@ class CurrencyViewModel extends ChangeNotifier {
             taxRefundCurrency = null;
             taxRefundRequirements = [];
             taxRefundInstructions = null;
-            
+
             taxRefundMessage = taxRefund['message'];
             print('Set tax refund message: $taxRefundMessage');
-            
+
             if (taxRefund['convertedMinAmount'] != null) {
               final minAmount = taxRefund['convertedMinAmount'];
-              convertedMinAmount = double.tryParse(minAmount['value']?.toString() ?? '');
+              convertedMinAmount = double.tryParse(
+                minAmount['value']?.toString() ?? '',
+              );
               convertedMinCurrency = minAmount['currency'];
-              print('Set minimum amount: $convertedMinAmount $convertedMinCurrency');
+              print(
+                'Set minimum amount: $convertedMinAmount $convertedMinCurrency',
+              );
             }
           }
         }
-        
+
         notifyListeners();
       } else {
         errorMessage = "Please take a photo first";
@@ -420,7 +452,9 @@ class CurrencyViewModel extends ChangeNotifier {
       errorMessage = "Error converting currency: $e";
       notifyListeners();
     } finally {
-      print('Final state - showTips: $showTips, isTaxRefundAvailable: $isTaxRefundAvailable');
+      print(
+        'Final state - showTips: $showTips, isTaxRefundAvailable: $isTaxRefundAvailable',
+      );
       print('Requirements: $taxRefundRequirements');
       print('Instructions: $taxRefundInstructions');
       isConverting = false;
@@ -448,6 +482,22 @@ class CurrencyViewModel extends ChangeNotifier {
     showTips = false;
     _showSuccessMessage = false;
     notifyListeners();
+  }
+
+  // Compress image before upload to avoid 413 errors
+  Future<XFile?> compressImage(XFile file) async {
+    final dir = await getTemporaryDirectory();
+    final targetPath =
+        '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final result = await FlutterImageCompress.compressAndGetFile(
+      file.path,
+      targetPath,
+      quality: 60, // Adjust as needed
+      minWidth: 1200,
+      minHeight: 1200,
+    );
+    if (result == null) return null;
+    return XFile(result.path);
   }
 }
 

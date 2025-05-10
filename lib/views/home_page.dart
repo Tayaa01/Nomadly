@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Import SystemNavigator
+import 'package:http/http.dart'
+    as http; // Added import for http.ClientException
 import '../widgets/app_drawer.dart';
 import '../widgets/modern_app_bar.dart'; // Import the new modern app bar
 import '../services/travel_services.dart';
@@ -10,6 +12,7 @@ import '../services/tips_service.dart'; // Make sure this import is correct
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../providers/destination_provider.dart';
+import '../providers/auth_provider.dart'; // Import AuthProvider
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math';
@@ -67,27 +70,33 @@ class _HomePageState extends State<HomePage> {
   Future<void> _progressiveLoadData() async {
     if (!mounted) return;
 
+    final destinationProvider = Provider.of<DestinationProvider>(
+      context,
+      listen: false,
+    );
+
+    if (!destinationProvider.hasManuallySelectedCountry) {
+      destinationProvider.setSelectedCountry("Japan");
+    }
+    await destinationProvider.initializeCountriesIfNeeded();
+
     try {
-      // Step 1: Initialize destination provider (quick operation)
-      final destinationProvider = Provider.of<DestinationProvider>(
-        context,
-        listen: false,
+      await _loadUserProfile(destinationProvider);
+
+      // Use forceRefresh: false by default to try cache first
+      await _loadDestinationDataParallel(
+        destinationProvider.selectedCountry,
+        destinationProvider: destinationProvider,
       );
-      await destinationProvider.initializeCountriesIfNeeded();
 
-      // Step 2: Load user profile and destination data in parallel
-      await Future.wait([
-        _loadUserProfile(destinationProvider),
-        _loadDestinationDataParallel(destinationProvider.selectedCountry),
-      ]);
-
-      // Step 3: Load tips (can be loaded after flights and hotels)
       if (destinationProvider.selectedCountry != null) {
         _loadTipsCategories(destinationProvider.selectedCountry!);
       } else {
-        setState(() {
-          _isLoadingTips = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoadingTips = false;
+          });
+        }
       }
     } catch (e) {
       print('Error during progressive loading: $e');
@@ -110,9 +119,7 @@ class _HomePageState extends State<HomePage> {
           _isLoadingUser = false;
         });
 
-        // Set user's country in the provider if it's the first time
-        if (!destinationProvider.hasInitializedCountry &&
-            user.countryCode.isNotEmpty) {
+        if (user.countryCode.isNotEmpty) {
           String userCountry = _mapCountryCodeToName(user.countryCode);
           destinationProvider.setInitialCountry(userCountry);
         }
@@ -122,29 +129,109 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _isLoadingUser = false;
+          if (e.toString().contains('401')) {
+            final authProvider = Provider.of<AuthProvider>(
+              context,
+              listen: false,
+            );
+            authProvider.logout().then((_) {
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/sign-in', (route) => false);
+            });
+          } else {
+            _errorMessage = 'Failed to load user profile: $e';
+          }
         });
       }
     }
   }
 
   // Load flights and hotels in parallel
-  Future<void> _loadDestinationDataParallel(String? destination) async {
-    if (!mounted || destination == null) {
+  Future<void> _loadDestinationDataParallel(
+    String? destination, {
+    required DestinationProvider destinationProvider,
+    bool forceRefresh = false,
+  }) async {
+    print(
+      '[HomePage] _loadDestinationDataParallel called with destination: $destination, forceRefresh: $forceRefresh',
+    );
+    if (!mounted) {
+      print(
+        '[HomePage] _loadDestinationDataParallel returning early: not mounted',
+      );
+      return;
+    }
+
+    const String hardcodedOrigin = "Tunisia";
+
+    if (destination == null) {
       setState(() {
         _isLoadingFlights = false;
         _isLoadingHotels = false;
+        _flights = [];
+        _hotels = [];
+        _errorMessage = null;
+      });
+      print(
+        '[HomePage] _loadDestinationDataParallel returning early: destination is null',
+      );
+      return;
+    }
+
+    if (destination.toLowerCase() == hardcodedOrigin.toLowerCase()) {
+      print(
+        '[HomePage] Origin and destination are the same ($destination). Skipping flight/hotel search.',
+      );
+      setState(() {
+        _isLoadingFlights = false;
+        _isLoadingHotels = false;
+        _flights = [];
+        _hotels = [];
+        _errorMessage =
+            'Please select a different country to search for flights and hotels from $hardcodedOrigin.';
       });
       return;
     }
 
+    if (!forceRefresh &&
+        destinationProvider.cachedDataCountry == destination &&
+        destinationProvider.cachedFlights.isNotEmpty) {
+      print('[HomePage] Using cached data for $destination');
+      if (mounted) {
+        setState(() {
+          _flights = List.from(destinationProvider.cachedFlights);
+          _hotels = List.from(destinationProvider.cachedHotels);
+          _isLoadingFlights = false;
+          _isLoadingHotels = false;
+          _lastUpdated = DateTime.now();
+          _errorMessage = null;
+        });
+      }
+      return;
+    }
+
+    print(
+      '[HomePage] Cache miss or forceRefresh for $destination. Fetching from API.',
+    );
+    setState(() {
+      _isLoadingFlights = true;
+      _isLoadingHotels = true;
+      _errorMessage = null;
+    });
+
     try {
-      // Load flights and hotels in parallel
+      print(
+        '[HomePage] Fetching flights and hotels for: $destination (from $hardcodedOrigin)',
+      );
       final results = await Future.wait([
         TravelServices.fetchFlights(destination),
         TravelServices.fetchHotels(destination),
       ]);
 
       if (mounted) {
+        print('[HomePage] Flights fetched: ${results[0]}');
+        print('[HomePage] Hotels fetched: ${results[1]}');
         setState(() {
           _flights = results[0];
           _isLoadingFlights = false;
@@ -152,13 +239,20 @@ class _HomePageState extends State<HomePage> {
           _isLoadingHotels = false;
           _lastUpdated = DateTime.now();
         });
+        destinationProvider.updateCache(destination, results[0], results[1]);
       }
     } catch (e) {
-      print('Error loading destination data: $e');
+      print('Error loading destination data for $destination: $e');
       if (mounted) {
         setState(() {
           _isLoadingFlights = false;
           _isLoadingHotels = false;
+          if (e is http.ClientException) {
+            _errorMessage = e.message;
+          } else {
+            _errorMessage =
+                'Failed to load flight/hotel data for $destination: ${e.toString()}';
+          }
         });
       }
     }
@@ -187,6 +281,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _silentRefresh() async {
     if (!mounted) return;
 
+    print('[HomePage] Performing silent refresh...');
     setState(() {
       _isRefreshing = true;
     });
@@ -197,7 +292,11 @@ class _HomePageState extends State<HomePage> {
         listen: false,
       );
       if (destinationProvider.selectedCountry != null) {
-        await _loadDestinationDataParallel(destinationProvider.selectedCountry);
+        await _loadDestinationDataParallel(
+          destinationProvider.selectedCountry,
+          destinationProvider: destinationProvider,
+          forceRefresh: true,
+        );
       }
 
       if (mounted) {
@@ -217,7 +316,23 @@ class _HomePageState extends State<HomePage> {
 
   // Regular full refresh from pull-to-refresh
   Future<void> _loadData() async {
+    print('[HomePage] Performing pull-to-refresh...');
+    final destinationProvider = Provider.of<DestinationProvider>(
+      context,
+      listen: false,
+    );
+
+    if (destinationProvider.selectedCountry != null) {
+      print(
+        '[HomePage] Clearing cache for ${destinationProvider.selectedCountry} before pull-to-refresh.',
+      );
+      destinationProvider.clearCacheForCountry(
+        destinationProvider.selectedCountry!,
+      );
+    }
+
     setState(() {
+      _isLoadingUser = true;
       _isLoadingFlights = true;
       _isLoadingHotels = true;
       _isLoadingTips = true;
@@ -242,7 +357,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _mapCountryCodeToName(String countryCode) {
-    // Map common country codes to names
     final Map<String, String> codeToName = {
       'US': 'United States',
       'GB': 'United Kingdom',
@@ -275,24 +389,25 @@ class _HomePageState extends State<HomePage> {
       listen: false,
     );
 
-    if (country == destinationProvider.selectedCountry) return;
+    if (country == destinationProvider.selectedCountry &&
+        !destinationProvider.cachedFlights.isEmpty) {
+      print(
+        '[HomePage] Country $country already selected and data likely cached/displayed. Skipping redundant load.',
+      );
+      return;
+    }
 
-    // Update the provider
     destinationProvider.setSelectedCountry(country);
 
     setState(() {
-      _isLoadingFlights = true;
-      _isLoadingHotels = true;
       _isLoadingTips = true;
-      _flights = [];
-      _hotels = [];
     });
 
-    // Load data for the new country in parallel
-    await Future.wait([
-      _loadDestinationDataParallel(country),
-      _loadTipsCategories(country),
-    ]);
+    await _loadDestinationDataParallel(
+      country,
+      destinationProvider: destinationProvider,
+    );
+    await _loadTipsCategories(country);
   }
 
   Future<void> _openLink(String? url) async {
@@ -350,12 +465,11 @@ class _HomePageState extends State<HomePage> {
 
     return WillPopScope(
       onWillPop: () async {
-        // Show a confirmation dialog before exiting the app
         final shouldExit = await _showExitConfirmationDialog();
         if (shouldExit) {
-          SystemNavigator.pop(); // Exit the app
+          SystemNavigator.pop();
         }
-        return false; // Handle the back action in this widget
+        return false;
       },
       child: Scaffold(
         appBar: ModernAppBar(
@@ -407,32 +521,25 @@ class _HomePageState extends State<HomePage> {
               ),
               actions: [
                 TextButton(
-                  onPressed:
-                      () => Navigator.of(
-                        context,
-                      ).pop(false), // Returns false (don't exit)
+                  onPressed: () => Navigator.of(context).pop(false),
                   child: const Text(
-                    'No', // Explicitly label the cancel button
+                    'No',
                     style: TextStyle(color: Color(0xFF4CD964)),
                   ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colors.red, // Make the exit button red for clarity
+                    backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed:
-                      () => Navigator.of(
-                        context,
-                      ).pop(true), // Returns true (exit)
+                  onPressed: () => Navigator.of(context).pop(true),
                   child: const Text('Yes'),
                 ),
               ],
             );
           },
         ) ??
-        false; // Default to false if dialog is dismissed
+        false;
   }
 
   Widget _buildErrorView() {
@@ -461,13 +568,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // New skeleton UI components - Updated Styles
   Widget _buildUserGreetingSkeleton() {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFF333333), // Match loading screen
-      highlightColor: const Color(
-        0xFF4CD964,
-      ).withOpacity(0.3), // Match loading screen
+      baseColor: const Color(0xFF333333),
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -475,7 +579,7 @@ class _HomePageState extends State<HomePage> {
             width: 100,
             height: 14,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color for content
+              color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -484,7 +588,7 @@ class _HomePageState extends State<HomePage> {
             width: 150,
             height: 24,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color for content
+              color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -495,10 +599,8 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildDestinationSelectorSkeleton() {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFF333333), // Match loading screen
-      highlightColor: const Color(
-        0xFF4CD964,
-      ).withOpacity(0.3), // Match loading screen
+      baseColor: const Color(0xFF333333),
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -506,23 +608,21 @@ class _HomePageState extends State<HomePage> {
             width: 160,
             height: 18,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color
+              color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
           const SizedBox(height: 16),
           Container(
-            // Search bar skeleton
             height: 48,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color
-              borderRadius: BorderRadius.circular(12), // Match style
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
           const SizedBox(height: 16),
           Row(
-            // Country buttons skeleton
             children: List.generate(
               4,
               (index) => Padding(
@@ -531,8 +631,8 @@ class _HomePageState extends State<HomePage> {
                   width: 80,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF333333), // Use base color
-                    borderRadius: BorderRadius.circular(12), // Match style
+                    color: const Color(0xFF333333),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
@@ -545,30 +645,26 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildFlightCardSkeleton() {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFF333333), // Match loading screen
-      highlightColor: const Color(
-        0xFF4CD964,
-      ).withOpacity(0.3), // Match loading screen
+      baseColor: const Color(0xFF333333),
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            // Title skeleton
             width: 160,
             height: 20,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color
+              color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
           const SizedBox(height: 16),
           Container(
-            // Card skeleton
             height: 200,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color
-              borderRadius: BorderRadius.circular(16), // Match style
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ],
@@ -578,25 +674,21 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHotelCardsSkeleton() {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFF333333), // Match loading screen
-      highlightColor: const Color(
-        0xFF4CD964,
-      ).withOpacity(0.3), // Match loading screen
+      baseColor: const Color(0xFF333333),
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            // Title skeleton
             width: 140,
             height: 20,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color
+              color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
           const SizedBox(height: 16),
           Row(
-            // Hotel cards skeleton
             children: List.generate(
               2,
               (index) => Padding(
@@ -605,8 +697,8 @@ class _HomePageState extends State<HomePage> {
                   width: 180,
                   height: 200,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF333333), // Use base color
-                    borderRadius: BorderRadius.circular(16), // Match style
+                    color: const Color(0xFF333333),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
@@ -619,22 +711,19 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildTipsSkeleton() {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFF333333), // Match loading screen
-      highlightColor: const Color(
-        0xFF4CD964,
-      ).withOpacity(0.3), // Match loading screen
+      baseColor: const Color(0xFF333333),
+      highlightColor: const Color(0xFF4CD964).withOpacity(0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            // Header skeleton
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
                 width: 120,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF333333), // Use base color
+                  color: const Color(0xFF333333),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -642,7 +731,7 @@ class _HomePageState extends State<HomePage> {
                 width: 60,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF333333), // Use base color
+                  color: const Color(0xFF333333),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -650,17 +739,15 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 16),
           Container(
-            // Tip preview card skeleton
             height: 150,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333), // Use base color
-              borderRadius: BorderRadius.circular(16), // Match style
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
           const SizedBox(height: 12),
           Row(
-            // Category chips skeleton
             children: List.generate(
               3,
               (index) => Padding(
@@ -669,8 +756,8 @@ class _HomePageState extends State<HomePage> {
                   width: 80,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF333333), // Use base color
-                    borderRadius: BorderRadius.circular(20), // Match chip style
+                    color: const Color(0xFF333333),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
               ),
@@ -681,7 +768,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // New progressive content view
   Widget _buildProgressiveContentView(DestinationProvider destinationProvider) {
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -689,7 +775,6 @@ class _HomePageState extends State<HomePage> {
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          // User Greeting Section
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -728,8 +813,6 @@ class _HomePageState extends State<HomePage> {
                       ),
             ),
           ),
-
-          // Last updated info
           if (_lastUpdated != null)
             SliverToBoxAdapter(
               child: Padding(
@@ -740,8 +823,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-
-          // Destination Selector - Always show, but use skeleton while loading
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -770,8 +851,6 @@ class _HomePageState extends State<HomePage> {
                       ),
             ),
           ),
-
-          // Featured Flights Section
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -787,8 +866,6 @@ class _HomePageState extends State<HomePage> {
                       : _buildFeaturedFlightsContent(destinationProvider),
             ),
           ),
-
-          // Popular Hotels Section
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -804,8 +881,6 @@ class _HomePageState extends State<HomePage> {
                       : _buildHotelsContent(destinationProvider),
             ),
           ),
-
-          // Travel Tips Section with integrated Tips
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -817,8 +892,6 @@ class _HomePageState extends State<HomePage> {
                       : _buildIntegratedTipsSection(destinationProvider),
             ),
           ),
-
-          // Travel Planner Promo - Always show this
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -885,8 +958,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-
-          // Currency services promo - Always show this
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
@@ -960,7 +1031,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Extract content-only widgets for each section
   Widget _buildFeaturedFlightsContent(DestinationProvider destinationProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1344,7 +1414,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-
         if (destinationProvider.selectedCountry != null) ...[
           Container(
             margin: const EdgeInsets.only(bottom: 16),
@@ -1401,7 +1470,6 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 12),
         ],
-
         SizedBox(
           height: 88,
           child: SingleChildScrollView(
@@ -1475,7 +1543,6 @@ class _HomePageState extends State<HomePage> {
                             destinationProvider.availableCountries[columnIndex],
                             destinationProvider,
                           ),
-
                         if (columnIndex + itemsPerRow < totalCountries)
                           _buildCountryButton(
                             destinationProvider.availableCountries[columnIndex +
@@ -1682,7 +1749,6 @@ class _HomePageState extends State<HomePage> {
       return 'https://images.unsplash.com/photo-1503220317375-aaad61436b1b?q=80&w=1000';
     }
 
-    // Find matching country in the JSON
     String countryKey = '';
     for (String key in _countryImages.keys) {
       if (key.toLowerCase() == destination.toLowerCase() ||
@@ -1692,32 +1758,27 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    // If we found a matching country
     if (countryKey.isNotEmpty && _countryImages.containsKey(countryKey)) {
-      // For flight images
       if (isFlightImage && _countryImages[countryKey].containsKey('airline')) {
         return _countryImages[countryKey]['airline'];
       }
 
-      // For hotel images
       if (isHotelImage &&
           _countryImages[countryKey].containsKey('hotels') &&
           _countryImages[countryKey]['hotels'] is List &&
           (_countryImages[countryKey]['hotels'] as List).isNotEmpty) {
         final hotelImages = _countryImages[countryKey]['hotels'] as List;
-        return hotelImages[0]; // Return the first hotel image
+        return hotelImages[0];
       }
 
-      // For general tourism images
       if (_countryImages[countryKey].containsKey('tourism') &&
           _countryImages[countryKey]['tourism'] is List &&
           (_countryImages[countryKey]['tourism'] as List).isNotEmpty) {
         final tourismImages = _countryImages[countryKey]['tourism'] as List;
-        return tourismImages[0]; // Return the first tourism image
+        return tourismImages[0];
       }
     }
 
-    // Default fallbacks
     if (isFlightImage) {
       return 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1000';
     }
@@ -1726,11 +1787,9 @@ class _HomePageState extends State<HomePage> {
       return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000';
     }
 
-    // Generic travel image fallback
     return 'https://images.unsplash.com/photo-1503220317375-aaad61436b1b?q=80&w=1000';
   }
 
-  // Add the missing _buildEmptyState method
   Widget _buildEmptyState(String message) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -1750,7 +1809,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Add the missing _buildIntegratedTipsSection method if it's also needed
   Widget _buildIntegratedTipsSection(DestinationProvider destinationProvider) {
     return FutureBuilder<List<String>>(
       future: _tipsService.getCategoriesForCountry(
@@ -1811,7 +1869,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      // Set the tip category and navigate to the tips screen
                       destinationProvider.setTipCategory(selectedCategory);
                       Navigator.pushNamed(context, '/tips');
                     },
@@ -1826,8 +1883,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Preview one tip from the first category
               if (selectedCategory != null)
                 FutureBuilder<List<Tip>>(
                   future: _tipsService.getTipsByCountryAndCategory(
@@ -1847,7 +1902,6 @@ class _HomePageState extends State<HomePage> {
                       );
                     }
 
-                    // Show first tip as preview
                     final tip = tipsSnapshot.data!.first;
                     return _buildTipPreviewCard(
                       category: tip.category,
@@ -1859,10 +1913,7 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                 ),
-
               const SizedBox(height: 12),
-
-              // Category chips
               SizedBox(
                 height: 40,
                 child: ListView.builder(
@@ -1898,7 +1949,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Add the missing _buildTipPreviewCard method if needed
   Widget _buildTipPreviewCard({
     required String category,
     required String content,

@@ -1,7 +1,7 @@
 class ApiConfig {
   // Main base URL for all services
-  static const String BASE_URL = "https://espritmobile.com/api";
-  //static const String BASE_URL = "http://192.168.238.159:3000/api";
+  //static const String BASE_URL = "https://espritmobile.com/api";
+  static const String BASE_URL = "http://192.168.31.196:3000/api";
 
   // Endpoints for Auth Service
   static const String REGISTER_ENDPOINT = "/auth/register";
