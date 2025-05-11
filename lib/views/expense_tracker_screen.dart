@@ -454,13 +454,34 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
     }
   }
 
+  // Helper to get currency symbol
+  String _getCurrencySymbol(String? currencyCode) {
+    if (currencyCode == null) return '';
+
+    switch (currencyCode) {
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      case 'TND':
+        return 'DT';
+      default:
+        return currencyCode;
+    }
+  }
+
   // Build a visually appealing transaction card
   Widget _buildTransactionCard(Transaction transaction) {
     // Determine if this is incoming or outgoing (negative amount)
     final isOutgoing = true; // Assume all are expenses for now
 
-    // Get currency symbol
+    // Get currency symbol - check for null
     final currencySymbol = _getCurrencySymbol(transaction.originalCurrency);
+    final convertedSymbol = _getCurrencySymbol(transaction.convertedCurrency);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -529,14 +550,15 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                   ),
                 ),
 
-                // Amount
+                // Amount with null safety
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     // Show primary amount (converted if available)
                     Text(
-                      transaction.convertedAmount != null
-                          ? '${_getCurrencySymbol(transaction.convertedCurrency ?? '')}${transaction.convertedAmount!.toStringAsFixed(2)}'
+                      transaction.convertedAmount != null &&
+                              transaction.convertedCurrency != null
+                          ? '$convertedSymbol${transaction.convertedAmount!.toStringAsFixed(2)}'
                           : '$currencySymbol${transaction.originalAmount.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 16,
@@ -549,8 +571,9 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                       ),
                     ),
 
-                    // Show secondary amount if available
+                    // Show secondary amount if available with null safety
                     if (transaction.convertedAmount != null &&
+                        transaction.convertedCurrency != null &&
                         transaction.convertedCurrency !=
                             transaction.originalCurrency)
                       Text(
@@ -570,6 +593,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
 
             // If we have original and converted amounts, show a divider and conversion details
             if (transaction.convertedAmount != null &&
+                transaction.convertedCurrency != null &&
                 transaction.convertedCurrency !=
                     transaction.originalCurrency) ...[
               const Divider(height: 24),
@@ -594,24 +618,6 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
         ),
       ),
     );
-  }
-
-  // Helper to get currency symbol
-  String _getCurrencySymbol(String currencyCode) {
-    switch (currencyCode) {
-      case 'USD':
-        return '\$';
-      case 'EUR':
-        return '€';
-      case 'GBP':
-        return '£';
-      case 'JPY':
-        return '¥';
-      case 'TND':
-        return 'DT';
-      default:
-        return currencyCode;
-    }
   }
 
   // Add a skeleton loader widget

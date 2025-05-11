@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider with ChangeNotifier {
-  bool _isDarkMode = true;
   final String _themeKey = 'is_dark_mode';
 
   ThemeProvider() {
@@ -16,7 +15,6 @@ class ThemeProvider with ChangeNotifier {
     // Set dark mode to always be true in shared preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_themeKey, true);
-    _isDarkMode = true;
     notifyListeners();
   }
 

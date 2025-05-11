@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nomadly/utils/country_currency_util.dart';
 import '../services/currency_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'; // Uncomment this import
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart'; // Update these imports to include the auth service for getting user preferences
+import '../services/transaction_service.dart'; // Add this import
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 
 class CurrencyViewModel extends ChangeNotifier {
   final CurrencyService _currencyService = CurrencyService();
-  final AuthService _authService =
-      AuthService(); // Add this service to access user information
+  final AuthService _authService = AuthService();
+  final TransactionService _transactionService =
+      TransactionService(); // Add this line
   String? scannedAmount;
   double? convertedAmount;
   String? convertedCurrencySymbol;
@@ -228,58 +230,103 @@ class CurrencyViewModel extends ChangeNotifier {
       // Take a photo using image picker
       final ImagePicker picker = ImagePicker();
       final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-
       if (photo == null) {
         _isScanning = false;
         notifyListeners();
         return;
       }
 
-      _scannedImage = photo;
+      // Compress the image before upload
+      final XFile? compressed = await compressImage(photo);
+      if (compressed == null) {
+        errorMessage = 'Failed to compress image.';
+        _isScanning = false;
+        notifyListeners();
+        return;
+      }
+      _scannedImage = compressed;
 
       // Get user country for target currency
       final user = await _authService.getCurrentUser();
-      final userCountryCode =
-          user?.countryCode ??
-          'TN'; // Default to TN if user country not available
+      final userCountryCode = user?.countryCode ?? 'TN';
 
-      // Source currency is from the location/bill country (detected or selected)
-      final sourceCurrency = currentCountryCode == 'TN' ? 'TND' : 'EUR';
+      // Source currency based on current country
+      final sourceCurrency =
+          CountryCurrencyUtil.getCurrencyForCountry(
+            currentCountryCode ?? 'US',
+          ) ??
+          'USD';
+      final targetCurrency =
+          CountryCurrencyUtil.getCurrencyForCountry(userCountryCode) ?? 'TND';
 
-      // Target currency is the user's preferred currency
-      final targetCurrency = userCountryCode == 'TN' ? 'TND' : 'EUR';
-
+      print('Currency for ${currentCountryCode}: $sourceCurrency');
+      print('Currency for $userCountryCode: $targetCurrency');
       print(
         'Scanning with sourceCurrency: $sourceCurrency, targetCurrency: $targetCurrency',
       );
 
       // Call new endpoint to analyze and convert
       final result = await _currencyService.analyzeAndConvertImage(
-        photo,
+        compressed,
         sourceCurrency: sourceCurrency,
         targetCurrency: targetCurrency,
       );
 
-      _scanResults = result;
+      print('RECEIVED RESULT TYPE: ${result.runtimeType}');
+      print('RECEIVED RESULT: $result');
 
-      // Display the results
-      if (result['analysis'] != null && result['conversion'] != null) {
-        final analysis = result['analysis'];
-        final conversion = result['conversion'];
+      // IMPORTANT: Store the scan results safely
+      try {
+        _scanResults = Map<String, dynamic>.from(result);
+      } catch (e) {
+        print('ERROR copying result: $e');
+        _scanResults = result; // Use original if copy fails
+      }
 
-        amountController.text = analysis['amount'].toString();
-        scannedAmount = '${analysis['amount']} ${conversion['from']}';
-        convertedAmount = conversion['result'];
-        convertedCurrencySymbol = conversion['to'];
+      // ISOLATE all the data extraction and UI updates in a single try block
+      try {
+        // Extract from imageAnalysis
+        final Map<String, dynamic>? imageAnalysis = result['imageAnalysis'];
+        final double? detectedAmount = imageAnalysis?['detectedAmount'];
+        final String? detectedCurrency = imageAnalysis?['detectedCurrency'];
+
+        // Extract from conversionResult
+        final Map<String, dynamic>? conversionResult =
+            result['conversionResult'];
+        final String? fromCurrency = conversionResult?['from'];
+        final String? toCurrency = conversionResult?['to'];
+        final double? resultAmount = conversionResult?['result']?.toDouble();
+
+        // Set UI values in one atomic operation
+        final localDisplayCurrency =
+            sourceCurrency ?? detectedCurrency ?? fromCurrency;
+
+        // Update the state all at once at the end
+        amountController.text = detectedAmount?.toString() ?? '';
+        scannedAmount =
+            detectedAmount != null
+                ? '$detectedAmount $localDisplayCurrency'
+                : null;
+        convertedAmount = resultAmount;
+        convertedCurrencySymbol = toCurrency;
         _hasScannedResults = true;
+
+        print(
+          'UI update complete: amount=$detectedAmount, currency=$localDisplayCurrency, converted=$resultAmount $toCurrency',
+        );
+      } catch (e) {
+        print('CRITICAL ERROR processing data: $e');
+        errorMessage = 'Error displaying results: ${e.toString()}';
+        _hasScannedResults = false;
+      } finally {
+        // Always end the scanning state, regardless of success or error
         _isScanning = false;
+        // Notify listeners once at the end
         notifyListeners();
-      } else {
-        throw Exception('Failed to analyze image');
       }
     } catch (e) {
-      print('Error scanning image: $e');
-      errorMessage = 'Failed to analyze image: ${e.toString()}';
+      print('ERROR in scan process: $e');
+      errorMessage = 'Failed to scan: ${e.toString()}';
       _isScanning = false;
       notifyListeners();
     }
@@ -294,38 +341,48 @@ class CurrencyViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Compress the image before upload (if not already compressed)
-      final XFile? compressed = await compressImage(_scannedImage!);
-      if (compressed == null) {
-        errorMessage = 'Failed to compress image.';
+      // Make sure we have scan results
+      if (_scanResults == null) {
+        errorMessage = 'No scan results available. Please scan again.';
         isConverting = false;
         notifyListeners();
         return;
       }
-      // Add transaction using the compressed image
-      final result = await _currencyService.addTransactionFromImage(
-        compressed,
-        countryCode: currentCountryCode,
-      );
-      print('Transaction added response: $result');
 
-      // Show success message
-      _showSuccessMessage = true;
-      isConverting = false;
-      _hasScannedResults = false;
-      _scanResults = null;
-      _scannedImage = null;
-      notifyListeners();
+      print('Adding transaction from scan results: $_scanResults');
 
-      // Hide success message after a few seconds
-      Future.delayed(const Duration(seconds: 3), () {
-        if (_showSuccessMessage) {
-          _showSuccessMessage = false;
-          notifyListeners();
-        }
-      });
+      try {
+        // Use the TransactionService method that properly handles scan results
+        final transaction = await _transactionService.addTransactionFromScan(
+          _scanResults!,
+        );
+
+        print('Transaction added successfully: ${transaction.id}');
+
+        // Show success message
+        _showSuccessMessage = true;
+        isConverting = false;
+        _hasScannedResults = false;
+        _scanResults = null;
+        _scannedImage = null;
+        notifyListeners();
+
+        // Hide success message after a few seconds
+        Future.delayed(const Duration(seconds: 3), () {
+          if (_showSuccessMessage) {
+            _showSuccessMessage = false;
+            notifyListeners();
+          }
+        });
+      } catch (e) {
+        print('Error creating transaction from scan: $e');
+        print('Error stack trace: ${StackTrace.current}');
+        errorMessage = 'Failed to add transaction: ${e.toString()}';
+        isConverting = false;
+        notifyListeners();
+      }
     } catch (e) {
-      print('Error adding transaction: $e');
+      print('Error in addTransaction: $e');
       errorMessage = 'Failed to add transaction: ${e.toString()}';
       isConverting = false;
       notifyListeners();

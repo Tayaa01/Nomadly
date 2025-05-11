@@ -16,7 +16,7 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   bool _isLoading = true;
   String _errorMessage = '';
@@ -38,27 +38,58 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
+    // Register as an observer to detect app lifecycle changes
+    WidgetsBinding.instance.addObserver(this);
+
     // Fetch data
-    Future.microtask(() {
-      final viewModel = Provider.of<ExpenseViewModel>(context, listen: false);
-      viewModel
-          .init()
-          .then((_) {
-            setState(() {
-              _isLoading = false;
-            });
-          })
-          .catchError((error) {
-            setState(() {
-              _isLoading = false;
-              _errorMessage = error.toString();
-            });
-          });
-    });
+    _fetchData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data when dependencies change (including when navigating back to this screen)
+    _fetchData();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh data when the app comes to the foreground
+    if (state == AppLifecycleState.resumed) {
+      _fetchData();
+    }
+  }
+
+  // Centralize data fetching logic
+  Future<void> _fetchData() async {
+    final viewModel = Provider.of<ExpenseViewModel>(context, listen: false);
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      await viewModel.init();
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = error.toString();
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
+    // Remove observer when screen is disposed
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
   }
@@ -67,45 +98,74 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   List<Transaction> _getFilteredTransactions(
     List<Transaction> allTransactions,
   ) {
+    print("Filtering ${allTransactions.length} transactions");
+    for (var transaction in allTransactions) {
+      print(
+        "Transaction: ${transaction.description}, Date: ${transaction.createdAt}, Amount: ${transaction.originalAmount} ${transaction.originalCurrency}",
+      );
+    }
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
 
     switch (_selectedPeriod) {
       case 'Last 7 Days':
         final startDate = today.subtract(const Duration(days: 6));
-        return allTransactions
-            .where(
-              (t) =>
-                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
-            )
-            .toList();
+        print("Date filter: $startDate to $endOfToday");
+        return allTransactions.where((t) {
+          final normalizedDate = DateTime(
+            t.createdAt.year,
+            t.createdAt.month,
+            t.createdAt.day,
+          );
+          final result =
+              !normalizedDate.isBefore(startDate) &&
+              !normalizedDate.isAfter(today);
+          print(
+            "Transaction ${t.description}: ${t.createdAt} -> normalized to $normalizedDate, include: $result",
+          );
+          return result;
+        }).toList();
 
       case 'Last 30 Days':
         final startDate = today.subtract(const Duration(days: 29));
-        return allTransactions
-            .where(
-              (t) =>
-                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
-            )
-            .toList();
+        print("Date filter: $startDate to $endOfToday");
+        return allTransactions.where((t) {
+          final normalizedDate = DateTime(
+            t.createdAt.year,
+            t.createdAt.month,
+            t.createdAt.day,
+          );
+          return !normalizedDate.isBefore(startDate) &&
+              !normalizedDate.isAfter(today);
+        }).toList();
 
       case 'This Month':
         final startDate = DateTime(now.year, now.month, 1);
-        return allTransactions
-            .where(
-              (t) =>
-                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
-            )
-            .toList();
+        print("Date filter: $startDate to $endOfToday");
+        return allTransactions.where((t) {
+          final normalizedDate = DateTime(
+            t.createdAt.year,
+            t.createdAt.month,
+            t.createdAt.day,
+          );
+          return !normalizedDate.isBefore(startDate) &&
+              !normalizedDate.isAfter(today);
+        }).toList();
 
       case 'This Year':
         final startDate = DateTime(now.year, 1, 1);
-        return allTransactions
-            .where(
-              (t) =>
-                  !t.createdAt.isBefore(startDate) && !t.createdAt.isAfter(now),
-            )
-            .toList();
+        print("Date filter: $startDate to $endOfToday");
+        return allTransactions.where((t) {
+          final normalizedDate = DateTime(
+            t.createdAt.year,
+            t.createdAt.month,
+            t.createdAt.day,
+          );
+          return !normalizedDate.isBefore(startDate) &&
+              !normalizedDate.isAfter(today);
+        }).toList();
 
       default:
         return allTransactions;
