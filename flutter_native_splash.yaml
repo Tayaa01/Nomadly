@@ -1,0 +1,27 @@
+flutter_native_splash:
+  # This is the background color of the splash screen
+  color: "#000000"
+  # You can use an image if you want, but since we want a simple black background, we'll just use color
+  # image: assets/images/logo.png
+  
+  # Dark mode
+  color_dark: "#000000"
+  # image_dark: assets/images/logo.png
+  
+  # Android 12 background color
+  android_12:
+    color: "#000000"
+    color_dark: "#000000"
+    # image: assets/images/logo.png
+    # image_dark: assets/images/logo.png
+
+  # Android, iOS and web status bar settings
+  android: true
+  ios: true
+  web: true
+  
+  # The image can be a png, jpg, or xml (vector) file
+  # For iOS, the image must be at least 3000x3000 pixels
+  
+  # Hide the status bar
+  fullscreen: true

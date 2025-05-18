@@ -41,15 +41,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     // Register as an observer to detect app lifecycle changes
     WidgetsBinding.instance.addObserver(this);
 
-    // Fetch data
+    // Fetch data only once during initialization
     _fetchData();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Refresh data when dependencies change (including when navigating back to this screen)
-    _fetchData();
+    // Only fetch data on initial load, not on every dependencies change
+    // to prevent infinite loops
   }
 
   @override

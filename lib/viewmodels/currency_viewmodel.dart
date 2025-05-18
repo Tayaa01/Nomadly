@@ -288,18 +288,16 @@ class CurrencyViewModel extends ChangeNotifier {
         // Extract from imageAnalysis
         final Map<String, dynamic>? imageAnalysis = result['imageAnalysis'];
         final double? detectedAmount = imageAnalysis?['detectedAmount'];
-        final String? detectedCurrency = imageAnalysis?['detectedCurrency'];
 
         // Extract from conversionResult
         final Map<String, dynamic>? conversionResult =
             result['conversionResult'];
-        final String? fromCurrency = conversionResult?['from'];
         final String? toCurrency = conversionResult?['to'];
         final double? resultAmount = conversionResult?['result']?.toDouble();
 
         // Set UI values in one atomic operation
         final localDisplayCurrency =
-            sourceCurrency ?? detectedCurrency ?? fromCurrency;
+            sourceCurrency;
 
         // Update the state all at once at the end
         amountController.text = detectedAmount?.toString() ?? '';

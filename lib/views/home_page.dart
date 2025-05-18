@@ -883,7 +883,12 @@ class _HomePageState extends State<HomePage> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(
+                16.0,
+                0.0,
+                16.0,
+                16.0,
+              ), // Reduced top padding
               child:
                   _isLoadingTips
                       ? _buildTipsSkeleton()
@@ -1570,6 +1575,8 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: _isRefreshing ? null : () => _onCountrySelected(country),
       child: Container(
+        width: 100, // Fixed width for all country buttons
+        alignment: Alignment.center, // Center the text
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF4CD964) : const Color(0xFF333333),
@@ -1587,6 +1594,7 @@ class _HomePageState extends State<HomePage> {
         ),
         child: Text(
           country,
+          overflow: TextOverflow.ellipsis, // Handle long country names
           style: TextStyle(
             color: isSelected ? Colors.black : Colors.white,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1816,12 +1824,57 @@ class _HomePageState extends State<HomePage> {
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Travel Tips',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+                ),
+              ),
+            ],
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Travel Tips',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildEmptyState(
+                'No travel tips available for ${destinationProvider.selectedCountry}',
+              ),
+            ],
+          );
+        }
+
+        final categories = snapshot.data!;
+        final selectedCategory = categories.isNotEmpty ? categories[0] : null;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Travel Tips',
                   style: TextStyle(
                     color: Colors.white,
@@ -1829,121 +1882,82 @@ class _HomePageState extends State<HomePage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 16),
-                Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF4CD964),
+                TextButton(
+                  onPressed: () {
+                    destinationProvider.setTipCategory(selectedCategory);
+                    Navigator.pushNamed(context, '/tips');
+                  },
+                  child: const Text(
+                    'See All',
+                    style: TextStyle(
+                      color: Color(0xFF4CD964),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
-          );
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyState(
-            'No travel tips available for ${destinationProvider.selectedCountry}',
-          );
-        }
-
-        final categories = snapshot.data!;
-        final selectedCategory = categories.isNotEmpty ? categories[0] : null;
-
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Travel Tips',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      destinationProvider.setTipCategory(selectedCategory);
-                      Navigator.pushNamed(context, '/tips');
-                    },
-                    child: const Text(
-                      'See All',
-                      style: TextStyle(
-                        color: Color(0xFF4CD964),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (selectedCategory != null)
-                FutureBuilder<List<Tip>>(
-                  future: _tipsService.getTipsByCountryAndCategory(
-                    destinationProvider.selectedCountry!,
-                    selectedCategory,
-                  ),
-                  builder: (context, tipsSnapshot) {
-                    if (!tipsSnapshot.hasData || tipsSnapshot.data!.isEmpty) {
-                      return _buildTipPreviewCard(
-                        category: selectedCategory,
-                        content:
-                            'Tap to see tips about ${destinationProvider.selectedCountry}.',
-                        onTap: () {
-                          destinationProvider.setTipCategory(selectedCategory);
-                          Navigator.pushNamed(context, '/tips');
-                        },
-                      );
-                    }
-
-                    final tip = tipsSnapshot.data!.first;
+            const SizedBox(height: 16),
+            if (selectedCategory != null)
+              FutureBuilder<List<Tip>>(
+                future: _tipsService.getTipsByCountryAndCategory(
+                  destinationProvider.selectedCountry!,
+                  selectedCategory,
+                ),
+                builder: (context, tipsSnapshot) {
+                  if (!tipsSnapshot.hasData || tipsSnapshot.data!.isEmpty) {
                     return _buildTipPreviewCard(
-                      category: tip.category,
-                      content: tip.content,
+                      category: selectedCategory,
+                      content:
+                          'Tap to see tips about ${destinationProvider.selectedCountry}.',
                       onTap: () {
-                        destinationProvider.setTipCategory(tip.category);
+                        destinationProvider.setTipCategory(selectedCategory);
                         Navigator.pushNamed(context, '/tips');
                       },
                     );
-                  },
-                ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 40,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: ChoiceChip(
-                        label: Text(categories[index]),
-                        selected: selectedCategory == categories[index],
-                        selectedColor: const Color(0xFF4CD964),
-                        backgroundColor: const Color(0xFF333333),
-                        labelStyle: TextStyle(
-                          color:
-                              selectedCategory == categories[index]
-                                  ? Colors.black
-                                  : Colors.white,
-                        ),
-                        onSelected: (_) {
-                          destinationProvider.setTipCategory(categories[index]);
-                          Navigator.pushNamed(context, '/tips');
-                        },
-                      ),
-                    );
-                  },
-                ),
+                  }
+
+                  final tip = tipsSnapshot.data!.first;
+                  return _buildTipPreviewCard(
+                    category: tip.category,
+                    content: tip.content,
+                    onTap: () {
+                      destinationProvider.setTipCategory(tip.category);
+                      Navigator.pushNamed(context, '/tips');
+                    },
+                  );
+                },
               ),
-            ],
-          ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(categories[index]),
+                      selected: selectedCategory == categories[index],
+                      selectedColor: const Color(0xFF4CD964),
+                      backgroundColor: const Color(0xFF333333),
+                      labelStyle: TextStyle(
+                        color:
+                            selectedCategory == categories[index]
+                                ? Colors.black
+                                : Colors.white,
+                      ),
+                      onSelected: (_) {
+                        destinationProvider.setTipCategory(categories[index]);
+                        Navigator.pushNamed(context, '/tips');
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );
@@ -1958,7 +1972,7 @@ class _HomePageState extends State<HomePage> {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: const Color(0xFF333333),
           borderRadius: BorderRadius.circular(16),
@@ -1987,14 +2001,14 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
               content,
               style: const TextStyle(color: Colors.white, fontSize: 16),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: const [

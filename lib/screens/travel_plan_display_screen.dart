@@ -75,6 +75,8 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen>
     print("Days: ${widget.plan.days}");
     print("Start Date: ${widget.plan.startDate}");
     print("Budget: ${widget.plan.budget}");
+    print("Estimated Budget: ${widget.plan.estimatedBudget}");
+    print("Is Budget Optimized: ${widget.plan.isBudgetOptimized}");
     print("============= DAY CONTENTS =============");
     for (int i = 0; i < widget.plan.daysContent.length; i++) {
       print("--- DAY ${i + 1} ---");
@@ -426,9 +428,7 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        widget.plan.isBudgetOptimized
-                            ? 'Budget-optimized: ~\$${widget.plan.estimatedBudget.toStringAsFixed(0)}'
-                            : 'Budget: \$${widget.plan.budget.toStringAsFixed(0)}',
+                        _buildBudgetText(),
                         style: const TextStyle(
                           fontSize: 16,
                           color: Color(0xFF4CD964),
@@ -1055,41 +1055,91 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen>
       ),
       child: Stack(
         children: [
-          // Main content
+          // Main content - with padding adjustments for cost badge
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(
+              left: 16,
+              top: 16,
+              right: 16,
+              bottom: 16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Time indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getTimeColor(activity.time),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getTimeIcon(activity.time),
-                        color: Colors.white,
-                        size: 12,
+                // Top row with time indicator on left, cost on right
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Time indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        activity.time,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                      decoration: BoxDecoration(
+                        color: _getTimeColor(activity.time),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getTimeIcon(activity.time),
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            activity.time,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Spacer(), // Push cost to the right
+                    // Cost indicator directly in the layout
+                    isFree
+                        ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CD964),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Text(
+                            'FREE',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        )
+                        : Container(
+                          constraints: const BoxConstraints(
+                            maxWidth: 150,
+                          ), // Control maximum width
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CD964).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF4CD964).withOpacity(0.3),
+                            ),
+                          ),
+                          child: _formatCostText(activity.cost),
                         ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -1131,53 +1181,6 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen>
                 ],
               ],
             ),
-          ),
-
-          // Cost badge in corner
-          Positioned(
-            top: 16,
-            right: 16,
-            child:
-                isFree
-                    ? Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4CD964),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Text(
-                        'FREE',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    )
-                    : Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4CD964).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF4CD964).withOpacity(0.3),
-                        ),
-                      ),
-                      child: Text(
-                        activity.cost.isEmpty ? 'COST' : activity.cost,
-                        style: const TextStyle(
-                          color: Color(0xFF4CD964),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
           ),
         ],
       ),
@@ -1476,6 +1479,84 @@ class _TravelPlanDisplayScreenState extends State<TravelPlanDisplayScreen>
       return FontAwesomeIcons.moon;
     } else {
       return FontAwesomeIcons.clock;
+    }
+  }
+
+  // Helper method to format the cost text for better display
+  Widget _formatCostText(String cost) {
+    if (cost.isEmpty) {
+      return const Text(
+        'COST',
+        style: TextStyle(
+          color: Color(0xFF4CD964),
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      );
+    }
+
+    // If the cost contains parentheses or is longer than a certain threshold
+    final bool isLongText = cost.contains('(') || cost.length > 15;
+
+    if (isLongText) {
+      // For long text with parentheses, extract and format differently
+      final RegExp costPattern = RegExp(r'([\$€£]\s*\d+(?:[,.]\d+)?)');
+      final match = costPattern.firstMatch(cost);
+      final String? numericPart = match?.group(1);
+
+      if (numericPart != null) {
+        // Has a numeric part we can extract
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              numericPart,
+              style: const TextStyle(
+                color: Color(0xFF4CD964),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              cost.replaceFirst(numericPart, '').trim(),
+              style: const TextStyle(
+                color: Color(0xFF4CD964),
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+            ),
+          ],
+        );
+      }
+    }
+
+    // Default case for shorter cost text
+    return Text(
+      cost,
+      style: const TextStyle(
+        color: Color(0xFF4CD964),
+        fontWeight: FontWeight.bold,
+        fontSize: 12,
+      ),
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  String _buildBudgetText() {
+    if (widget.plan.isBudgetOptimized) {
+      return 'Budget-optimized: ~\$${widget.plan.estimatedBudget.toStringAsFixed(0)}';
+    } else if (widget.plan.budget > 0) {
+      return 'Budget: \$${widget.plan.budget.toStringAsFixed(0)}';
+    } else if (widget.plan.estimatedBudget > 0) {
+      // Fallback to estimated budget if regular budget is 0
+      return 'Estimated budget: \$${widget.plan.estimatedBudget.toStringAsFixed(0)}';
+    } else {
+      // Both budgets are 0, generic text
+      return 'Budget information unavailable';
     }
   }
 }

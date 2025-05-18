@@ -103,7 +103,7 @@ class _SignInPageState extends State<SignInPage> {
 
           // Navigate based on profile completeness (similar to Google Sign-In)
           // ignore: unnecessary_null_comparison
-          if (user.countryCode == null || user.countryCode!.isEmpty) {
+          if (user.countryCode == null || user.countryCode.isEmpty) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -210,7 +210,8 @@ class _SignInPageState extends State<SignInPage> {
           );
           await authProvider.loginSuccess(appAccessToken, user);
           // Check if countryCode is missing or empty
-          if (user.countryCode == null || user.countryCode!.isEmpty) {
+          // ignore: unnecessary_null_comparison
+          if (user.countryCode == null || user.countryCode.isEmpty) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

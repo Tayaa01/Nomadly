@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/travel_request.dart';
-import '../models/travel_plan.dart';  // Make sure this path is correct
+import '../models/travel_plan.dart'; // Make sure this path is correct
 import '../network/api_config.dart';
 import '../services/auth_service.dart';
 
@@ -14,7 +14,7 @@ class TravelPlannerService {
   Future<TravelPlan?> getExistingPlan() async {
     try {
       final token = await _authService.getToken();
-      
+
       if (token == null) {
         throw Exception('Not authenticated');
       }
@@ -43,20 +43,30 @@ class TravelPlannerService {
   Future<TravelPlan> generateCustomPlan(TravelRequest request) async {
     try {
       final token = await _authService.getToken();
-      
+
       if (token == null) {
         throw Exception('Not authenticated');
       }
 
-      print('Generating plan for country: ${request.country}, city: ${request.city}, budget: ${request.budget}, days: ${request.days}');
-      
+      print(
+        'Generating plan for country: ${request.country}, city: ${request.city}, budget: ${request.budget}, days: ${request.days}',
+      );
+
+      // Ensure budget is always passed as a positive number or explicitly null
+      final budgetValue =
+          (request.budget != null && request.budget! > 0)
+              ? request.budget
+              : null;
+
       final response = await http.post(
-        Uri.parse('${ApiConfig.BASE_URL}${ApiConfig.TRAVEL_GENERATE_PLAN_ENDPOINT}'),
+        Uri.parse(
+          '${ApiConfig.BASE_URL}${ApiConfig.TRAVEL_GENERATE_PLAN_ENDPOINT}',
+        ),
         headers: ApiConfig.getAuthHeaders(token),
         body: json.encode({
           'country': request.country,
           'city': request.city, // Add city parameter
-          'budget': request.budget,
+          'budget': budgetValue,
           'days': request.days,
           'startDate': request.startDate.toIso8601String(),
         }),
@@ -67,7 +77,9 @@ class TravelPlannerService {
         return TravelPlan.fromJson(data);
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Server error ${response.statusCode}');
+        throw Exception(
+          errorData['message'] ?? 'Server error ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('Error generating plan: $e');
@@ -79,15 +91,19 @@ class TravelPlannerService {
   Future<TravelPlan> generateBudgetPlan(TravelRequest request) async {
     try {
       final token = await _authService.getToken();
-      
+
       if (token == null) {
         throw Exception('Not authenticated');
       }
 
-      print('Generating budget plan for country: ${request.country}, city: ${request.city}, days: ${request.days}');
-      
+      print(
+        'Generating budget plan for country: ${request.country}, city: ${request.city}, days: ${request.days}',
+      );
+
       final response = await http.post(
-        Uri.parse('${ApiConfig.BASE_URL}${ApiConfig.TRAVEL_GENERATE_BUDGET_PLAN_ENDPOINT}'),
+        Uri.parse(
+          '${ApiConfig.BASE_URL}${ApiConfig.TRAVEL_GENERATE_BUDGET_PLAN_ENDPOINT}',
+        ),
         headers: ApiConfig.getAuthHeaders(token),
         body: json.encode({
           'country': request.country,
@@ -102,7 +118,9 @@ class TravelPlannerService {
         return TravelPlan.fromJson(data);
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Server error ${response.statusCode}');
+        throw Exception(
+          errorData['message'] ?? 'Server error ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('Error generating budget plan: $e');
@@ -115,9 +133,11 @@ class TravelPlannerService {
     try {
       // Use the new method and extract content
       final plan = await generateCustomPlan(request);
-      
+
       // Combine all day content into one string
-      final combinedContent = plan.daysContent.map((day) => day.content).join('\n\n');
+      final combinedContent = plan.daysContent
+          .map((day) => day.content)
+          .join('\n\n');
       return combinedContent;
     } catch (e) {
       print('Error in generateItinerary: $e');

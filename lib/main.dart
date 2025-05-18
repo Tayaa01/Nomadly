@@ -34,6 +34,17 @@ import 'models/user.dart'; // Import the User model
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set system UI overlay style to dark from the very beginning
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.black,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -67,26 +78,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // Always use dark mode
   bool isDarkMode = true;
 
   @override
   void initState() {
     super.initState();
   }
-
-  ThemeData get _lightTheme => ThemeData(
-    scaffoldBackgroundColor: Colors.white,
-    colorScheme: ColorScheme.light(
-      surface: const Color(0xFFF5F5F5),
-      primary: const Color(0xFF1E1E1E),
-      onPrimary: Colors.white,
-      secondary: const Color(0xFF666666),
-    ),
-    textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Color(0xFF1E1E1E)),
-      bodyMedium: TextStyle(color: Color(0xFF666666)),
-    ),
-  );
 
   ThemeData get _darkTheme => ThemeData(
     scaffoldBackgroundColor: const Color(0xFF000000),
@@ -102,10 +100,11 @@ class _MyAppState extends State<MyApp> {
     ),
   );
 
+  // We're only using dark theme
+
   void toggleTheme() {
-    setState(() {
-      isDarkMode = !isDarkMode;
-    });
+    // Do nothing - always staying in dark mode
+    // Kept for compatibility
   }
 
   @override
@@ -165,7 +164,9 @@ class _MyAppState extends State<MyApp> {
   Widget _buildMaterialApp(Widget home) {
     return MaterialApp(
       title: 'Nomadly',
-      theme: isDarkMode ? _darkTheme : _lightTheme,
+      theme: _darkTheme, // Always use dark theme for main theme
+      darkTheme: _darkTheme, // Set dark theme explicitly
+      themeMode: ThemeMode.dark, // Force dark theme mode
       debugShowCheckedModeBanner: false,
       home: home,
       onGenerateRoute: _onGenerateRoute,
@@ -208,11 +209,29 @@ class _MyAppState extends State<MyApp> {
   Widget _buildLoadingScreen() {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: _darkTheme, // Use the dark theme
+      darkTheme: _darkTheme, // Set dark theme explicitly
+      themeMode: ThemeMode.dark, // Force dark theme
       home: Scaffold(
         backgroundColor: Colors.black,
         body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App logo or branding can be added here
+              Image.asset(
+                'assets/images/logo.png',
+                width: 100,
+                height: 100,
+                errorBuilder:
+                    (context, error, stackTrace) =>
+                        const SizedBox(height: 100, width: 100),
+              ),
+              const SizedBox(height: 20),
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CD964)),
+              ),
+            ],
           ),
         ),
       ),

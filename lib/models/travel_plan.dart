@@ -6,9 +6,7 @@ class DayContent {
   DayContent({required this.content});
 
   factory DayContent.fromJson(Map<String, dynamic> json) {
-    return DayContent(
-      content: json['content'] ?? '',
-    );
+    return DayContent(content: json['content'] ?? '');
   }
 }
 
@@ -48,12 +46,24 @@ class TravelPlan {
   factory TravelPlan.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic>? weatherData;
     if (json['weatherData'] != null && json['weatherData'] is Map) {
-      if (json['weatherData']['forecast'] != null && json['weatherData']['forecast'] is List) {
+      if (json['weatherData']['forecast'] != null &&
+          json['weatherData']['forecast'] is List) {
         weatherData = Map<String, dynamic>.from(json['weatherData']);
       } else {
         weatherData = Map<String, dynamic>.from(json['weatherData']);
         weatherData['forecast'] = [];
       }
+    }
+
+    // Parse budget, ensure it's not 0 for non-budget-optimized plans
+    double budget = (json['budget'] ?? 0).toDouble();
+    bool isBudgetOptimized = json['isBudgetOptimized'] ?? false;
+    double estimatedBudget =
+        (json['estimatedBudget'] as num?)?.toDouble() ?? 0.0;
+
+    // If it's not a budget-optimized plan but budget is 0, set budget to estimated budget
+    if (!isBudgetOptimized && budget == 0 && estimatedBudget > 0) {
+      budget = estimatedBudget;
     }
 
     return TravelPlan(
@@ -62,22 +72,27 @@ class TravelPlan {
       country: json['country'] ?? '',
       city: json['city'] ?? '', // Add city from json
       days: json['days'] ?? 0,
-      startDate: json['startDate'] != null 
-          ? DateTime.parse(json['startDate']) 
-          : DateTime.now(),
-      budget: (json['budget'] ?? 0).toDouble(),
-      isBudgetOptimized: json['isBudgetOptimized'] ?? false,
-      daysContent: (json['daysContent'] as List<dynamic>?)
-          ?.map((day) => DayContent.fromJson(day))
-          .toList() ?? [],
+      startDate:
+          json['startDate'] != null
+              ? DateTime.parse(json['startDate'])
+              : DateTime.now(),
+      budget: budget,
+      isBudgetOptimized: isBudgetOptimized,
+      daysContent:
+          (json['daysContent'] as List<dynamic>?)
+              ?.map((day) => DayContent.fromJson(day))
+              .toList() ??
+          [],
       additionalInfo: json['additionalInfo'] ?? '',
-      estimatedBudget: (json['estimatedBudget'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt']) 
-          : DateTime.now(),
+      estimatedBudget: estimatedBudget,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
+      updatedAt:
+          json['updatedAt'] != null
+              ? DateTime.parse(json['updatedAt'])
+              : DateTime.now(),
       weatherData: weatherData, // Added
     );
   }
@@ -92,7 +107,8 @@ class TravelPlan {
       'startDate': startDate.toIso8601String(),
       'budget': budget,
       'isBudgetOptimized': isBudgetOptimized,
-      'daysContent': daysContent.map((day) => {'content': day.content}).toList(),
+      'daysContent':
+          daysContent.map((day) => {'content': day.content}).toList(),
       'additionalInfo': additionalInfo,
       'estimatedBudget': estimatedBudget,
       'createdAt': createdAt.toIso8601String(),
